@@ -1,0 +1,837 @@
+/* ============================================================
+   UTC STATUS – Design System & Stylesheet
+   Trường Đại học Giao thông Vận tải (UTC)
+   Matching Exact Dashboard Reference UI
+   ============================================================ */
+
+:root {
+  --bg-page:           #ebf1f6; /* Nền xám nhẹ dịu mát giúp các thẻ card trắng nổi bật */
+  --bg-card:           #ffffff;
+  --bg-card-hover:     #f8fafc;
+  --border-color:      #e2e8f0;
+  --border-subtle:     #f1f5f9;
+
+  --text-primary:      #1e293b;
+  --text-secondary:    #475569;
+  --text-muted:        #64748b;
+
+  /* ═══ BẢNG MÀU CHỦ ĐẠO: XANH LÁ / TEAL GREEN THEO CHUẨN THIẾT KẾ ═══ */
+  --green-brand:       #007a78; /* Xanh lá / Teal nhận diện UTC STATUS */
+  --green-dark:        #006764; /* Xanh rêu đậm đặc trưng của thẻ 'Bảo trì trong tuần' */
+  --green-darker:      #005250;
+  --green-light:       #0d9488;
+  --green-emerald:     #10b981; /* Xanh ngọc lục bảo: Donut ring & Hoạt động bình thường */
+  --green-mint-soft:   #e6f4f1; /* Nền mint pastel nhạt cho nút & highlight lịch */
+  --green-mint-border: #ccfbf1;
+  --green-box-bg:      #f0fdf9; /* Khung nền nhạt bo góc quanh vòng Donut Chart */
+
+  /* Tương thích ngược */
+  --teal-primary:      var(--green-brand);
+  --teal-dark:         var(--green-dark);
+  --teal-light:        var(--green-light);
+  --teal-soft-bg:      var(--green-mint-soft);
+  --teal-card-bg:      var(--green-dark);
+
+  /* ═══ MÀU ĐỎ ĐIỂM NHẤN (CHỌN LỌC - ACCENT RED) ═══ */
+  --red-accent:        #ef4444; /* Chữ UTC, chấm nhịp tim, badge số lượng, cảnh báo sự cố */
+  --red-accent-dark:   #dc2626; /* Link 'Xem chi tiết', text sự cố */
+  --red-accent-soft:   #fef2f2;
+  --red-accent-border: #fecaca;
+
+  /* Trạng thái vận hành */
+  --c-operational:     #22c55e;
+  --c-degraded:        #eab308;
+  --c-partial:         #f97316;
+  --c-major:           #ef4444;
+  --c-maintenance:     #f59e0b;
+
+  --radius-sm:         8px;
+  --radius-md:         12px;
+  --radius-lg:         16px;
+  --radius-xl:         20px;
+
+  --shadow-sm:         0 1px 3px rgba(0,0,0,0.04);
+  --shadow-card:       0 2px 10px rgba(0,0,0,0.04);
+  --shadow-hover:      0 8px 24px rgba(0,0,0,0.08);
+
+  --font-family:       'Inter', system-ui, -apple-system, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Top Navbar ─────────────────────────────────────────────── */
+.utc-navbar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.65rem 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.utc-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.utc-logo-icon {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 1.6rem;
+  color: var(--teal-primary);
+}
+
+.utc-logo-dot {
+  width: 7px;
+  height: 7px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  margin-top: -12px;
+}
+
+.utc-brand-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ef4444; /* UTC in Red */
+  line-height: 1.1;
+}
+
+.utc-brand-title span {
+  color: var(--teal-primary); /* STATUS in Teal */
+}
+
+.utc-brand-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.nav-action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-action-btn:hover {
+  background: var(--teal-soft-bg);
+  color: var(--teal-primary);
+  border-color: #ccfbf1;
+}
+
+.nav-action-btn.teal-box {
+  background: var(--teal-soft-bg);
+  border-color: #99f6e4;
+  color: var(--teal-primary);
+}
+
+.nav-badge-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+
+.admin-dropdown-btn:hover {
+  background: #f1f5f9;
+}
+
+/* ── Common Card Style ──────────────────────────────────────── */
+.utc-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.utc-card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.utc-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--teal-primary);
+  margin-bottom: 0;
+}
+
+.utc-json-link {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--teal-light);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.utc-json-link:hover {
+  color: var(--teal-dark);
+  text-decoration: underline;
+}
+
+/* ── Service Info Card Content ──────────────────────────────── */
+.service-info-card {
+  background: linear-gradient(145deg, #f0fdf9 0%, #e6f7f2 100%) !important;
+  border: 1px solid #bbf7d0 !important;
+  box-shadow: 0 4px 18px rgba(13, 148, 136, 0.08) !important;
+}
+
+.service-info-card .utc-card-title {
+  color: #065f46 !important;
+  font-size: 1.22rem !important;
+  font-weight: 800 !important;
+}
+
+.donut-chart-box {
+  background-color: #ffffff;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.07);
+}
+
+.service-donut-container {
+  width: 105px;
+  height: 105px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.donut-inner-text {
+  position: absolute;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.donut-ratio {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.donut-label {
+  font-size: 0.68rem;
+  color: var(--green-brand);
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.donut-svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.donut-meter, .donut-value {
+  fill: none;
+  stroke-width: 9;
+}
+
+.donut-meter {
+  stroke: #e2e8f0;
+}
+
+.donut-value {
+  stroke: var(--green-emerald);
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.6s ease;
+}
+
+.status-stat-label {
+  color: #1e293b;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.status-stat-label.header-label {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-bottom: 2px;
+}
+
+.status-stat-val-bold {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.status-stat-val-bold.red-alert {
+  color: var(--red-accent-dark);
+}
+
+.status-stat-val-bold.green-ok {
+  color: var(--c-operational);
+}
+
+/* ── 2 Thẻ Sự cố đang xử lý & Bảo trì trong tuần (NỀN XANH - CHỮ TRẮNG) ── */
+.utc-stat-card {
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.4rem;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 124px;
+}
+
+.utc-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Thẻ 1: Sự cố đang xử lý (Nền xanh Teal đậm, Chữ trắng, Icon trắng) */
+.stat-card-green-incident,
+.stat-card-white {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 15px rgba(13, 148, 136, 0.28) !important;
+  color: #ffffff !important;
+}
+
+.stat-card-green-incident:hover,
+.stat-card-white:hover {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+  box-shadow: 0 6px 22px rgba(13, 148, 136, 0.38) !important;
+}
+
+/* Thẻ 2: Bảo trì trong tuần (Nền xanh rêu đậm, Chữ trắng, Icon trắng) */
+.stat-card-green-maint,
+.stat-card-darkgreen {
+  background: linear-gradient(135deg, #006764 0%, #065f46 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 15px rgba(0, 103, 100, 0.28) !important;
+  color: #ffffff !important;
+}
+
+.stat-card-green-maint:hover,
+.stat-card-darkgreen:hover {
+  background: linear-gradient(135deg, #005653 0%, #054e39 100%) !important;
+  box-shadow: 0 6px 22px rgba(0, 103, 100, 0.38) !important;
+}
+
+/* Toàn bộ chữ, số, icon của cả 2 thẻ đồng bộ MÀU TRẮNG */
+.stat-card-green-incident *,
+.stat-card-green-maint *,
+.stat-card-white *,
+.stat-card-darkgreen * {
+  color: #ffffff !important;
+}
+
+.utc-stat-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff !important;
+}
+
+.utc-stat-card-icon {
+  font-size: 1.35rem;
+  color: #ffffff !important;
+  opacity: 0.95;
+}
+
+.utc-stat-card-number {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #ffffff !important;
+  line-height: 1.1;
+  margin: 3px 0;
+}
+
+.utc-stat-card-link {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #ffffff !important;
+  opacity: 0.95;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.utc-stat-card:hover .utc-stat-card-link {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* Tương thích fallback: Flat alert strip */
+.summary-alerts-strip-row {
+  margin-bottom: 4px;
+}
+.flat-alert-strip {
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+}
+.alert-strip-incident {
+  background-color: var(--red-accent-soft);
+  border: 1px solid var(--red-accent-border);
+}
+.alert-strip-maint {
+  background-color: var(--green-box-bg);
+  border: 1px solid var(--green-mint-border);
+}
+
+/* ── Monthly Calendar Component ────────────────────────────── */
+.calendar-card {
+  background: linear-gradient(145deg, #f7fbf9 0%, #eef8f5 100%) !important;
+  border: 1px solid #c2ece0 !important;
+  box-shadow: 0 4px 18px rgba(13, 148, 136, 0.08) !important;
+}
+
+.calendar-card .utc-card-title {
+  color: #065f46 !important;
+  font-size: 1.22rem !important;
+  font-weight: 800 !important;
+}
+
+.calendar-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-nav-btn {
+  background: #ffffff;
+  border: 1px solid #c2ece0;
+  color: #065f46;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 1rem;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.calendar-nav-btn:hover {
+  color: #ffffff;
+  background: #007a78;
+  border-color: #007a78;
+}
+
+.calendar-month-text {
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  padding: 0 4px;
+}
+
+.calendar-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px 6px;
+  margin-top: 0.8rem;
+  table-layout: fixed;
+}
+
+.calendar-table th {
+  text-align: center;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important; /* Chữ đậm rõ ràng */
+  color: #0f172a !important;
+  padding-bottom: 8px;
+}
+
+.calendar-day-cell {
+  height: 38px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important; /* Chữ số ngày đậm rõ ràng */
+  color: #0f172a !important;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.calendar-day-cell:hover:not(.other-month) {
+  background: #ccfbf1 !important;
+  color: #065f46 !important;
+}
+
+.calendar-day-cell.other-month {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  cursor: default;
+}
+
+.calendar-day-cell.has-events {
+  background: #a7f3d0 !important; /* Highlight rõ ràng nổi bật */
+  font-weight: 800 !important;
+  color: #064e3b !important;
+  border-radius: 8px;
+}
+
+.calendar-day-cell.is-today {
+  border: 2px solid #006764 !important;
+  font-weight: 800 !important;
+  background: #ffffff !important;
+  color: #006764 !important;
+}
+
+.calendar-dots {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+}
+
+.cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.cal-dot-incident { background-color: var(--c-major); }
+.cal-dot-maint    { background-color: #d97706; }
+
+.calendar-legend {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important; /* Chú thích đậm rõ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 0.8rem;
+  color: #1e293b !important;
+}
+
+/* ── Section: 3-Tier Normal Document Flow Features Hub ──────── */
+.dashboard-features-hub,
+.system-features-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: 10px;
+  clear: both;
+  position: relative;
+}
+
+.features-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+  padding: 0 2px;
+}
+
+.header-accent-bar {
+  display: inline-block;
+  width: 3px;
+  height: 15px;
+  background-color: var(--teal-primary);
+  border-radius: 2px;
+}
+
+.section-title-text {
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1e293b;
+}
+
+.section-note-text {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+@media (max-width: 576px) {
+  .section-note-text {
+    display: none;
+  }
+}
+
+/* ── Grid: 7 Thẻ Chức Năng Cân Đối & Responsive ─────────────── */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 1200px) {
+  .services-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+/* ── Thẻ Chức Năng: Trắng phẳng, viền mỏng, không màu mè ──────── */
+.service-icon-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.15rem 0.85rem 1rem 0.85rem;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 132px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  user-select: none;
+}
+
+.service-icon-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.service-card-dot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.service-icon-card:hover .service-card-dot {
+  transform: scale(1.2);
+}
+
+.service-card-dot.pulse {
+  animation: pulse-dot-clean 1.8s infinite;
+}
+
+@keyframes pulse-dot-clean {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  70% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.service-big-icon {
+  font-size: 28px;
+  margin-bottom: 0.55rem;
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.service-icon-card:hover .service-big-icon {
+  transform: scale(1.12);
+}
+
+.service-card-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+
+.service-card-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  color: #64748b;
+  line-height: 1.25;
+}
+
+.service-badge-pill {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: inline-block;
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.service-badge-pill.pill-alert {
+  background-color: #fef2f2;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.service-badge-pill.pill-warn {
+  background-color: #fffbeb;
+  color: #b45309;
+  font-weight: 600;
+}
+
+/* ── Modal & Dialogs ────────────────────────────────────────── */
+.modal-content.utc-modal {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.utc-modal .modal-header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.25rem 1.5rem;
+}
+
+.utc-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.utc-badge-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge-operational    { background: #dcfce7; color: #15803d; }
+.badge-degraded       { background: #fef9c3; color: #a16207; }
+.badge-partial_outage { background: #ffedd5; color: #c2410c; }
+.badge-major_outage   { background: #fee2e2; color: #b91c1c; }
+.badge-maintenance    { background: #fef3c7; color: #b45309; }
+
+/* 90-day bars inside modal */
+.modal-uptime-bars {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 48px;
+  padding: 4px 0;
+  background: #f8fafc;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e2e8f0;
+}
+
+.modal-bar-day {
+  flex: 1;
+  background-color: var(--c-operational);
+  border-radius: 1px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.modal-bar-day:hover {
+  opacity: 0.75;
+}
+
+.modal-bar-day.down { background-color: var(--c-major); }
+.modal-bar-day.mid  { background-color: var(--c-degraded); }
+
+/* Timeline UI */
+.timeline-item {
+  position: relative;
+  padding-left: 28px;
+  padding-bottom: 1.25rem;
+  border-left: 2px solid #e2e8f0;
+}
+
+.timeline-item:last-child {
+  border-left-color: transparent;
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -7px;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--teal-primary);
+  border: 2px solid #ffffff;
+}
+
+.timeline-dot.resolved { background: var(--c-operational); }
+.timeline-dot.active   { background: var(--c-major); }
+
+/* JSON Code Box */
+.json-code-box {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.82rem;
+  max-height: 420px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.utc-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}

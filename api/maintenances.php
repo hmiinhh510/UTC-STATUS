@@ -9,12 +9,6 @@ header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Cache-Control: no-store');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method Not Allowed']);
-    exit;
-}
-
 function jsonOut(int $code, array $data): void
 {
     http_response_code($code);
@@ -22,35 +16,66 @@ function jsonOut(int $code, array $data): void
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    jsonOut(405, ['error' => 'Phương thức không được hỗ trợ (Method Not Allowed).']);
+}
+
 try {
     $pdo = Database::getInstance();
 
-    $includePast = (bool) ($_GET['include_past'] ?? false);
-    $limit = min(50, max(1, (int) ($_GET['limit'] ?? 20)));
+    $tab   = $_GET['tab'] ?? 'all'; // 'upcoming', 'past', 'all'
+    $limit = min(50, max(1, (int) ($_GET['limit'] ?? 30)));
 
-    $statusFilter = $includePast
-        ? "m.status IN ('scheduled','in_progress','completed')"
-        : "m.status IN ('scheduled','in_progress') AND m.expected_end >= NOW() - INTERVAL 1 DAY";
-
-    $stmt = $pdo->prepare(
+    // 1. Lấy các kế hoạch sắp tới & đang diễn ra (in_progress, scheduled)
+    $stmtUpcoming = $pdo->prepare(
         "SELECT m.id, m.title, m.description, m.status,
                 m.scheduled_at, m.expected_end, m.updated_at,
                 GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS affected_services
          FROM maintenances m
          LEFT JOIN maintenance_services ms ON ms.maintenance_id = m.id
          LEFT JOIN services s ON s.id = ms.service_id
-         WHERE $statusFilter
+         WHERE m.status IN ('in_progress', 'scheduled')
          GROUP BY m.id
-         ORDER BY m.scheduled_at ASC
-         LIMIT :lim"
+         ORDER BY (m.status = 'in_progress') DESC, m.scheduled_at ASC"
     );
-    $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
-    $stmt->execute();
-    $rows = $stmt->fetchAll();
+    $stmtUpcoming->execute();
+    $upcoming = $stmtUpcoming->fetchAll();
+
+    // 2. Lấy các kế hoạch đã hoàn tất (completed)
+    $stmtPast = $pdo->prepare(
+        "SELECT m.id, m.title, m.description, m.status,
+                m.scheduled_at, m.expected_end, m.updated_at,
+                GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS affected_services
+         FROM maintenances m
+         LEFT JOIN maintenance_services ms ON ms.maintenance_id = m.id
+         LEFT JOIN services s ON s.id = ms.service_id
+         WHERE m.status = 'completed'
+         GROUP BY m.id
+         ORDER BY m.expected_end DESC
+         LIMIT 20"
+    );
+    $stmtPast->execute();
+    $past = $stmtPast->fetchAll();
+
+    $all = array_merge($upcoming, $past);
+
+    $responseData = match ($tab) {
+        'upcoming' => $upcoming,
+        'past'     => $past,
+        default    => $all,
+    };
 
     jsonOut(200, [
-        'data' => $rows,
-        'count' => count($rows),
+        'data'     => $responseData,
+        'upcoming' => $upcoming,
+        'past'     => $past,
+        'counts'   => [
+            'total'       => count($all),
+            'upcoming'    => count($upcoming),
+            'in_progress' => count(array_filter($upcoming, fn($m) => $m['status'] === 'in_progress')),
+            'scheduled'   => count(array_filter($upcoming, fn($m) => $m['status'] === 'scheduled')),
+            'past'        => count($past),
+        ],
         'generated_at' => date('c'),
     ]);
 

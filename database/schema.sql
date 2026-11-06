@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `email`      VARCHAR(191) NOT NULL,
     `password`   VARCHAR(255) NOT NULL COMMENT 'Bcrypt hash từ password_hash()',
     `role`       ENUM('admin','editor','student') NOT NULL DEFAULT 'student',
+    `status`     ENUM('active','locked') NOT NULL DEFAULT 'active' COMMENT 'Trạng thái hoạt động tài khoản',
     `reset_token` VARCHAR(100) DEFAULT NULL COMMENT 'Mã xác nhận khôi phục mật khẩu (OTP / Token)',
     `reset_expires_at` DATETIME DEFAULT NULL COMMENT 'Thời hạn của mã xác thực khôi phục',
     `remember_token` VARCHAR(255) DEFAULT NULL COMMENT 'Token phiên ghi nhớ đăng nhập',
@@ -249,6 +250,27 @@ CREATE TABLE IF NOT EXISTS `incident_reports` (
     CONSTRAINT `fk_ir_service`
         FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
         ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- 10. PASSWORD RESET REQUESTS (Yêu cầu cấp lại mật khẩu cho sinh viên)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `password_reset_requests` (
+    `id`                INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`           INT UNSIGNED NOT NULL,
+    `username`          VARCHAR(80)  NOT NULL,
+    `full_name`         VARCHAR(150) DEFAULT NULL,
+    `email`             VARCHAR(191) NOT NULL,
+    `status`            ENUM('pending', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+    `new_password_temp` VARCHAR(255) DEFAULT NULL COMMENT 'Mật khẩu mới do Admin cấp',
+    `admin_note`        VARCHAR(255) DEFAULT NULL,
+    `processed_by`      INT UNSIGNED DEFAULT NULL,
+    `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `processed_at`      DATETIME     DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_prr_user_id` (`user_id`),
+    KEY `idx_prr_status`  (`status`),
+    KEY `idx_prr_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================

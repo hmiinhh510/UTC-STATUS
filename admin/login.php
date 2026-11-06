@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             $stmt = $pdo->prepare(
-                'SELECT id, username, full_name, email, password, role 
+                'SELECT id, username, full_name, email, password, role, status 
                  FROM users 
                  WHERE username = :acc1 OR email = :acc2 
                  LIMIT 1'
@@ -142,6 +142,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $stmt->fetch();
 
             if ($user && password_verify($password, $user['password'])) {
+                // Kiểm tra trạng thái tài khoản
+                if (($user['status'] ?? 'active') === 'locked') {
+                    logAuthAction(
+                        $pdo,
+                        (int) $user['id'],
+                        $user['username'],
+                        'login_blocked',
+                        "Đăng nhập thất bại: Tài khoản đang bị khóa bởi Quản trị viên"
+                    );
+                    setFlash('danger', 'Tài khoản của bạn đang bị khóa bởi Quản trị viên hệ thống. Vui lòng liên hệ Admin để được hỗ trợ mở khóa.');
+                    header('Location: login.php?tab=login');
+                    exit;
+                }
+
                 session_regenerate_id(true);
                 $_SESSION['admin_id']       = (int) $user['id'];
                 $_SESSION['admin_name']     = !empty($user['full_name']) ? $user['full_name'] : $user['username'];
@@ -309,79 +323,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ==========================================================
-    // ACTION: FORGOT STEP 1 - REQUEST OTP (Xác minh cả Username VÀ Email)
+    // ACTION: FORGOT PASSWORD - XÁC MINH SINH VIÊN & GỬI YÊU CẦU ĐẾN ADMIN CẤP MẬT KHẨU
     // ==========================================================
     if ($action === 'forgot_request') {
         $username = trim($_POST['username'] ?? '');
         $email    = trim($_POST['email'] ?? '');
-        $mailFrom = trim((string) (getenv('UTC_STATUS_MAIL_FROM') ?: ''));
 
         if ($username === '' || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             setFlash('danger', 'Vui lòng nhập chính xác Tên đăng nhập (hoặc Mã SV) và Địa chỉ Email đã đăng ký.');
-            header('Location: login.php?tab=forgot&step=1');
-            exit;
-        }
-
-        if ($mailFrom === '' || !filter_var($mailFrom, FILTER_VALIDATE_EMAIL) || !function_exists('mail')) {
-            setFlash('danger', 'Chức năng gửi email khôi phục chưa được cấu hình. Vui lòng liên hệ quản trị viên.');
-            header('Location: login.php?tab=forgot&step=1');
+            header('Location: login.php?tab=forgot');
             exit;
         }
 
         try {
-            // Xác thực cả Username VÀ Email cùng khớp với tài khoản
-            $stmt = $pdo->prepare('SELECT id, username, full_name, email FROM users WHERE username = :u AND email = :e LIMIT 1');
+            // Xác thực thông tin sinh viên: Cả Username VÀ Email cùng khớp với tài khoản
+            $stmt = $pdo->prepare('SELECT id, username, full_name, email, role, status FROM users WHERE username = :u AND email = :e LIMIT 1');
             $stmt->execute([':u' => $username, ':e' => $email]);
             $user = $stmt->fetch();
 
-            if ($user) {
-                // Tạo mã xác nhận OTP 6 chữ số
-                $otp = (string) random_int(100000, 999999);
-                $otpHash = hash('sha256', $otp);
-
-                $upStmt = $pdo->prepare(
-                    'UPDATE users 
-                     SET reset_token = :t, 
-                         reset_expires_at = DATE_ADD(NOW(), INTERVAL 15 MINUTE) 
-                     WHERE id = :id'
-                );
-                $upStmt->execute([':t' => $otpHash, ':id' => $user['id']]);
-
-                $mailBody = "Mã xác thực UTC STATUS của bạn là {$otp}. Mã có hiệu lực trong 15 phút. Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.";
-                $headers = [
-                    "From: UTC STATUS <{$mailFrom}>",
-                    'MIME-Version: 1.0',
-                    'Content-Type: text/plain; charset=UTF-8',
-                ];
-                if (!mail($user['email'], 'UTC STATUS - Khôi phục mật khẩu', $mailBody, implode("\r\n", $headers))) {
-                    $clearStmt = $pdo->prepare(
-                        'UPDATE users SET reset_token = NULL, reset_expires_at = NULL
-                         WHERE id = :id AND reset_token = :token'
-                    );
-                    $clearStmt->execute([':id' => $user['id'], ':token' => $otpHash]);
-                    throw new RuntimeException('Unable to deliver password recovery email.');
-                }
-
-                logAuthAction(
-                    $pdo,
-                    (int) $user['id'],
-                    $user['username'],
-                    'forgot_otp_request',
-                    'Yêu cầu mã OTP khôi phục mật khẩu'
-                );
-
-                setFlash('info', 'Nếu thông tin khớp với tài khoản, mã xác thực đã được gửi đến email đăng ký.');
-                header('Location: login.php?tab=forgot&step=2');
-                exit;
-            } else {
-                setFlash('info', 'Nếu thông tin khớp với tài khoản, mã xác thực đã được gửi đến email đăng ký.');
-                header('Location: login.php?tab=forgot&step=2');
+            if (!$user) {
+                // Nhập sai thông tin sinh viên
+                setFlash('danger', 'Thông tin xác minh không chính xác: Tên đăng nhập (Mã SV) hoặc Email không khớp với bất kỳ tài khoản sinh viên nào trong hệ thống. Vui lòng kiểm tra lại!');
+                header('Location: login.php?tab=forgot');
                 exit;
             }
+
+            // Đúng thông tin sinh viên!
+            // 1. Kiểm tra xem Admin đã duyệt cấp mật khẩu mới gần đây chưa
+            $reqStmt = $pdo->prepare(
+                'SELECT * FROM password_reset_requests 
+                 WHERE user_id = :uid 
+                 ORDER BY id DESC 
+                 LIMIT 1'
+            );
+            $reqStmt->execute([':uid' => $user['id']]);
+            $latestReq = $reqStmt->fetch();
+
+            if ($latestReq && $latestReq['status'] === 'completed' && !empty($latestReq['new_password_temp'])) {
+                // Admin đã phê duyệt cấp mật khẩu mới
+                $_SESSION['approved_reset'] = [
+                    'username'     => $user['username'],
+                    'full_name'    => $user['full_name'],
+                    'new_password' => $latestReq['new_password_temp'],
+                    'processed_at' => $latestReq['processed_at']
+                ];
+                setFlash('success', "Xác minh thành công! Quản trị viên (Admin) đã cấp mật khẩu mới cho tài khoản của bạn.");
+                header('Location: login.php?tab=forgot');
+                exit;
+            }
+
+            if ($latestReq && $latestReq['status'] === 'pending') {
+                // Yêu cầu đang chờ duyệt
+                setFlash('warning', "Thông tin sinh viên chính xác! Yêu cầu cấp lại mật khẩu của bạn (gửi lúc " . date('d/m/Y H:i', strtotime($latestReq['created_at'])) . ") đang chờ Quản trị viên (Admin) phê duyệt. Vui lòng liên hệ Admin để nhận mật khẩu mới.");
+                header('Location: login.php?tab=forgot');
+                exit;
+            }
+
+            // Tạo yêu cầu mới gửi đến Admin
+            $insReq = $pdo->prepare(
+                'INSERT INTO password_reset_requests (user_id, username, full_name, email, status, created_at)
+                 VALUES (:uid, :u, :fn, :e, "pending", NOW())'
+            );
+            $insReq->execute([
+                ':uid' => $user['id'],
+                ':u'   => $user['username'],
+                ':fn'  => $user['full_name'] ?: $user['username'],
+                ':e'   => $user['email']
+            ]);
+
+            logAuthAction(
+                $pdo,
+                (int) $user['id'],
+                $user['username'],
+                'forgot_request_admin',
+                "Sinh viên {$user['full_name']} ({$user['username']}) gửi yêu cầu Admin cấp lại mật khẩu"
+            );
+
+            setFlash('success', "Thông tin sinh viên chính xác! Yêu cầu cấp lại mật khẩu cho tài khoản <strong>" . htmlspecialchars($user['full_name'] ?: $user['username']) . " (" . htmlspecialchars($user['username']) . ")</strong> đã được gửi thành công đến Quản trị viên (Admin). Admin sẽ kiểm tra và cấp mật khẩu mới cho bạn.");
+            header('Location: login.php?tab=forgot');
+            exit;
+
         } catch (Throwable $e) {
             error_log('[Forgot Request Error] ' . $e->getMessage());
-            setFlash('danger', 'Không thể gửi email khôi phục mật khẩu. Vui lòng thử lại sau hoặc liên hệ quản trị viên.');
-            header('Location: login.php?tab=forgot&step=1');
+            setFlash('danger', 'Có lỗi xảy ra khi gửi yêu cầu đến quản trị viên. Vui lòng thử lại sau.');
+            header('Location: login.php?tab=forgot');
             exit;
         }
     }
@@ -1126,24 +1151,62 @@ unset($_SESSION['flash']);
       </div>
 
       <!-- ======================================================== -->
-      <!-- TAB 3: QUÊN MẬT KHẨU (FORGOT PASSWORD - 2 BƯỚC)           -->
+      <!-- TAB 3: QUÊN MẬT KHẨU & YÊU CẦU ADMIN CẤP MẬT KHẨU         -->
       <!-- ======================================================== -->
       <div class="tab-pane <?= $activeTab === 'forgot' ? 'active' : '' ?>" id="pane-forgot">
         
-        <!-- Step Progress Dots -->
-        <div class="step-indicator">
-          <div class="step-dot <?= $forgotStep === 1 ? 'active' : 'completed' ?>" id="dot-step-1">
-            <?= $forgotStep > 1 ? '<i class="fa-solid fa-check"></i>' : '1' ?>
-          </div>
-          <div class="step-line <?= $forgotStep >= 2 ? 'active' : '' ?>"></div>
-          <div class="step-dot <?= $forgotStep === 2 ? 'active' : '' ?>" id="dot-step-2">2</div>
-        </div>
-
-        <?php if ($forgotStep === 1): ?>
-          <!-- STEP 1: NHẬP USERNAME VÀ EMAIL ĐỂ XÁC MINH CẤP OTP -->
+        <?php if (!empty($_SESSION['approved_reset'])): 
+          $appr = $_SESSION['approved_reset'];
+          unset($_SESSION['approved_reset']);
+        ?>
+          <!-- KẾT QUẢ: ADMIN ĐÃ CẤP MẬT KHẨU MỚI THÀNH CÔNG -->
           <div class="text-center mb-3">
-            <h6 class="fw-700 text-secondary mb-1">Bước 1: Xác minh tài khoản & Nhận mã OTP</h6>
-            <p class="text-muted small">Nhập chính xác Tên đăng nhập (hoặc Mã SV) và Email đã đăng ký.</p>
+            <div class="realtime-header-icon-box mx-auto mb-2" style="color:#10b981;border-color:#a7f3d0;width:50px;height:50px">
+              <i class="fa-solid fa-circle-check fs-4"></i>
+            </div>
+            <h6 class="fw-700 text-dark mb-1">Quản Trị Viên Đã Cấp Mật Khẩu!</h6>
+            <p class="text-muted small mb-3">Mật khẩu mới đã được cập nhật vào tài khoản sinh viên của bạn.</p>
+          </div>
+
+          <div class="p-3 bg-light rounded-3 border mb-3">
+            <div class="small text-muted mb-1">Tài khoản sinh viên:</div>
+            <div class="fw-700 text-dark mb-2"><?= htmlspecialchars($appr['full_name']) ?> <span class="text-secondary fw-normal">(<?= htmlspecialchars($appr['username']) ?>)</span></div>
+            
+            <div class="small text-muted mb-1">Mật khẩu đăng nhập mới do Admin cấp:</div>
+            <div class="d-flex align-items-center justify-content-between p-2 bg-white rounded border">
+              <span class="fs-5 fw-bold text-success font-monospace" id="displayNewPass"><?= htmlspecialchars($appr['new_password']) ?></span>
+              <button type="button" class="btn btn-sm btn-outline-secondary py-1" onclick="navigator.clipboard.writeText('<?= htmlspecialchars($appr['new_password'], ENT_QUOTES) ?>'); alert('Đã sao chép mật khẩu mới vào bộ nhớ đệm!');">
+                <i class="fa-regular fa-copy me-1"></i>Copy
+              </button>
+            </div>
+            <div class="small text-muted mt-2">
+              <i class="fa-solid fa-clock-rotate-left me-1"></i>Cấp lúc: <?= !empty($appr['processed_at']) ? date('d/m/Y H:i', strtotime($appr['processed_at'])) : date('d/m/Y H:i') ?>
+            </div>
+          </div>
+
+          <button type="button" onclick="switchAuthTab('login')" class="btn-auth-submit">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            <span>Chuyển Sang Đăng Nhập Ngay</span>
+          </button>
+
+          <div class="text-center mt-3">
+            <a href="login.php?tab=forgot" class="small text-muted text-decoration-none">
+              <i class="fa-solid fa-rotate-left me-1"></i> Tra cứu tài khoản khác
+            </a>
+          </div>
+
+        <?php else: ?>
+          <!-- FORM: XÁC MINH THÔNG TIN SINH VIÊN ĐỂ ADMIN CẤP MẬT KHẨU -->
+          <div class="text-center mb-3">
+            <h6 class="fw-700 text-secondary mb-1">Quên Mật Khẩu &amp; Yêu Cầu Cấp Lại</h6>
+            <p class="text-muted small">Nhập chính xác thông tin sinh viên để gửi yêu cầu đến Quản trị viên cấp lại mật khẩu.</p>
+          </div>
+
+          <div class="p-2-5 mb-3 rounded bg-light border small text-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-circle-info text-teal fs-6 flex-shrink-0"></i>
+            <div>
+              Hệ thống sẽ xác minh <strong>Mã SV</strong> và <strong>Email</strong>. Nếu trùng khớp, Admin sẽ trực tiếp tạo mật khẩu mới cho bạn.
+            </div>
           </div>
 
           <form method="POST" action="login.php" novalidate>
@@ -1152,7 +1215,7 @@ unset($_SESSION['flash']);
 
             <!-- Username / Mã SV -->
             <div class="mb-3">
-              <label for="forgot_username" class="form-label">Tên đăng nhập / Mã SV</label>
+              <label for="forgot_username" class="form-label">Tên đăng nhập / Mã SV <span class="text-danger">*</span></label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-regular fa-user"></i></span>
                 <input 
@@ -1169,7 +1232,7 @@ unset($_SESSION['flash']);
 
             <!-- Email -->
             <div class="mb-4">
-              <label for="forgot_email" class="form-label">Địa chỉ Email đã đăng ký</label>
+              <label for="forgot_email" class="form-label">Địa chỉ Email sinh viên đã đăng ký <span class="text-danger">*</span></label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-regular fa-envelope"></i></span>
                 <input 
@@ -1185,137 +1248,12 @@ unset($_SESSION['flash']);
 
             <button type="submit" class="btn-auth-submit">
               <i class="fa-solid fa-paper-plane"></i>
-              <span>Xác minh & Gửi mã OTP</span>
+              <span>Xác Minh &amp; Yêu Cầu Admin Cấp Mật Khẩu</span>
             </button>
 
             <div class="text-center mt-3">
               <a href="javascript:void(0)" onclick="switchAuthTab('login')" class="small text-muted text-decoration-none">
                 <i class="fa-solid fa-arrow-left me-1"></i> Quay lại Đăng nhập
-              </a>
-            </div>
-          </form>
-
-        <?php else: ?>
-          <!-- STEP 2: NHẬP OTP & ĐẶT LẠI MẬT KHẨU MỚI -->
-          <div class="text-center mb-3">
-            <h6 class="fw-700 text-secondary mb-1">Bước 2: Xác nhận OTP & Đặt lại mật khẩu</h6>
-            <p class="text-muted small">Nhập mã OTP 6 số và thiết lập mật khẩu bảo mật mới.</p>
-          </div>
-
-          <form method="POST" action="login.php" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>" />
-            <input type="hidden" name="action" value="forgot_reset" />
-
-            <!-- Username & Email (Pre-filled / Readonly) -->
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="form-label mb-1">Tài khoản</label>
-                <input 
-                  type="text" 
-                  name="username" 
-                  class="form-control bg-light border text-muted small py-1-5 px-2" 
-                  required 
-                  readonly 
-                />
-              </div>
-              <div class="col-6">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label mb-0">Email</label>
-                  <a href="login.php?tab=forgot&step=1" class="small text-decoration-none" style="color:var(--auth-brand);font-size:0.7rem">Đổi lại</a>
-                </div>
-                <input 
-                  type="email" 
-                  name="email" 
-                  class="form-control bg-light border text-muted small py-1-5 px-2" 
-                  required 
-                  readonly 
-                />
-              </div>
-            </div>
-
-            <!-- OTP Input -->
-            <div class="mb-3">
-              <label for="reset_otp" class="form-label">Mã xác thực OTP (6 chữ số)</label>
-              <div class="input-group">
-                <span class="input-group-text"><i class="fa-solid fa-shield"></i></span>
-                <input 
-                  type="text" 
-                  id="reset_otp" 
-                  name="otp" 
-                  class="form-control otp-input" 
-                  placeholder="------" 
-                  maxlength="6"
-                  required 
-                  autofocus
-                  autocomplete="one-time-code"
-                />
-              </div>
-            </div>
-
-            <!-- New Password -->
-            <div class="mb-3">
-              <label for="new_password" class="form-label">Mật khẩu mới</label>
-              <div class="input-group">
-                <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-                <input 
-                  type="password" 
-                  id="new_password" 
-                  name="new_password" 
-                  class="form-control" 
-                  placeholder="Tối thiểu 6 ký tự" 
-                  required 
-                  autocomplete="new-password"
-                  oninput="checkNewPasswordStrength(this.value)"
-                />
-                <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('new_password', this)" title="Ẩn/Hiện mật khẩu">
-                  <i class="fa-regular fa-eye"></i>
-                </button>
-              </div>
-              
-              <!-- Strength Bars for Reset Password -->
-              <div class="strength-meter-container">
-                <div class="strength-bars">
-                  <div class="strength-bar" id="new-str-bar-1"></div>
-                  <div class="strength-bar" id="new-str-bar-2"></div>
-                  <div class="strength-bar" id="new-str-bar-3"></div>
-                  <div class="strength-bar" id="new-str-bar-4"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Confirm New Password -->
-            <div class="mb-4">
-              <label for="new_password_confirm" class="form-label">Xác nhận mật khẩu mới</label>
-              <div class="input-group">
-                <span class="input-group-text"><i class="fa-solid fa-shield-check"></i></span>
-                <input 
-                  type="password" 
-                  id="new_password_confirm" 
-                  name="new_password_confirm" 
-                  class="form-control" 
-                  placeholder="Nhập lại mật khẩu mới" 
-                  required 
-                  autocomplete="new-password"
-                  oninput="checkNewPasswordMatch()"
-                />
-                <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('new_password_confirm', this)" title="Ẩn/Hiện mật khẩu">
-                  <i class="fa-regular fa-eye"></i>
-                </button>
-              </div>
-              <div id="new-match-feedback" class="match-feedback d-none"></div>
-            </div>
-
-            <button type="submit" class="btn-auth-submit">
-              <i class="fa-solid fa-check-circle"></i>
-              <span>Cập nhật mật khẩu mới</span>
-            </button>
-
-            <div class="text-center mt-3 d-flex justify-content-between">
-              <a href="login.php?tab=forgot&step=1" class="small text-muted text-decoration-none">
-                <i class="fa-solid fa-rotate-left me-1"></i> Yêu cầu lại mã OTP
-              </a>
-              <a href="javascript:void(0)" onclick="switchAuthTab('login')" class="small text-decoration-none fw-600" style="color:var(--auth-brand)">
-                Đăng nhập ngay
               </a>
             </div>
           </form>

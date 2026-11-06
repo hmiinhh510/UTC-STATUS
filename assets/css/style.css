@@ -734,6 +734,12 @@ button, input, select, textarea {
   font-weight: 600;
 }
 
+.service-badge-pill.pill-success {
+  background-color: #ecfdf5;
+  color: #059669;
+  font-weight: 600;
+}
+
 /* ── Modal & Dialogs ────────────────────────────────────────── */
 .modal-content.utc-modal {
   border-radius: var(--radius-xl);
@@ -842,4 +848,463 @@ button, input, select, textarea {
   background: #ffffff;
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STACKED MODAL & Z-INDEX MANAGEMENT (Bootstrap 5)
+   ══════════════════════════════════════════════════════════════ */
+.modal-backdrop.modal-backdrop-stacked {
+  opacity: 0.35 !important;
+}
+
+body.modal-open {
+  overflow: hidden !important;
+  padding-right: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DATADOG / STATUSPAGE STYLE UPTIME MODAL (modal-uptime-pro)
+   ══════════════════════════════════════════════════════════════ */
+.modal-uptime-pro {
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.svc-icon-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background-color: var(--green-mint-soft);
+  border: 1px solid var(--green-mint-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Status Pill with Pulsing Dot (Datadog Style) */
+.status-pill-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.status-pill-pulse.operational {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.status-pill-pulse.operational .pulse-dot {
+  background-color: #10b981;
+}
+.status-pill-pulse.operational .pulse-dot::before {
+  background-color: rgba(16, 185, 129, 0.45);
+}
+
+.status-pill-pulse.degraded {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.status-pill-pulse.degraded .pulse-dot {
+  background-color: #f59e0b;
+}
+.status-pill-pulse.degraded .pulse-dot::before {
+  background-color: rgba(245, 158, 11, 0.45);
+}
+
+.status-pill-pulse.partial_outage {
+  background-color: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+}
+.status-pill-pulse.partial_outage .pulse-dot {
+  background-color: #f97316;
+}
+.status-pill-pulse.partial_outage .pulse-dot::before {
+  background-color: rgba(249, 115, 22, 0.45);
+}
+
+.status-pill-pulse.major_outage {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.status-pill-pulse.major_outage .pulse-dot {
+  background-color: #ef4444;
+}
+.status-pill-pulse.major_outage .pulse-dot::before {
+  background-color: rgba(239, 68, 68, 0.45);
+}
+
+.status-pill-pulse.maintenance {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+.status-pill-pulse.maintenance .pulse-dot {
+  background-color: #3b82f6;
+}
+.status-pill-pulse.maintenance .pulse-dot::before {
+  background-color: rgba(59, 130, 246, 0.45);
+}
+
+.pulse-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pulse-dot::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  animation: pulseRing 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Flat Minimalist Stats Cards */
+.stats-card-minimal {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.stats-card-minimal:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+.stats-card-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.stats-card-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+.bg-teal-subtle-box { background: #e6f4f1; }
+.bg-success-subtle-box { background: #ecfdf5; }
+.bg-danger-subtle-box { background: #fef2f2; }
+.bg-warning-subtle-box { background: #fffbeb; }
+
+.stats-card-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
+}
+.stats-card-meta {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+/* 90-Day Uptime Bars */
+.uptime-bars-wrapper {
+  background: #f8fafc;
+}
+.uptime-bars-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 44px;
+  width: 100%;
+}
+.uptime-bar-col {
+  flex: 1;
+  height: 100%;
+  border-radius: 2.5px;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
+  min-width: 2px;
+}
+.uptime-bar-col:hover {
+  transform: scaleY(1.12);
+  filter: brightness(1.1);
+  z-index: 5;
+  position: relative;
+}
+.uptime-bar-col.bar-emerald {
+  background-color: #10b981;
+}
+.uptime-bar-col.bar-amber {
+  background-color: #f59e0b;
+}
+.uptime-bar-col.bar-rose {
+  background-color: #ef4444;
+}
+
+/* Tooltip Styling */
+.utc-bar-tooltip .tooltip-inner {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Incident History */
+.incident-item-card {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.incident-item-card:hover {
+  border-color: #cbd5e1;
+  background-color: #fbfcfe;
+}
+.empty-incident-box {
+  background-color: #f8fafc;
+}
+.shadow-2xs {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TEAL BUTTONS & UTILITIES (UTC Brand Green)
+   ══════════════════════════════════════════════════════════════ */
+.btn-teal {
+  background-color: var(--green-brand);
+  border-color: var(--green-brand);
+  color: #ffffff;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-teal:hover, .btn-teal:focus, .btn-teal:active {
+  background-color: var(--green-dark);
+  border-color: var(--green-dark);
+  color: #ffffff;
+}
+
+.btn-outline-teal {
+  color: var(--green-brand);
+  border-color: var(--green-brand);
+  background-color: transparent;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-outline-teal:hover, .btn-outline-teal:focus, .btn-outline-teal:active, .btn-outline-teal.active {
+  background-color: var(--green-brand) !important;
+  border-color: var(--green-brand) !important;
+  color: #ffffff !important;
+}
+
+.btn-xs {
+  padding: 0.22rem 0.65rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.bg-teal-soft {
+  background-color: #f0fdf9 !important;
+}
+.border-teal-subtle {
+  border-color: #ccfbf1 !important;
+}
+.text-teal {
+  color: var(--green-brand) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UPTIME HISTORY & MAINTENANCE MODAL PRO
+   ══════════════════════════════════════════════════════════════ */
+.modal-uptime-history-pro, .modal-maintenance-pro {
+  border-radius: 18px;
+  border: 1px solid var(--green-mint-border);
+  overflow: hidden;
+}
+
+.modal-uptime-history-pro .modal-header, .modal-maintenance-pro .modal-header {
+  background: linear-gradient(135deg, #f0fdf9 0%, #e6f4f1 100%);
+  border-bottom: 1px solid var(--green-mint-border);
+  padding: 1.2rem 1.75rem;
+}
+
+.modal-uptime-history-pro .modal-body, .modal-maintenance-pro .modal-body {
+  background-color: #f0f5f4;
+  background-image: radial-gradient(#d5e7e4 0.75px, transparent 0.75px);
+  background-size: 16px 16px;
+  padding: 1.5rem 1.75rem;
+}
+.modal-realtime-pro {
+  border-radius: 18px;
+  border: 1px solid var(--green-mint-border);
+  overflow: hidden;
+}
+
+.modal-realtime-pro .modal-header {
+  background: linear-gradient(135deg, #f0fdf9 0%, #e6f4f1 100%);
+  border-bottom: 1px solid var(--green-mint-border);
+  padding: 1.2rem 1.75rem;
+}
+
+.modal-realtime-pro .modal-title {
+  color: var(--green-dark) !important;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+.realtime-header-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  border: 1.5px solid var(--green-mint-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e11d48; /* Heartbeat pulse red */
+  box-shadow: 0 2px 8px rgba(0, 122, 120, 0.08);
+  flex-shrink: 0;
+}
+
+/* Nền Modal Body: Phủ tông xanh rêu/teal nhạt dịu mát đồng bộ với web */
+.modal-realtime-pro .modal-body {
+  background-color: #f0f5f4;
+  background-image: radial-gradient(#d5e7e4 0.75px, transparent 0.75px);
+  background-size: 16px 16px;
+  padding: 1.5rem 1.75rem;
+}
+
+/* Thanh Thống Kê / Ma Trận Datadog */
+.realtime-matrix-banner {
+  background: #ffffff;
+  border: 1px solid var(--green-mint-border);
+  border-left: 4px solid var(--green-brand);
+  border-radius: 12px;
+  padding: 0.95rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 122, 120, 0.05);
+}
+
+/* Thẻ Dịch Vụ trong Ma Trận Real-time (Component Card) */
+.realtime-card-item {
+  background: #ffffff;
+  border: 1px solid #d8e8e5;
+  border-radius: 14px;
+  padding: 1.2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.realtime-card-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, var(--green-brand), #10b981);
+  opacity: 0.85;
+}
+
+.realtime-card-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--green-light);
+  box-shadow: 0 8px 24px rgba(0, 122, 120, 0.12);
+}
+
+.realtime-svc-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background-color: var(--green-mint-soft);
+  border: 1px solid var(--green-mint-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green-brand);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.realtime-group-badge {
+  background-color: #f0fdf9;
+  color: var(--green-dark);
+  border: 1px solid var(--green-mint-border);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Nút Xem Biểu Đồ Uptime: Chuẩn Màu Xanh Teal Nhận Diện UTC */
+.btn-realtime-uptime {
+  background-color: #f0fdf9;
+  color: var(--green-brand);
+  border: 1px solid var(--green-mint-border);
+  font-weight: 600;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.btn-realtime-uptime:hover {
+  background-color: var(--green-brand);
+  color: #ffffff;
+  border-color: var(--green-brand);
+  box-shadow: 0 4px 12px rgba(0, 122, 120, 0.25);
+}
+.btn-realtime-uptime:hover i {
+  color: #ffffff !important;
+}
+
+/* Card Real-time Status nổi bật trên trang chủ */
+#card-feat-realtime-monitoring {
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdf9 100%);
+  border-color: #ccfbf1;
+  position: relative;
+}
+#card-feat-realtime-monitoring::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--green-brand);
+  border-radius: 2px;
+}
+#card-feat-realtime-monitoring:hover {
+  border-color: var(--green-brand);
+  box-shadow: 0 8px 20px rgba(0, 122, 120, 0.12);
 }

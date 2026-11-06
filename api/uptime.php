@@ -30,13 +30,18 @@ function jsonOut(int $code, array $data): void
 try {
     $pdo = Database::getInstance();
 
-    $serviceId = filter_input(INPUT_GET, 'service_id', FILTER_VALIDATE_INT);
+    $serviceId = filter_var($_GET['service_id'] ?? null, FILTER_VALIDATE_INT);
     if (!$serviceId || $serviceId < 1) {
         jsonOut(400, ['error' => 'Tham số service_id không hợp lệ.']);
     }
 
     // ── Verify service exists ────────────────────────────────
-    $svcStmt = $pdo->prepare('SELECT id, name, status FROM services WHERE id = :id');
+    $svcStmt = $pdo->prepare(
+        'SELECT s.id, s.name, s.status, s.icon, s.description, g.name AS group_name
+         FROM services s
+         LEFT JOIN service_groups g ON g.id = s.group_id
+         WHERE s.id = :id'
+    );
     $svcStmt->execute([':id' => $serviceId]);
     $service = $svcStmt->fetch();
 
@@ -93,11 +98,28 @@ try {
     $dtStmt->execute([':id' => $serviceId]);
     $stats = $dtStmt->fetch();
 
+    // ── Fetch incidents for this service in past 90 days ─────
+    $incStmt = $pdo->prepare(
+        'SELECT i.id, i.title, i.severity, i.status, i.started_at, i.resolved_at,
+                TIMESTAMPDIFF(MINUTE, i.started_at, COALESCE(i.resolved_at, NOW())) AS duration_minutes,
+                (SELECT u.message FROM incident_updates u WHERE u.incident_id = i.id ORDER BY u.created_at DESC LIMIT 1) AS latest_update
+         FROM incidents i
+         JOIN incident_services isc ON isc.incident_id = i.id
+         WHERE isc.service_id = :id
+           AND i.started_at >= NOW() - INTERVAL 90 DAY
+         ORDER BY i.started_at DESC'
+    );
+    $incStmt->execute([':id' => $serviceId]);
+    $serviceIncidents = $incStmt->fetchAll();
+
     jsonOut(200, [
         'service' => [
-            'id'     => (int) $service['id'],
-            'name'   => $service['name'],
-            'status' => $service['status'],
+            'id'          => (int) $service['id'],
+            'name'        => $service['name'],
+            'status'      => $service['status'],
+            'icon'        => $service['icon'] ?? 'fa-server',
+            'group_name'  => $service['group_name'] ?? 'Hệ thống',
+            'description' => $service['description'] ?? '',
         ],
         'summary' => [
             'avg_uptime_pct'          => $avgUptime,
@@ -105,6 +127,7 @@ try {
             'total_downtime_minutes'  => (int) ($stats['total_downtime_minutes'] ?? 0),
         ],
         'daily'        => $days,
+        'incidents'    => $serviceIncidents,
         'generated_at' => date('c'),
     ]);
 

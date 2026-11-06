@@ -18,17 +18,15 @@ header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Cache-Control: no-store');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method Not Allowed']);
-    exit;
-}
-
 function jsonOut(int $code, array $data): void
 {
     http_response_code($code);
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    jsonOut(405, ['error' => 'Phương thức không được hỗ trợ (Method Not Allowed).']);
 }
 
 try {
@@ -113,6 +111,7 @@ try {
 
     jsonOut(200, [
         'data'       => $incidents,
+        'incidents'  => $incidents,
         'pagination' => [
             'page'       => $page,
             'per_page'   => $perPage,

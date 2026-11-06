@@ -17,7 +17,7 @@ if (PHP_SAPI !== 'cli') {
 require_once __DIR__ . '/../config/database.php';
 
 $pdo = Database::getInstance();
-$pdo->exec("SET NAMES utf8mb4");
+$pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 $forceReset = isset($argv[1]) && $argv[1] === '--force';
 
@@ -47,8 +47,9 @@ $groups = [
 ];
 
 $stmtGrp = $pdo->prepare(
-    'INSERT IGNORE INTO service_groups (id, name, description, sort_order, created_at)
-     VALUES (:id, :name, :description, :sort_order, NOW())'
+    'INSERT INTO service_groups (id, name, description, sort_order, created_at)
+     VALUES (:id, :name, :description, :sort_order, NOW())
+     ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), sort_order = VALUES(sort_order)'
 );
 foreach ($groups as $g) {
     $stmtGrp->execute($g);
@@ -149,8 +150,9 @@ $services = [
 ];
 
 $stmtSvc = $pdo->prepare(
-    'INSERT IGNORE INTO services (id, group_id, name, description, icon, status, sort_order, check_url, created_at, updated_at)
-     VALUES (:id, :group_id, :name, :description, :icon, :status, :sort_order, :check_url, NOW(), NOW())'
+    'INSERT INTO services (id, group_id, name, description, icon, status, sort_order, check_url, created_at, updated_at)
+     VALUES (:id, :group_id, :name, :description, :icon, :status, :sort_order, :check_url, NOW(), NOW())
+     ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), icon = VALUES(icon), check_url = VALUES(check_url)'
 );
 
 foreach ($services as $s) {
@@ -192,14 +194,16 @@ $incidents = [
 ];
 
 $stmtInc = $pdo->prepare(
-    'INSERT IGNORE INTO incidents (id, title, severity, status, started_at, resolved_at, created_by, created_at, updated_at)
-     VALUES (:id, :title, :severity, :status, :started_at, :resolved_at, 1, :created_at, NOW())'
+    'INSERT INTO incidents (id, title, severity, status, started_at, resolved_at, created_by, created_at, updated_at)
+     VALUES (:id, :title, :severity, :status, :started_at, :resolved_at, 1, :created_at, NOW())
+     ON DUPLICATE KEY UPDATE title = VALUES(title), severity = VALUES(severity), status = VALUES(status)'
 );
 
 $stmtIncSvc = $pdo->prepare('INSERT IGNORE INTO incident_services (incident_id, service_id) VALUES (:iid, :sid)');
 $stmtIncUpd = $pdo->prepare(
-    'INSERT IGNORE INTO incident_updates (id, incident_id, status, message, created_by, created_at)
-     VALUES (:id, :iid, :status, :message, 1, :created_at)'
+    'INSERT INTO incident_updates (id, incident_id, status, message, created_by, created_at)
+     VALUES (:id, :iid, :status, :message, 1, :created_at)
+     ON DUPLICATE KEY UPDATE message = VALUES(message), status = VALUES(status)'
 );
 
 foreach ($incidents as $inc) {
@@ -263,8 +267,9 @@ $maintenances = [
 ];
 
 $stmtMaint = $pdo->prepare(
-    'INSERT IGNORE INTO maintenances (id, title, description, status, scheduled_at, expected_end, created_by, created_at, updated_at)
-     VALUES (:id, :title, :description, :status, :scheduled_at, :expected_end, 1, NOW(), NOW())'
+    'INSERT INTO maintenances (id, title, description, status, scheduled_at, expected_end, created_by, created_at, updated_at)
+     VALUES (:id, :title, :description, :status, :scheduled_at, :expected_end, 1, NOW(), NOW())
+     ON DUPLICATE KEY UPDATE title = VALUES(title), description = VALUES(description), status = VALUES(status)'
 );
 $stmtMaintSvc = $pdo->prepare('INSERT IGNORE INTO maintenance_services (maintenance_id, service_id) VALUES (:mid, :sid)');
 

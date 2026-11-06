@@ -15,17 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method Not Allowed']);
-    exit;
-}
-
 function jsonOut(int $code, array $data): void
 {
     http_response_code($code);
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    jsonOut(405, ['error' => 'Phương thức không được hỗ trợ (Method Not Allowed).']);
 }
 
 // ── Đọc và giải mã dữ liệu đầu vào ──────────────────────────

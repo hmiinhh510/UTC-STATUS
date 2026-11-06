@@ -33,7 +33,7 @@ unset($_SESSION['flash']);
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <!-- Page Stylesheet -->
-  <link rel="stylesheet" href="assets/css/style.css?v=2.3" />
+  <link rel="stylesheet" href="assets/css/style.css?v=2.5" />
 </head>
 
 <body>
@@ -368,16 +368,38 @@ unset($_SESSION['flash']);
      MODALS (CLICK ON ANY FEATURE TO SHOW DETAIL)
   ══════════════════════════════════════════════════════════════ -->
 
-  <!-- 1. Modal: Chi tiết Dịch Vụ & 90 ngày Uptime -->
-  <div class="modal fade" id="modalServiceDetail" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content utc-modal">
-        <div class="modal-header">
-          <h5 id="svcModalTitle" class="modal-title fw-700">Chi tiết Dịch vụ</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <!-- 1. Modal: Chi tiết Dịch Vụ & 90 ngày Uptime (Datadog / Statuspage Style - Stacked Modal Support) -->
+  <div class="modal fade" id="modalServiceDetail" tabindex="-1" aria-labelledby="svcModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content utc-modal modal-uptime-pro shadow-lg">
+        <div class="modal-header py-3 px-4 d-flex align-items-center justify-content-between border-bottom">
+          <div class="d-flex align-items-center gap-3">
+            <div id="svcModalIconBox" class="svc-icon-avatar">
+              <i class="fa-solid fa-server fs-5 text-teal"></i>
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <h5 id="svcModalTitle" class="modal-title fw-700 mb-0 text-dark">Chi tiết Dịch vụ</h5>
+                <span id="svcModalStatusBadge"></span>
+              </div>
+              <div id="svcModalGroupSub" class="small text-muted mt-1">
+                <!-- Group name & ID code populated dynamically -->
+              </div>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1-5" id="btnBackToRealtime" data-bs-dismiss="modal" title="Quay lại danh sách">
+              <i class="fa-solid fa-arrow-left"></i>
+              <span class="d-none d-sm-inline">Quay lại danh sách</span>
+            </button>
+            <button type="button" class="btn-close ms-1" data-bs-dismiss="modal" aria-label="Đóng"></button>
+          </div>
         </div>
-        <div id="svcModalBody" class="modal-body">
+        <div id="svcModalBody" class="modal-body p-4">
           <!-- Dynamically populated -->
+        </div>
+        <div id="svcModalFooter" class="modal-footer py-2 px-4 bg-light border-top d-flex align-items-center justify-content-between">
+          <!-- Quick actions footer populated dynamically -->
         </div>
       </div>
     </div>
@@ -399,16 +421,70 @@ unset($_SESSION['flash']);
     </div>
   </div>
 
-  <!-- 3. Modal: Kế Hoạch Bảo Trì -->
+  <!-- 3. Modal: Kế Hoạch Bảo Trì (Đồng bộ chuẩn Pro & Màu xanh web) -->
   <div class="modal fade" id="modalMaintenancesDetail" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content utc-modal">
-        <div class="modal-header">
-          <h5 class="modal-title fw-700" style="color:var(--teal-primary)"><i
-              class="fa-solid fa-screwdriver-wrench me-2"></i>Kế hoạch Bảo trì Hệ thống</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content utc-modal modal-maintenance-pro shadow-lg">
+        <div class="modal-header py-3 px-4 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="realtime-header-icon-box" style="color: #d97706; border-color: #fde68a;">
+              <i class="fa-solid fa-calendar-check fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title mb-0 fw-700" style="color: var(--green-dark);">
+                Kế Hoạch &amp; Lịch Trình Bảo Trì
+              </h5>
+              <div class="small text-muted mt-0-5">
+                Lịch Nâng Cấp Kỹ Thuật Định Kỳ – Trung Tâm CNTT Đại Học Giao Thông Vận Tải
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body p-4">
+          <!-- 3 Maintenance KPI Cards -->
+          <div class="row g-3 mb-4" id="maintenanceKpiCards">
+            <div class="col-4">
+              <div class="stats-card-minimal h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="stats-card-label">Đang diễn ra</span>
+                  <div class="stats-card-icon-box text-warning bg-warning-subtle-box"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                </div>
+                <div id="maintKpiInProgress" class="stats-card-value text-warning">0</div>
+                <div class="stats-card-meta"><i class="fa-solid fa-clock-rotate-left text-warning me-1"></i>Bảo trì live</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="stats-card-minimal h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="stats-card-label">Kế hoạch sắp tới</span>
+                  <div class="stats-card-icon-box text-teal bg-teal-subtle-box"><i class="fa-regular fa-calendar-clock"></i></div>
+                </div>
+                <div id="maintKpiUpcoming" class="stats-card-value text-teal">0</div>
+                <div class="stats-card-meta"><i class="fa-solid fa-calendar-check text-teal me-1"></i>Đã xếp lịch</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="stats-card-minimal h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="stats-card-label">Lịch sử hoàn tất</span>
+                  <div class="stats-card-icon-box text-success bg-success-subtle-box"><i class="fa-solid fa-circle-check"></i></div>
+                </div>
+                <div id="maintKpiCompleted" class="stats-card-value text-success">0</div>
+                <div class="stats-card-meta"><i class="fa-solid fa-check-double text-success me-1"></i>Đúng tiến độ</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Tabs & Title -->
+          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2 pt-2 border-top">
+            <h6 class="fw-700 text-dark mb-0 d-flex align-items-center gap-2">
+              <i class="fa-solid fa-screwdriver-wrench text-teal"></i>
+              <span>Danh Sách Cửa Sổ Bảo Trì &amp; Nâng Cấp Hệ Thống</span>
+            </h6>
+            <div id="maintenanceFilterTabs" class="d-flex gap-1"></div>
+          </div>
+
           <div id="maintenancesModalList"></div>
         </div>
       </div>
@@ -489,21 +565,36 @@ unset($_SESSION['flash']);
     </div>
   </div>
 
-  <!-- 7. Modal: Real-time Monitoring & Status (Giám sát toàn bộ dịch vụ) -->
+  <!-- 7. Modal: Real-time Monitoring & Status (Giám sát toàn bộ dịch vụ - Đồng bộ màu xanh web) -->
   <div class="modal fade" id="modalRealtimeOverview" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content utc-modal">
-        <div class="modal-header">
-          <h5 class="modal-title fw-700" style="color:var(--teal-primary)">
-            <i class="fa-solid fa-heart-pulse me-2"></i>Real-time Monitoring &amp; Status – Giám Sát Trạng Thái Tức Thời
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-content utc-modal modal-realtime-pro shadow-lg">
+        <div class="modal-header py-3 px-4 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="realtime-header-icon-box">
+              <i class="fa-solid fa-heart-pulse fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title mb-0">
+                Real-time Monitoring &amp; Status
+              </h5>
+              <div class="small text-muted mt-0-5">
+                Giám Sát Trạng Thái Tức Thời – Hệ Thống Dịch Vụ Đại Học Giao Thông Vận Tải
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
         </div>
         <div class="modal-body p-4">
-          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+          <div class="realtime-matrix-banner d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
             <div>
-              <span class="fw-700 fs-6 text-dark me-2">Ma trận trạng thái dịch vụ (Datadog Component Matrix)</span>
-              <span class="text-muted small">Cập nhật tự động mỗi 30 giây</span>
+              <div class="fw-700 fs-6 text-dark d-flex align-items-center gap-2">
+                <i class="fa-solid fa-network-wired text-teal"></i>
+                <span>Ma trận trạng thái dịch vụ (Datadog Component Matrix)</span>
+              </div>
+              <div class="text-muted small mt-0-5">
+                <i class="fa-solid fa-arrows-rotate me-1 text-teal"></i>Cập nhật tự động theo thời gian thực mỗi 30 giây
+              </div>
             </div>
             <div id="realtimeFilterBadges" class="d-flex gap-2"></div>
           </div>
@@ -515,51 +606,79 @@ unset($_SESSION['flash']);
     </div>
   </div>
 
-  <!-- 8. Modal: Uptime & Incident History (SLA / SLI Analytics) -->
+  <!-- 8. Modal: Uptime & Incident History (SLA / SLI Analytics - Đồng bộ màu xanh web) -->
   <div class="modal fade" id="modalUptimeHistory" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content utc-modal">
-        <div class="modal-header">
-          <h5 class="modal-title fw-700" style="color:#8b5cf6">
-            <i class="fa-solid fa-chart-line me-2"></i>Uptime &amp; Incident History – Thống Kê SLA &amp; Lịch Sử Sự Cố
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-content utc-modal modal-uptime-history-pro shadow-lg">
+        <div class="modal-header py-3 px-4 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="realtime-header-icon-box" style="color: #2563eb; border-color: #bfdbfe;">
+              <i class="fa-solid fa-chart-line fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title mb-0 fw-700" style="color: var(--green-dark);">
+                Uptime &amp; Incident History
+              </h5>
+              <div class="small text-muted mt-0-5">
+                Thống Kê Cam Kết SLA 90 Ngày &amp; Lịch Sử Xử Lý Sự Cố Hệ Thống
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
         </div>
         <div class="modal-body p-4">
           <!-- 4 SLA KPI Cards -->
-          <div class="row g-3 mb-4">
+          <div class="row g-3 mb-4" id="uptimeKpiCards">
             <div class="col-6 col-md-3">
-              <div class="p-3 rounded border bg-light text-center">
-                <div class="text-muted small fw-600 mb-1">Uptime SLA 90 ngày</div>
-                <div class="fs-4 fw-800 text-success">99.82%</div>
-                <span class="badge bg-success-subtle text-success small">Đạt chuẩn SLA</span>
+              <div class="stats-card-minimal h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="stats-card-label">Uptime SLA 90 ngày</span>
+                  <div class="stats-card-icon-box text-success bg-success-subtle-box"><i class="fa-solid fa-shield-check"></i></div>
+                </div>
+                <div id="uptimeKpiSla" class="stats-card-value text-success">99.88%</div>
+                <div class="stats-card-meta"><i class="fa-solid fa-circle-check text-success me-1"></i>Đạt chuẩn SLA UTC</div>
               </div>
             </div>
             <div class="col-6 col-md-3">
-              <div class="p-3 rounded border bg-light text-center">
-                <div class="text-muted small fw-600 mb-1">Sự cố 90 ngày</div>
-                <div id="uptimeTotalIncidents" class="fs-4 fw-800 text-danger">3</div>
-                <span class="badge bg-danger-subtle text-danger small">Đã giải quyết</span>
+              <div class="stats-card-minimal h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="stats-card-label">Sự cố 90 ngày</span>
+                  <div class="stats-card-icon-box text-danger bg-danger-subtle-box"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                </div>
+                <div id="uptimeTotalIncidents" class="stats-card-value text-danger">7</div>
+                <div class="stats-card-meta">100% Đã giải quyết</div>
               </div>
             </div>
             <div class="col-6 col-md-3">
-              <div class="p-3 rounded border bg-light text-center">
-                <div class="text-muted small fw-600 mb-1">MTTR (Xử lý TB)</div>
-                <div class="fs-4 fw-800 text-primary">42 min</div>
-                <span class="badge bg-primary-subtle text-primary small">Nhanh hơn TB</span>
+              <div class="stats-card-minimal h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="stats-card-label">MTTR (Xử lý TB)</span>
+                  <div class="stats-card-icon-box text-primary bg-teal-subtle-box"><i class="fa-solid fa-stopwatch"></i></div>
+                </div>
+                <div id="uptimeKpiMttr" class="stats-card-value text-primary">58 min</div>
+                <div class="stats-card-meta"><i class="fa-solid fa-bolt text-warning me-1"></i>Dưới mục tiêu 2h</div>
               </div>
             </div>
             <div class="col-6 col-md-3">
-              <div class="p-3 rounded border bg-light text-center">
-                <div class="text-muted small fw-600 mb-1">Thời gian khả dụng</div>
-                <div class="fs-4 fw-800 text-teal">2,158h</div>
-                <span class="badge bg-info-subtle text-info small">24/7 Monitored</span>
+              <div class="stats-card-minimal h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="stats-card-label">Khả dụng</span>
+                  <div class="stats-card-icon-box text-teal bg-teal-subtle-box"><i class="fa-solid fa-server"></i></div>
+                </div>
+                <div id="uptimeKpiHours" class="stats-card-value text-teal">2,153h</div>
+                <div class="stats-card-meta">Giám sát 24/7</div>
               </div>
             </div>
           </div>
 
-          <h6 class="fw-700 text-dark mb-3"><i class="fa-solid fa-timeline me-2 text-primary"></i>Nhật ký sự cố &amp;
-            mốc giải quyết</h6>
+          <!-- Filter Tabs & Timeline -->
+          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2 pt-2 border-top">
+            <h6 class="fw-700 text-dark mb-0 d-flex align-items-center gap-2">
+              <i class="fa-solid fa-timeline text-teal"></i>
+              <span>Nhật ký Sự cố &amp; Tiến trình Giải quyết</span>
+            </h6>
+            <div id="uptimeIncidentFilterTabs" class="d-flex gap-1"></div>
+          </div>
           <div id="uptimeIncidentTimeline"></div>
         </div>
       </div>
@@ -805,10 +924,16 @@ unset($_SESSION['flash']);
     </div>
   </div>
 
+  <!-- Global App Config -->
+  <script>
+    window.CURRENT_USER_ROLE = '<?= htmlspecialchars($adminRole, ENT_QUOTES, 'UTF-8') ?>';
+    window.CURRENT_USER_NAME = '<?= htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8') ?>';
+  </script>
+
   <!-- Bootstrap 5 Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Application JS (v2.2 cache-buster) -->
-  <script src="assets/js/app.js?v=2.2"></script>
+  <!-- Application JS (v2.4 cache-buster) -->
+  <script src="assets/js/app.js?v=2.5"></script>
 </body>
 
 </html>

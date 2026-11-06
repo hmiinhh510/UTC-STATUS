@@ -1,20 +1,16 @@
 <?php
 /**
- * API Endpoint: GET /api/health_check.php
- *
- * Tự động kiểm tra tình trạng thực tế của các dịch vụ (Automated Health Check).
- * Hỗ trợ tham số:
- *   ?service_id=X   – chỉ kiểm tra 1 dịch vụ cụ thể
- *   ?auto_update=1  – tự động cập nhật trạng thái dịch vụ trong CSDL nếu phát hiện thay đổi
+ * GET /api/health_check.php performs read-only probes.
+ * POST /api/health_check.php performs probes and updates service status.
  */
 
 declare(strict_types=1);
 require_once __DIR__ . '/auth_guard.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/health_check_runner.php';
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Cache-Control: no-store, no-cache');
+header('Cache-Control: no-store, no-cache, must-revalidate');
 
 function jsonOut(int $code, array $data): void
 {
@@ -23,115 +19,53 @@ function jsonOut(int $code, array $data): void
     exit;
 }
 
-try {
-    $pdo = Database::getInstance();
-    $pdo->exec("SET NAMES utf8mb4");
-
-    $targetServiceId = filter_input(INPUT_GET, 'service_id', FILTER_VALIDATE_INT);
-    $autoUpdate      = (bool) ($_GET['auto_update'] ?? false);
-
-    if ($targetServiceId) {
-        $stmt = $pdo->prepare('SELECT id, name, status, check_url FROM services WHERE id = :id');
-        $stmt->execute([':id' => $targetServiceId]);
-        $services = $stmt->fetchAll();
-    } else {
-        $stmt = $pdo->query('SELECT id, name, status, check_url FROM services ORDER BY sort_order ASC, id ASC');
-        $services = $stmt->fetchAll();
-    }
-
-    $results = [];
-    $updateStmt = $pdo->prepare('UPDATE services SET status = :status, updated_at = NOW() WHERE id = :id');
-    $logHistoryStmt = $pdo->prepare(
-        'INSERT INTO service_status_history (service_id, old_status, new_status, changed_by, reason, created_at)
-         VALUES (:sid, :old, :new, NULL, :reason, NOW())'
-    );
-    $logActivityStmt = $pdo->prepare(
-        'INSERT INTO activity_logs (username, action, target_type, target_id, details, ip_address, created_at)
-         VALUES ("HealthCheckBot", "auto_health_check", "service", :sid, :details, "127.0.0.1", NOW())'
-    );
-
-    foreach ($services as $svc) {
-        $sid      = (int) $svc['id'];
-        $url      = $svc['check_url'];
-        $currentSt= $svc['status'];
-
-        if (empty($url)) {
-            $results[] = [
-                'service_id'     => $sid,
-                'name'           => $svc['name'],
-                'check_url'      => null,
-                'current_status' => $currentSt,
-                'check_status'   => 'skipped',
-                'message'        => 'Không cấu hình URL kiểm tra (Dịch vụ nội bộ/phần cứng)'
-            ];
-            continue;
-        }
-
-        // Thực hiện probe HTTP bằng cURL với timeout 3s
-        $startTime = microtime(true);
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_NOBODY         => true, // HEAD request để nhanh và tiết kiệm băng thông
-            CURLOPT_TIMEOUT        => 3,
-            CURLOPT_CONNECTTIMEOUT => 3,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS      => 3,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_USERAGENT      => 'UTC-StatusPage-HealthCheck/2.0'
-        ]);
-
-        $response   = curl_exec($ch);
-        $httpCode   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError  = curl_error($ch);
-        curl_close($ch);
-        $durationMs = round((microtime(true) - $startTime) * 1000, 1);
-
-        $isHealthy = ($httpCode >= 200 && $httpCode < 400);
-        $suggestedStatus = $isHealthy ? 'operational' : ($httpCode >= 500 || $httpCode === 0 ? 'major_outage' : 'degraded');
-
-        $statusChanged = false;
-        if ($autoUpdate && $suggestedStatus !== $currentSt) {
-            // Cập nhật CSDL
-            $updateStmt->execute([':status' => $suggestedStatus, ':id' => $sid]);
-            $reason = "Tự động phát hiện qua Health Check (HTTP {$httpCode}, {$durationMs}ms)";
-            $logHistoryStmt->execute([
-                ':sid'    => $sid,
-                ':old'    => $currentSt,
-                ':new'    => $suggestedStatus,
-                ':reason' => $reason
-            ]);
-            $logActivityStmt->execute([
-                ':sid'     => $sid,
-                ':details' => "Health Check đổi trạng thái dịch vụ \"{$svc['name']}\" từ {$currentSt} sang {$suggestedStatus} (HTTP {$httpCode})"
-            ]);
-            $statusChanged = true;
-        }
-
-        $results[] = [
-            'service_id'       => $sid,
-            'name'             => $svc['name'],
-            'check_url'        => $url,
-            'http_code'        => $httpCode,
-            'latency_ms'       => $durationMs,
-            'is_healthy'       => $isHealthy,
-            'current_status'   => $currentSt,
-            'suggested_status' => $suggestedStatus,
-            'status_updated'   => $statusChanged,
-            'error'            => $curlError ?: null
-        ];
-    }
-
-    jsonOut(200, [
-        'success'      => true,
-        'checked_count'=> count($results),
-        'timestamp'    => date('c'),
-        'results'      => $results
-    ]);
-
-} catch (Throwable $e) {
-    error_log('[API/health_check] ' . $e->getMessage());
-    jsonOut(500, ['error' => 'Lỗi máy chủ nội bộ khi kiểm tra: ' . $e->getMessage()]);
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if (!in_array($method, ['GET', 'POST'], true)) {
+    header('Allow: GET, POST');
+    jsonOut(405, ['error' => 'Method Not Allowed']);
 }
 
+if (!in_array($_SESSION['admin_role'] ?? '', ['admin', 'editor'], true)) {
+    jsonOut(403, ['error' => 'Chỉ quản trị viên hoặc biên tập viên mới được chạy Health Check.']);
+}
+
+if ($method === 'GET' && isset($_GET['auto_update'])) {
+    jsonOut(405, ['error' => 'State updates require a CSRF-protected POST request.']);
+}
+
+if ($method === 'POST') {
+    $expectedCsrfToken = $_SESSION['csrf_token'] ?? '';
+    $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if ($expectedCsrfToken === '' || $csrfToken === '' || !hash_equals($expectedCsrfToken, $csrfToken)) {
+        jsonOut(403, ['error' => 'Yêu cầu không hợp lệ. Vui lòng tải lại trang và thử lại.']);
+    }
+
+}
+
+$rawServiceId = $method === 'POST'
+    ? ($_POST['service_id'] ?? $_GET['service_id'] ?? null)
+    : ($_GET['service_id'] ?? null);
+$serviceId = null;
+if ($rawServiceId !== null) {
+    $serviceId = filter_var($rawServiceId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($serviceId === false) {
+        jsonOut(400, ['error' => 'Tham số service_id không hợp lệ.']);
+    }
+}
+
+try {
+    $pdo = Database::getInstance();
+    $result = runHealthChecks(
+        $pdo,
+        $serviceId === null ? null : (int) $serviceId,
+        $method === 'POST',
+        $method === 'POST' ? (int) $_SESSION['admin_id'] : null
+    );
+    if ($serviceId !== null && $result['checked_count'] === 0) {
+        jsonOut(404, ['error' => 'Không tìm thấy dịch vụ cần kiểm tra.']);
+    }
+    jsonOut(200, $result);
+} catch (Throwable $e) {
+    error_log('[API/health_check] ' . $e->getMessage());
+    jsonOut(500, ['error' => 'Lỗi máy chủ nội bộ khi kiểm tra dịch vụ.']);
+}

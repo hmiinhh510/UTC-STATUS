@@ -1,19 +1,25 @@
 <?php
 /**
  * Database Seeder Script for UTC STATUS (Đại học GTVT)
- * An toàn, hỗ trợ cập nhật dữ liệu mẫu mà không làm hỏng khóa ngoại hoặc mất dữ liệu hiện có.
+ * Chỉ bổ sung dữ liệu mẫu còn thiếu; không ghi đè trạng thái vận hành hoặc số liệu hiện có.
  *
  * Cách chạy:
  *   CLI: php database/seed_utc.php
- *   CLI (xóa và tạo lại toàn bộ): php database/seed_utc.php --force
+ *   CLI (xóa và tạo lại dữ liệu dịch vụ mẫu): php database/seed_utc.php --force
  */
 declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 require_once __DIR__ . '/../config/database.php';
 
 $pdo = Database::getInstance();
 $pdo->exec("SET NAMES utf8mb4");
 
-$forceReset = (isset($argv[1]) && $argv[1] === '--force') || (isset($_GET['reset']) && $_GET['reset'] === '1');
+$forceReset = isset($argv[1]) && $argv[1] === '--force';
 
 echo "=== KHỞI CHẠY SEED DỮ LIỆU UTC STATUS ===\n";
 
@@ -21,8 +27,10 @@ if ($forceReset) {
     echo "-> Đang thực hiện RESET toàn bộ dữ liệu mẫu theo yêu cầu (--force)...\n";
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
     $pdo->exec("TRUNCATE TABLE `service_daily_uptime`");
+    $pdo->exec("TRUNCATE TABLE `service_status_history`");
     $pdo->exec("TRUNCATE TABLE `incident_services`");
     $pdo->exec("TRUNCATE TABLE `incident_updates`");
+    $pdo->exec("TRUNCATE TABLE `incident_reports`");
     $pdo->exec("TRUNCATE TABLE `incidents`");
     $pdo->exec("TRUNCATE TABLE `maintenance_services`");
     $pdo->exec("TRUNCATE TABLE `maintenances`");
@@ -39,9 +47,8 @@ $groups = [
 ];
 
 $stmtGrp = $pdo->prepare(
-    'INSERT INTO service_groups (id, name, description, sort_order, created_at)
-     VALUES (:id, :name, :description, :sort_order, NOW())
-     ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), sort_order = VALUES(sort_order)'
+    'INSERT IGNORE INTO service_groups (id, name, description, sort_order, created_at)
+     VALUES (:id, :name, :description, :sort_order, NOW())'
 );
 foreach ($groups as $g) {
     $stmtGrp->execute($g);
@@ -142,16 +149,8 @@ $services = [
 ];
 
 $stmtSvc = $pdo->prepare(
-    'INSERT INTO services (id, group_id, name, description, icon, status, sort_order, check_url, created_at, updated_at)
-     VALUES (:id, :group_id, :name, :description, :icon, :status, :sort_order, :check_url, NOW(), NOW())
-     ON DUPLICATE KEY UPDATE
-        group_id = VALUES(group_id),
-        name = VALUES(name),
-        description = VALUES(description),
-        icon = VALUES(icon),
-        status = VALUES(status),
-        sort_order = VALUES(sort_order),
-        check_url = VALUES(check_url)'
+    'INSERT IGNORE INTO services (id, group_id, name, description, icon, status, sort_order, check_url, created_at, updated_at)
+     VALUES (:id, :group_id, :name, :description, :icon, :status, :sort_order, :check_url, NOW(), NOW())'
 );
 
 foreach ($services as $s) {
@@ -193,16 +192,14 @@ $incidents = [
 ];
 
 $stmtInc = $pdo->prepare(
-    'INSERT INTO incidents (id, title, severity, status, started_at, resolved_at, created_by, created_at, updated_at)
-     VALUES (:id, :title, :severity, :status, :started_at, :resolved_at, 1, :created_at, NOW())
-     ON DUPLICATE KEY UPDATE title = VALUES(title), severity = VALUES(severity), status = VALUES(status), resolved_at = VALUES(resolved_at)'
+    'INSERT IGNORE INTO incidents (id, title, severity, status, started_at, resolved_at, created_by, created_at, updated_at)
+     VALUES (:id, :title, :severity, :status, :started_at, :resolved_at, 1, :created_at, NOW())'
 );
 
 $stmtIncSvc = $pdo->prepare('INSERT IGNORE INTO incident_services (incident_id, service_id) VALUES (:iid, :sid)');
 $stmtIncUpd = $pdo->prepare(
-    'INSERT INTO incident_updates (id, incident_id, status, message, created_by, created_at)
-     VALUES (:id, :iid, :status, :message, 1, :created_at)
-     ON DUPLICATE KEY UPDATE message = VALUES(message)'
+    'INSERT IGNORE INTO incident_updates (id, incident_id, status, message, created_by, created_at)
+     VALUES (:id, :iid, :status, :message, 1, :created_at)'
 );
 
 foreach ($incidents as $inc) {
@@ -266,9 +263,8 @@ $maintenances = [
 ];
 
 $stmtMaint = $pdo->prepare(
-    'INSERT INTO maintenances (id, title, description, status, scheduled_at, expected_end, created_by, created_at, updated_at)
-     VALUES (:id, :title, :description, :status, :scheduled_at, :expected_end, 1, NOW(), NOW())
-     ON DUPLICATE KEY UPDATE title = VALUES(title), status = VALUES(status), scheduled_at = VALUES(scheduled_at), expected_end = VALUES(expected_end)'
+    'INSERT IGNORE INTO maintenances (id, title, description, status, scheduled_at, expected_end, created_by, created_at, updated_at)
+     VALUES (:id, :title, :description, :status, :scheduled_at, :expected_end, 1, NOW(), NOW())'
 );
 $stmtMaintSvc = $pdo->prepare('INSERT IGNORE INTO maintenance_services (maintenance_id, service_id) VALUES (:mid, :sid)');
 
@@ -284,11 +280,10 @@ foreach ($maintenances as $m) {
     $stmtMaintSvc->execute([':mid' => $m['id'], ':sid' => $m['service_id']]);
 }
 
-// 5. Cập nhật 90 ngày Uptime an toàn (dùng REPLACE hoặc ON DUPLICATE KEY UPDATE)
+// 5. Bổ sung 90 ngày uptime mẫu nhưng không ghi đè các snapshot đã có
 $stmtUpDay = $pdo->prepare(
-    'INSERT INTO service_daily_uptime (service_id, snapshot_date, uptime_pct, incident_count)
-     VALUES (:sid, :sdate, :up, :inc)
-     ON DUPLICATE KEY UPDATE uptime_pct = VALUES(uptime_pct), incident_count = VALUES(incident_count)'
+    'INSERT IGNORE INTO service_daily_uptime (service_id, snapshot_date, uptime_pct, incident_count)
+     VALUES (:sid, :sdate, :up, :inc)'
 );
 
 for ($sid = 1; $sid <= 9; $sid++) {

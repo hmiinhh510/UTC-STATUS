@@ -67,9 +67,31 @@ try {
     $stmtCheck->execute([':ep' => $endpoint]);
     $existing = $stmtCheck->fetch();
 
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $baseUrl = "{$protocol}://{$host}/status_page";
+    $configuredBaseUrl = rtrim((string) (getenv('UTC_STATUS_BASE_URL') ?: ''), '/');
+    if ($configuredBaseUrl !== '') {
+        $baseUrl = $configuredBaseUrl;
+    } else {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $serverName = $_SERVER['SERVER_NAME'] ?? 'localhost';
+        $serverPort = (int) ($_SERVER['SERVER_PORT'] ?? ($protocol === 'https' ? 443 : 80));
+        $defaultPort = $protocol === 'https' ? 443 : 80;
+        $portSuffix = $serverPort === $defaultPort ? '' : ':' . $serverPort;
+        $applicationPath = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/\\');
+        $baseUrl = "{$protocol}://{$serverName}{$portSuffix}{$applicationPath}";
+    }
+
+    $baseUrlParts = parse_url($baseUrl);
+    if (
+        !is_array($baseUrlParts) ||
+        !in_array(strtolower((string) ($baseUrlParts['scheme'] ?? '')), ['http', 'https'], true) ||
+        empty($baseUrlParts['host']) ||
+        isset($baseUrlParts['user']) ||
+        isset($baseUrlParts['pass']) ||
+        isset($baseUrlParts['query']) ||
+        isset($baseUrlParts['fragment'])
+    ) {
+        throw new RuntimeException('UTC_STATUS_BASE_URL must be an absolute HTTP(S) URL.');
+    }
 
     if ($existing) {
         if ((int) $existing['verified'] === 1) {

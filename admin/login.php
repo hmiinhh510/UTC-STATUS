@@ -17,6 +17,7 @@
 declare(strict_types=1);
 session_start();
 header('Content-Type: text/html; charset=UTF-8');
+unset($_SESSION['last_reset_otp'], $_SESSION['reset_username'], $_SESSION['reset_email']);
 
 require_once __DIR__ . '/../config/database.php';
 
@@ -288,19 +289,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $newId = (int) $pdo->lastInsertId();
 
-            // Tự động bổ sung vào danh sách nhận thông báo Email (subscriptions)
-            try {
-                $subToken = bin2hex(random_bytes(32));
-                $subStmt = $pdo->prepare(
-                    'INSERT INTO subscriptions (type, endpoint, token, verified, verified_at, created_at)
-                     VALUES ("email", :ep, :t, 1, NOW(), NOW())
-                     ON DUPLICATE KEY UPDATE verified = 1, verified_at = NOW()'
-                );
-                $subStmt->execute([':ep' => $email, ':t' => $subToken]);
-            } catch (Throwable) {
-                // Không chặn đăng ký nếu bảng sub có lỗi nhỏ
-            }
-
             logAuthAction(
                 $pdo,
                 $newId,
@@ -326,9 +314,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'forgot_request') {
         $username = trim($_POST['username'] ?? '');
         $email    = trim($_POST['email'] ?? '');
+        $mailFrom = trim((string) (getenv('UTC_STATUS_MAIL_FROM') ?: ''));
 
         if ($username === '' || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             setFlash('danger', 'Vui lòng nhập chính xác Tên đăng nhập (hoặc Mã SV) và Địa chỉ Email đã đăng ký.');
+            header('Location: login.php?tab=forgot&step=1');
+            exit;
+        }
+
+        if ($mailFrom === '' || !filter_var($mailFrom, FILTER_VALIDATE_EMAIL) || !function_exists('mail')) {
+            setFlash('danger', 'Chức năng gửi email khôi phục chưa được cấu hình. Vui lòng liên hệ quản trị viên.');
             header('Location: login.php?tab=forgot&step=1');
             exit;
         }
@@ -342,6 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($user) {
                 // Tạo mã xác nhận OTP 6 chữ số
                 $otp = (string) random_int(100000, 999999);
+                $otpHash = hash('sha256', $otp);
 
                 $upStmt = $pdo->prepare(
                     'UPDATE users 
@@ -349,31 +345,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          reset_expires_at = DATE_ADD(NOW(), INTERVAL 15 MINUTE) 
                      WHERE id = :id'
                 );
-                $upStmt->execute([':t' => $otp, ':id' => $user['id']]);
+                $upStmt->execute([':t' => $otpHash, ':id' => $user['id']]);
 
-                $_SESSION['reset_username'] = $user['username'];
-                $_SESSION['reset_email']    = $user['email'];
-                $_SESSION['last_reset_otp'] = $otp;
+                $mailBody = "Mã xác thực UTC STATUS của bạn là {$otp}. Mã có hiệu lực trong 15 phút. Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.";
+                $headers = [
+                    "From: UTC STATUS <{$mailFrom}>",
+                    'MIME-Version: 1.0',
+                    'Content-Type: text/plain; charset=UTF-8',
+                ];
+                if (!mail($user['email'], 'UTC STATUS - Khôi phục mật khẩu', $mailBody, implode("\r\n", $headers))) {
+                    $clearStmt = $pdo->prepare(
+                        'UPDATE users SET reset_token = NULL, reset_expires_at = NULL
+                         WHERE id = :id AND reset_token = :token'
+                    );
+                    $clearStmt->execute([':id' => $user['id'], ':token' => $otpHash]);
+                    throw new RuntimeException('Unable to deliver password recovery email.');
+                }
 
                 logAuthAction(
                     $pdo,
                     (int) $user['id'],
                     $user['username'],
                     'forgot_otp_request',
-                    "Yêu cầu mã OTP khôi phục cho tài khoản {$username} ({$email})"
+                    'Yêu cầu mã OTP khôi phục mật khẩu'
                 );
 
-                setFlash('info', "Mã xác thực OTP đã được tạo cho tài khoản <strong>" . htmlspecialchars($username) . "</strong> (" . htmlspecialchars($email) . ").<br><div class='mt-2 p-2 bg-light rounded border border-info-subtle d-inline-block text-dark'><i class='fa-solid fa-key text-warning me-1'></i> Mã OTP thử nghiệm: <span class='badge bg-dark fs-6 px-3 py-1 font-monospace text-warning tracking-wider'>{$otp}</span> (Có hiệu lực trong 15 phút).</div>");
+                setFlash('info', 'Nếu thông tin khớp với tài khoản, mã xác thực đã được gửi đến email đăng ký.');
                 header('Location: login.php?tab=forgot&step=2');
                 exit;
             } else {
-                setFlash('danger', "Thông tin Tên đăng nhập (Mã SV) hoặc Email không chính xác hoặc không khớp với hồ sơ đăng ký.");
-                header('Location: login.php?tab=forgot&step=1');
+                setFlash('info', 'Nếu thông tin khớp với tài khoản, mã xác thực đã được gửi đến email đăng ký.');
+                header('Location: login.php?tab=forgot&step=2');
                 exit;
             }
         } catch (Throwable $e) {
             error_log('[Forgot Request Error] ' . $e->getMessage());
-            setFlash('danger', 'Lỗi hệ thống khi tạo mã khôi phục. Vui lòng thử lại sau.');
+            setFlash('danger', 'Không thể gửi email khôi phục mật khẩu. Vui lòng thử lại sau hoặc liên hệ quản trị viên.');
             header('Location: login.php?tab=forgot&step=1');
             exit;
         }
@@ -389,7 +396,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newPassword     = $_POST['new_password'] ?? '';
         $newPassConfirm  = $_POST['new_password_confirm'] ?? '';
 
-        if ($username === '' || $email === '' || $otp === '' || $newPassword === '') {
+        if ($username === '' || $email === '' || !preg_match('/^\d{6}$/', $otp) || $newPassword === '') {
             setFlash('danger', 'Vui lòng nhập đầy đủ thông tin xác nhận và mật khẩu mới.');
             header('Location: login.php?tab=forgot&step=2');
             exit;
@@ -408,36 +415,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
-            $stmt = $pdo->prepare(
-                'SELECT id, username, full_name, reset_token, reset_expires_at 
-                 FROM users 
-                 WHERE username = :u
-                   AND email = :e 
-                   AND reset_token = :t 
-                   AND reset_expires_at >= NOW() 
-                 LIMIT 1'
+            $userIdStmt = $pdo->prepare('SELECT id FROM users WHERE username = :username AND email = :email LIMIT 1');
+            $userIdStmt->execute([':username' => $username, ':email' => $email]);
+            $userId = $userIdStmt->fetchColumn();
+
+            $upStmt = $pdo->prepare(
+                'UPDATE users
+                 SET password = :password,
+                     reset_token = NULL,
+                     reset_expires_at = NULL,
+                     remember_token = NULL
+                 WHERE username = :username
+                   AND email = :email
+                   AND reset_token = :token
+                   AND reset_expires_at >= NOW()'
             );
-            $stmt->execute([':u' => $username, ':e' => $email, ':t' => $otp]);
-            $user = $stmt->fetch();
+            $upStmt->execute([
+                ':password' => password_hash($newPassword, PASSWORD_DEFAULT),
+                ':username' => $username,
+                ':email' => $email,
+                ':token' => hash('sha256', $otp),
+            ]);
 
-            if ($user) {
-                $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-                $upStmt = $pdo->prepare(
-                    'UPDATE users 
-                     SET password = :p, 
-                         reset_token = NULL, 
-                         reset_expires_at = NULL, 
-                         remember_token = NULL 
-                     WHERE id = :id'
-                );
-                $upStmt->execute([':p' => $newHash, ':id' => $user['id']]);
-
-                unset($_SESSION['reset_username'], $_SESSION['reset_email'], $_SESSION['last_reset_otp']);
+            if ($upStmt->rowCount() === 1) {
 
                 logAuthAction(
                     $pdo,
-                    (int) $user['id'],
-                    $user['username'],
+                    $userId === false ? null : (int) $userId,
+                    $username,
                     'password_reset',
                     "Khôi phục và đặt lại mật khẩu mới thành công qua mã OTP"
                 );
@@ -463,9 +468,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 
-$savedResetUser  = $_SESSION['reset_username'] ?? '';
-$savedResetEmail = $_SESSION['reset_email'] ?? '';
-$lastResetOtp    = $_SESSION['last_reset_otp'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -881,7 +883,7 @@ $lastResetOtp    = $_SESSION['last_reset_otp'] ?? '';
             <?php endif; ?>
           </div>
           <div class="flex-grow-1">
-            <?= $flash['message'] ?>
+            <?= htmlspecialchars((string) $flash['message'], ENT_QUOTES, 'UTF-8') ?>
           </div>
           <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -1159,7 +1161,6 @@ $lastResetOtp    = $_SESSION['last_reset_otp'] ?? '';
                   name="username" 
                   class="form-control" 
                   placeholder="Ví dụ: sinhvien hoặc 201200123" 
-                  value="<?= htmlspecialchars($savedResetUser) ?>"
                   required 
                   autofocus
                 />
@@ -1177,7 +1178,6 @@ $lastResetOtp    = $_SESSION['last_reset_otp'] ?? '';
                   name="email" 
                   class="form-control" 
                   placeholder="sinhvien@student.utc.edu.vn" 
-                  value="<?= htmlspecialchars($savedResetEmail) ?>"
                   required 
                 />
               </div>
@@ -1214,7 +1214,6 @@ $lastResetOtp    = $_SESSION['last_reset_otp'] ?? '';
                   type="text" 
                   name="username" 
                   class="form-control bg-light border text-muted small py-1-5 px-2" 
-                  value="<?= htmlspecialchars($savedResetUser) ?>" 
                   required 
                   readonly 
                 />
@@ -1228,7 +1227,6 @@ $lastResetOtp    = $_SESSION['last_reset_otp'] ?? '';
                   type="email" 
                   name="email" 
                   class="form-control bg-light border text-muted small py-1-5 px-2" 
-                  value="<?= htmlspecialchars($savedResetEmail) ?>" 
                   required 
                   readonly 
                 />
@@ -1250,7 +1248,6 @@ $lastResetOtp    = $_SESSION['last_reset_otp'] ?? '';
                   required 
                   autofocus
                   autocomplete="one-time-code"
-                  value="<?= htmlspecialchars($lastResetOtp) ?>"
                 />
               </div>
             </div>

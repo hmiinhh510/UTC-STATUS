@@ -796,6 +796,8 @@ async function triggerHealthCheckProbe() {
   const btn = document.getElementById('btnRunHealthProbe');
   const timeEl = document.getElementById('healthCheckLastRun');
 
+  if (!tbody) return;
+
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Đang quét Endpoints…';
@@ -812,7 +814,9 @@ async function triggerHealthCheckProbe() {
   try {
     const res = await fetch('api/health_check.php');
     const data = await res.json();
-    const results = data.results || [];
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    if (!Array.isArray(data.results)) throw new Error('Dữ liệu health check không hợp lệ.');
+    const results = data.results;
 
     if (timeEl) {
       timeEl.textContent = `Vừa hoàn thành lúc ${new Date().toLocaleTimeString('vi-VN')}`;
@@ -852,6 +856,17 @@ async function triggerHealthCheckProbe() {
         : (r.check_status === 'skipped'
           ? '<span class="badge bg-secondary">Skipped</span>'
           : '<span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i>Degraded / Down</span>');
+      let checkUrlMarkup = '<span class="text-muted small fst-italic">Dịch vụ mạng nội bộ</span>';
+      if (r.check_url) {
+        try {
+          const parsedUrl = new URL(r.check_url);
+          if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
+            checkUrlMarkup = `<a href="${escHtml(parsedUrl.href)}" target="_blank" rel="noopener noreferrer" class="small text-decoration-none font-monospace">${escHtml(r.check_url)}</a>`;
+          }
+        } catch (error) {
+          checkUrlMarkup = '<span class="text-danger small">URL không hợp lệ</span>';
+        }
+      }
 
       return `
         <tr>
@@ -860,7 +875,7 @@ async function triggerHealthCheckProbe() {
             <div class="small text-muted">ID: #${r.service_id}</div>
           </td>
           <td>
-            ${r.check_url ? `<a href="${r.check_url}" target="_blank" class="small text-decoration-none font-monospace">${escHtml(r.check_url)}</a>` : '<span class="text-muted small fst-italic">Dịch vụ mạng nội bộ</span>'}
+            ${checkUrlMarkup}
           </td>
           <td>${codeBadge}</td>
           <td>${latencyBadge}</td>
@@ -872,7 +887,7 @@ async function triggerHealthCheckProbe() {
     tbody.innerHTML = `
       <tr>
         <td colspan="5" class="text-center py-3 text-danger">
-          <i class="fa-solid fa-triangle-exclamation me-1"></i>Lỗi khi thực thi tiến trình Health Check.
+          <i class="fa-solid fa-triangle-exclamation me-1"></i>${escHtml(err.message || 'Lỗi khi thực thi tiến trình Health Check.')}
         </td>
       </tr>`;
   } finally {

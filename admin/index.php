@@ -18,6 +18,8 @@ if (($_SESSION['admin_role'] ?? '') === 'student') {
 }
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/service_status.php';
+require_once __DIR__ . '/../api/health_check_runner.php';
 
 $pdo = Database::getInstance();
 $pdo->exec("SET NAMES utf8mb4");
@@ -97,27 +99,6 @@ function logAction(PDO $pdo, int $userId, string $username, string $action, stri
     }
 }
 
-/**
- * Ghi nhận lịch sử thay đổi trạng thái dịch vụ
- */
-function recordStatusChange(PDO $pdo, int $serviceId, string $oldStatus, string $newStatus, int $changedBy, string $reason): void {
-    try {
-        $stmt = $pdo->prepare(
-            'INSERT INTO service_status_history (service_id, old_status, new_status, changed_by, reason, created_at)
-             VALUES (:sid, :old, :new, :by, :reason, NOW())'
-        );
-        $stmt->execute([
-            ':sid'    => $serviceId,
-            ':old'    => $oldStatus,
-            ':new'    => $newStatus,
-            ':by'     => $changedBy,
-            ':reason' => $reason
-        ]);
-    } catch (Throwable $e) {
-        error_log('[StatusHistory Error] ' . $e->getMessage());
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     $action = $_POST['action'] ?? '';
@@ -148,13 +129,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if ($svc) {
                         $oldStatus = $svc['status'];
-                        $stmt = $pdo->prepare('UPDATE services SET status = :status, updated_at = NOW() WHERE id = :id');
-                        $stmt->execute([':status' => $newStatus, ':id' => $serviceId]);
+                        $statusChange = reconcileServiceStatus(
+                            $pdo,
+                            $serviceId,
+                            $adminId,
+                            'Quản trị viên đổi trạng thái trực tiếp trên Dashboard',
+                            $newStatus
+                        );
+                        $effectiveStatus = $statusChange['new_status'] ?? $oldStatus;
+                        logAction($pdo, $adminId, $adminName, 'quick_status', 'service', $serviceId, "Đổi trạng thái dịch vụ '{$svc['name']}' từ '{$oldStatus}' sang '{$effectiveStatus}'");
 
-                        recordStatusChange($pdo, $serviceId, $oldStatus, $newStatus, $adminId, "Quản trị viên đổi trạng thái trực tiếp trên Dashboard");
-                        logAction($pdo, $adminId, $adminName, 'quick_status', 'service', $serviceId, "Đổi trạng thái dịch vụ '{$svc['name']}' từ '{$oldStatus}' sang '{$newStatus}'");
-
-                        setFlash('success', "Đã đổi trạng thái dịch vụ \"{$svc['name']}\" sang [{$newStatus}] thành công!");
+                        $message = $effectiveStatus === $newStatus
+                            ? "Đã đổi trạng thái dịch vụ \"{$svc['name']}\" sang [{$effectiveStatus}] thành công!"
+                            : "Trạng thái dịch vụ \"{$svc['name']}\" vẫn là [{$effectiveStatus}] do còn sự cố hoặc bảo trì đang hoạt động.";
+                        setFlash('success', $message);
                     }
                 } else {
                     setFlash('danger', 'Dữ liệu trạng thái không hợp lệ.');
@@ -168,11 +156,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $description = trim($_POST['description'] ?? '');
                 $icon        = trim($_POST['icon'] ?? 'fa-server');
                 $status      = trim($_POST['status'] ?? 'operational');
+                $validStatuses = ['operational', 'degraded', 'partial_outage', 'major_outage', 'maintenance'];
                 $sortOrder   = (int) ($_POST['sort_order'] ?? 0);
                 $checkUrl    = trim($_POST['check_url'] ?? '');
 
-                if ($name === '' || $groupId <= 0) {
-                    setFlash('danger', 'Tên dịch vụ và nhóm phân loại không được để trống.');
+                if ($name === '' || $groupId <= 0 || !in_array($status, $validStatuses, true)) {
+                    setFlash('danger', 'Tên, nhóm hoặc trạng thái dịch vụ không hợp lệ.');
                 } else {
                     $stmt = $pdo->prepare(
                         'INSERT INTO services (group_id, name, description, icon, status, sort_order, check_url, created_at, updated_at)
@@ -201,20 +190,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $description = trim($_POST['description'] ?? '');
                 $icon        = trim($_POST['icon'] ?? 'fa-server');
                 $status      = trim($_POST['status'] ?? 'operational');
+                $validStatuses = ['operational', 'degraded', 'partial_outage', 'major_outage', 'maintenance'];
                 $sortOrder   = (int) ($_POST['sort_order'] ?? 0);
                 $checkUrl    = trim($_POST['check_url'] ?? '');
 
-                if ($serviceId <= 0 || $name === '' || $groupId <= 0) {
+                if ($serviceId <= 0 || $name === '' || $groupId <= 0 || !in_array($status, $validStatuses, true)) {
                     setFlash('danger', 'Thông tin dịch vụ không hợp lệ.');
                 } else {
                     $curStmt = $pdo->prepare('SELECT status FROM services WHERE id = :id');
                     $curStmt->execute([':id' => $serviceId]);
-                    $oldStatus = $curStmt->fetchColumn() ?: 'operational';
+                    $oldStatus = $curStmt->fetchColumn();
+                    if ($oldStatus === false) {
+                        throw new RuntimeException('Không tìm thấy dịch vụ cần cập nhật.');
+                    }
 
+                    $pdo->beginTransaction();
                     $stmt = $pdo->prepare(
                         'UPDATE services
                          SET group_id = :group_id, name = :name, description = :description,
-                             icon = :icon, status = :status, sort_order = :sort_order,
+                             icon = :icon, sort_order = :sort_order,
                              check_url = :check_url, updated_at = NOW()
                          WHERE id = :id'
                     );
@@ -223,17 +217,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':name'        => $name,
                         ':description' => $description,
                         ':icon'        => $icon ?: 'fa-server',
-                        ':status'      => $status,
                         ':sort_order'  => $sortOrder,
                         ':check_url'   => $checkUrl ?: null,
                         ':id'          => $serviceId,
                     ]);
 
-                    if ($oldStatus !== $status) {
-                        recordStatusChange($pdo, $serviceId, $oldStatus, $status, $adminId, "Chỉnh sửa dịch vụ");
-                    }
-                    logAction($pdo, $adminId, $adminName, 'update_service', 'service', $serviceId, "Cập nhật thông tin dịch vụ: {$name}");
-                    setFlash('success', "Đã cập nhật dịch vụ #{$serviceId} thành công!");
+                    $statusChange = reconcileServiceStatus(
+                        $pdo,
+                        $serviceId,
+                        $adminId,
+                        'Cập nhật trạng thái khi chỉnh sửa dịch vụ',
+                        $status
+                    );
+                    $pdo->commit();
+                    $effectiveStatus = $statusChange['new_status'] ?? $oldStatus;
+                    logAction($pdo, $adminId, $adminName, 'update_service', 'service', $serviceId, "Cập nhật thông tin dịch vụ: {$name}; trạng thái {$oldStatus} -> {$effectiveStatus}");
+                    $message = $effectiveStatus === $status
+                        ? "Đã cập nhật dịch vụ #{$serviceId} thành công!"
+                        : "Đã cập nhật thông tin dịch vụ #{$serviceId}; trạng thái vẫn là [{$effectiveStatus}] do còn sự cố hoặc bảo trì đang hoạt động.";
+                    setFlash('success', $message);
                 }
                 break;
 
@@ -300,8 +302,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $status       = trim($_POST['status'] ?? 'investigating');
                 $message      = trim($_POST['message'] ?? '');
                 $serviceIds   = $_POST['service_ids'] ?? [];
+                $serviceIds   = is_array($serviceIds)
+                    ? array_values(array_unique(array_filter(array_map('intval', $serviceIds), static fn(int $id): bool => $id > 0)))
+                    : [];
+                $validSeverities = ['minor', 'major', 'critical'];
+                $validIncidentStatuses = ['investigating', 'identified', 'monitoring'];
 
-                if ($title === '' || empty($serviceIds) || $message === '') {
+                if (
+                    $title === '' ||
+                    $serviceIds === [] ||
+                    $message === '' ||
+                    !in_array($severity, $validSeverities, true) ||
+                    !in_array($status, $validIncidentStatuses, true)
+                ) {
                     setFlash('danger', 'Vui lòng nhập tiêu đề, chọn ít nhất 1 dịch vụ bị ảnh hưởng và thông điệp ban đầu.');
                 } else {
                     $pdo->beginTransaction();
@@ -318,27 +331,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
                     $incidentId = (int) $pdo->lastInsertId();
 
-                    // Xác định trạng thái dịch vụ theo mức độ nghiêm trọng
-                    $targetSvcStatus = match ($severity) {
-                        'critical' => 'major_outage',
-                        'major'    => 'partial_outage',
-                        default    => 'degraded',
-                    };
-
                     $stmtRel    = $pdo->prepare('INSERT INTO incident_services (incident_id, service_id) VALUES (:inc_id, :svc_id)');
-                    $stmtSvcCur = $pdo->prepare('SELECT status FROM services WHERE id = :svc_id');
-                    $stmtSvcUpd = $pdo->prepare('UPDATE services SET status = :st, updated_at = NOW() WHERE id = :svc_id');
-
                     foreach ($serviceIds as $sid) {
-                        $sidInt = (int) $sid;
-                        if ($sidInt > 0) {
-                            $stmtRel->execute([':inc_id' => $incidentId, ':svc_id' => $sidInt]);
-                            $stmtSvcCur->execute([':svc_id' => $sidInt]);
-                            $oldSt = $stmtSvcCur->fetchColumn() ?: 'operational';
-
-                            $stmtSvcUpd->execute([':st' => $targetSvcStatus, ':svc_id' => $sidInt]);
-                            recordStatusChange($pdo, $sidInt, $oldSt, $targetSvcStatus, $adminId, "Sự cố #{$incidentId}: {$title}");
-                        }
+                        $stmtRel->execute([':inc_id' => $incidentId, ':svc_id' => $sid]);
+                        reconcileServiceStatus($pdo, $sid, $adminId, "Sự cố #{$incidentId}: {$title}");
                     }
 
                     // Thêm bản tin cập nhật đầu tiên
@@ -364,8 +360,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $incidentId = (int) ($_POST['incident_id'] ?? 0);
                 $status     = trim($_POST['status'] ?? 'investigating');
                 $message    = trim($_POST['message'] ?? '');
+                $validIncidentStatuses = ['investigating', 'identified', 'monitoring', 'resolved'];
 
-                if ($incidentId <= 0 || $message === '') {
+                if ($incidentId <= 0 || $message === '' || !in_array($status, $validIncidentStatuses, true)) {
                     setFlash('danger', 'Vui lòng nhập nội dung cập nhật tiến độ sự cố.');
                 } else {
                     $pdo->beginTransaction();
@@ -385,7 +382,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtInc = $pdo->prepare(
                         'UPDATE incidents
                          SET status = :status,
-                             resolved_at = COALESCE(:resolved_at, resolved_at),
+                             resolved_at = :resolved_at,
                              updated_at = NOW()
                          WHERE id = :id'
                     );
@@ -395,22 +392,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':id'          => $incidentId,
                     ]);
 
-                    // Nếu đã giải quyết -> Tự động đưa các dịch vụ về operational
-                    if ($status === 'resolved') {
-                        $svcStmt = $pdo->prepare('SELECT service_id FROM incident_services WHERE incident_id = :inc_id');
-                        $svcStmt->execute([':inc_id' => $incidentId]);
-                        $affServices = $svcStmt->fetchAll(PDO::FETCH_COLUMN);
-
-                        $stmtRevert = $pdo->prepare('UPDATE services SET status = "operational", updated_at = NOW() WHERE id = :id');
-                        foreach ($affServices as $affSid) {
-                            $stmtRevert->execute([':id' => $affSid]);
-                            recordStatusChange($pdo, (int)$affSid, 'outage', 'operational', $adminId, "Sự cố #{$incidentId} đã giải quyết xong");
-                        }
+                    $svcStmt = $pdo->prepare('SELECT service_id FROM incident_services WHERE incident_id = :inc_id');
+                    $svcStmt->execute([':inc_id' => $incidentId]);
+                    foreach ($svcStmt->fetchAll(PDO::FETCH_COLUMN) as $affectedServiceId) {
+                        reconcileServiceStatus(
+                            $pdo,
+                            (int) $affectedServiceId,
+                            $adminId,
+                            "Cập nhật trạng thái sự cố #{$incidentId} sang {$status}"
+                        );
                     }
 
                     $pdo->commit();
                     logAction($pdo, $adminId, $adminName, 'update_incident', 'incident', $incidentId, "Cập nhật tiến độ sự cố #{$incidentId} sang: {$status}");
-                    setFlash('success', "Đã thêm cập nhật tiến độ sự cố #{$incidentId}" . ($status === 'resolved' ? ' và tự động khôi phục dịch vụ về Hoạt động tốt!' : '!'));
+                    setFlash('success', "Đã thêm cập nhật tiến độ sự cố #{$incidentId}" . ($status === 'resolved' ? ' và đồng bộ lại trạng thái dịch vụ theo các sự cố/bảo trì còn hoạt động!' : '!'));
                 }
                 break;
 
@@ -431,17 +426,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $svcStmt = $pdo->prepare('SELECT service_id FROM incident_services WHERE incident_id = :inc_id');
                     $svcStmt->execute([':inc_id' => $incidentId]);
-                    $affServices = $svcStmt->fetchAll(PDO::FETCH_COLUMN);
-
-                    $stmtRevert = $pdo->prepare('UPDATE services SET status = "operational", updated_at = NOW() WHERE id = :id');
-                    foreach ($affServices as $affSid) {
-                        $stmtRevert->execute([':id' => $affSid]);
-                        recordStatusChange($pdo, (int)$affSid, 'outage', 'operational', $adminId, "Khôi phục khi đóng sự cố #{$incidentId}");
+                    foreach ($svcStmt->fetchAll(PDO::FETCH_COLUMN) as $affectedServiceId) {
+                        reconcileServiceStatus(
+                            $pdo,
+                            (int) $affectedServiceId,
+                            $adminId,
+                            "Khôi phục khi đóng sự cố #{$incidentId}"
+                        );
                     }
 
                     $pdo->commit();
                     logAction($pdo, $adminId, $adminName, 'resolve_incident', 'incident', $incidentId, "Đóng nhanh sự cố #{$incidentId}");
-                    setFlash('success', "Đã đóng sự cố #{$incidentId} và đưa toàn bộ dịch vụ về Hoạt động tốt!");
+                    setFlash('success', "Đã đóng sự cố #{$incidentId} và đồng bộ lại trạng thái các dịch vụ liên quan!");
                 }
                 break;
 
@@ -494,21 +490,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($maintId > 0 && in_array($newStatus, $validStatuses, true)) {
                     $pdo->beginTransaction();
 
+                    $currentStatusStmt = $pdo->prepare('SELECT status FROM maintenances WHERE id = :id FOR UPDATE');
+                    $currentStatusStmt->execute([':id' => $maintId]);
+                    $previousStatus = $currentStatusStmt->fetchColumn();
+                    if ($previousStatus === false) {
+                        throw new RuntimeException('Không tìm thấy lịch bảo trì cần cập nhật.');
+                    }
+
                     $stmt = $pdo->prepare('UPDATE maintenances SET status = :st, updated_at = NOW() WHERE id = :id');
                     $stmt->execute([':st' => $newStatus, ':id' => $maintId]);
 
-                    if ($newStatus === 'in_progress') {
-                        $stmtSvc = $pdo->prepare(
-                            'UPDATE services SET status = "maintenance", updated_at = NOW()
-                             WHERE id IN (SELECT service_id FROM maintenance_services WHERE maintenance_id = :m_id)'
+                    if ($previousStatus !== $newStatus && ($previousStatus === 'in_progress' || $newStatus === 'in_progress')) {
+                        $serviceStmt = $pdo->prepare(
+                            'SELECT service_id FROM maintenance_services WHERE maintenance_id = :maintenance_id'
                         );
-                        $stmtSvc->execute([':m_id' => $maintId]);
-                    } elseif ($newStatus === 'completed' || $newStatus === 'cancelled') {
-                        $stmtSvc = $pdo->prepare(
-                            'UPDATE services SET status = "operational", updated_at = NOW()
-                             WHERE id IN (SELECT service_id FROM maintenance_services WHERE maintenance_id = :m_id)'
-                        );
-                        $stmtSvc->execute([':m_id' => $maintId]);
+                        $serviceStmt->execute([':maintenance_id' => $maintId]);
+                        foreach ($serviceStmt->fetchAll(PDO::FETCH_COLUMN) as $affectedServiceId) {
+                            reconcileServiceStatus(
+                                $pdo,
+                                (int) $affectedServiceId,
+                                $adminId,
+                                "Cập nhật trạng thái bảo trì #{$maintId}"
+                            );
+                        }
                     }
 
                     $pdo->commit();
@@ -519,15 +523,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // ── CHẠY HEALTH CHECK TỰ ĐỘNG ────────────────────
             case 'run_health_check':
-                // Gọi API kiểm tra sức khỏe tự động
-                $hcUrl = "http://127.0.0.1/status_page/api/health_check.php?auto_update=1";
-                $ctx = stream_context_create(['http' => ['timeout' => 5]]);
-                $hcResult = @file_get_contents($hcUrl, false, $ctx);
-                $hcJson   = $hcResult ? json_decode($hcResult, true) : null;
-
-                $checked = $hcJson['checked_count'] ?? 0;
+                $healthCheck = runHealthChecks($pdo, null, true, $adminId);
+                $checked = $healthCheck['checked_count'];
                 logAction($pdo, $adminId, $adminName, 'run_health_check', 'system', null, "Chạy Health Check tự động: kiểm tra {$checked} dịch vụ");
-                setFlash('success', "Đã hoàn thành kiểm tra sức khỏe tự động ({$checked} dịch vụ). Hệ thống đã tự động ghi nhận độ trễ và trạng thái!");
+                $failedChecks = array_values(array_filter(
+                    $healthCheck['results'],
+                    static fn(array $result): bool =>
+                        ($result['check_status'] ?? null) !== 'skipped' &&
+                        ($result['is_healthy'] ?? false) !== true
+                ));
+                if ($failedChecks !== []) {
+                    $failedNames = implode(', ', array_column($failedChecks, 'name'));
+                    setFlash(
+                        'warning',
+                        'Health Check hoàn tất nhưng có ' . count($failedChecks) . ' dịch vụ lỗi hoặc URL không hợp lệ: ' . $failedNames
+                    );
+                } else {
+                    setFlash('success', "Đã hoàn thành Health Check ({$checked} dịch vụ).");
+                }
                 break;
         }
     } catch (Throwable $e) {

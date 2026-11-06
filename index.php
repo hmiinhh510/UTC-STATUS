@@ -5,6 +5,7 @@
  */
 declare(strict_types=1);
 session_start();
+header('Content-Type: text/html; charset=UTF-8');
 
 // Bắt buộc đăng nhập toàn hệ thống: Tuyệt đối chặn khách vãng lai
 if (!isset($_SESSION['admin_id'])) {
@@ -31,12 +32,8 @@ unset($_SESSION['flash']);
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <!-- Page Stylesheet (v2.2 cache-buster) -->
-  <link rel="stylesheet" href="assets/css/style.css?v=2.2" />
+  <!-- Page Stylesheet -->
+  <link rel="stylesheet" href="assets/css/style.css?v=2.3" />
 </head>
 
 <body>

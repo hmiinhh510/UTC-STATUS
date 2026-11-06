@@ -9,6 +9,7 @@ CREATE DATABASE IF NOT EXISTS `status_page_db`
     COLLATE utf8mb4_unicode_ci;
 
 USE `status_page_db`;
+SET NAMES utf8mb4;
 
 -- ------------------------------------------------------------
 -- 1. USERS (Tài khoản Quản trị & Biên tập viên)
@@ -258,10 +259,10 @@ CREATE TABLE IF NOT EXISTS `incident_reports` (
 -- Admin: admin / Admin@123
 -- Editor: editor / Editor@123
 INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`) VALUES
-  (1, 'admin',    'admin@utc.edu.vn',           'y$OntUUzXIfsOfmaIrPFKl/OWKbf4iGGVIwvbhCUXCrpaRyW3pfa0Za', 'admin'),
-  (2, 'editor',   'editor@utc.edu.vn',          'y$speVxhNBxpiXp8PBQMnt8e..3y2I27hzbUQ41/hRlegoQYM7UETB2', 'editor'),
-  (3, 'sinhvien', 'sinhvien@student.utc.edu.vn', 'y$Xo7q4r78F8TfJlh35q6cquGz27yI5w7aMhLqK0V5E2r1b9A2s1Z8W', 'student')
-  ON DUPLICATE KEY UPDATE `password` = VALUES(`password`), `role` = VALUES(`role`);
+  (1, 'admin',    'admin@utc.edu.vn',           '$2y$10$OntUUzXIfsOfmaIrPFKl/OWKbf4iGGVIwvbhCUXCrpaRyW3pfa0Za', 'admin'),
+  (2, 'editor',   'editor@utc.edu.vn',          '$2y$10$YEtnDp7QLF0bY/pWsgGwq.93mhHCdEcJHRhjoGtA86NaBTs8Tqbsm', 'editor'),
+  (3, 'sinhvien', 'sinhvien@student.utc.edu.vn', '$2y$10$m7Cci3kTQC6r.TBFtkrXBeti.8WGAmqPk1A3TSjC8.gWGX1f2dtnu', 'student')
+  ON DUPLICATE KEY UPDATE `id` = `id`;
 
 -- 2. Nhóm Dịch Vụ
 INSERT INTO `service_groups` (`id`, `name`, `description`, `sort_order`) VALUES

@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+header('Content-Type: text/html; charset=UTF-8');
 
 /**
  * UTC STATUS - Bảng Điều Hướng & Danh Mục Địa Chỉ Truy Cập Hệ Thống
@@ -202,13 +203,12 @@ $linksData = [
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <!-- Google Fonts Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=2.3" />
   <style>
     body {
       background-color: var(--bg-page);
       color: #1e293b;
-      font-family: 'Inter', sans-serif;
+      font-family: var(--font-family);
     }
 
     .urls-header {

@@ -69,7 +69,13 @@ status_page/
 - Cách 2: Sử dụng dòng lệnh Terminal:
   ```powershell
   & "C:\xampp\mysql\bin\mysql.exe" -u root -e "CREATE DATABASE IF NOT EXISTS status_page_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-  & "C:\xampp\mysql\bin\mysql.exe" -u root status_page_db < "C:\xampp\htdocs\status_page\database\schema.sql"
+  & "C:\xampp\mysql\bin\mysql.exe" --default-character-set=utf8mb4 -u root status_page_db < "C:\xampp\htdocs\status_page\database\schema.sql"
+  ```
+
+  Khi đã nhập SQL bằng client chưa cấu hình UTF-8 và nội dung tiếng Việt bị lỗi, có thể khôi phục các chuỗi CP850 bị ảnh hưởng mà không thay đổi trạng thái dịch vụ hoặc lịch sự cố:
+  ```powershell
+  & "C:\xampp\php\php.exe" "C:\xampp\htdocs\status_page\database\repair_encoding.php" --dry-run
+  & "C:\xampp\php\php.exe" "C:\xampp\htdocs\status_page\database\repair_encoding.php"
   ```
 
 ### Bước 4: Khởi tạo dữ liệu mẫu UTC

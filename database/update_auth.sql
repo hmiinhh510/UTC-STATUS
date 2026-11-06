@@ -5,6 +5,7 @@
 -- ============================================================
 
 USE `status_page_db`;
+SET NAMES utf8mb4;
 
 -- 1. Bổ sung các cột vào bảng `users` nếu chưa tồn tại
 SET @dbname = DATABASE();
@@ -77,4 +78,3 @@ DEALLOCATE PREPARE alterIfNotExists;
 -- 2. Cập nhật Họ tên mẫu cho tài khoản mặc định
 UPDATE `users` SET `full_name` = 'Quản trị viên UTC' WHERE `username` = 'admin' AND (`full_name` IS NULL OR `full_name` = '');
 UPDATE `users` SET `full_name` = 'Biên tập viên Vận hành' WHERE `username` = 'editor' AND (`full_name` IS NULL OR `full_name` = '');
-

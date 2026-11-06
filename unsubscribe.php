@@ -5,6 +5,7 @@
  */
 
 declare(strict_types=1);
+header('Content-Type: text/html; charset=UTF-8');
 require_once __DIR__ . '/config/database.php';
 
 $token = trim((string) ($_GET['token'] ?? ''));
@@ -55,7 +56,7 @@ if ($token !== '' && strlen($token) === 64) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hủy Nhận Thông Báo – UTC STATUS</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/style.css?v=2.3" />
   <style>
     body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background-color: var(--bg-page); }
     .box { max-width: 480px; width: 100%; background: #ffffff; border-radius: 16px; padding: 2.5rem; text-align: center; border: 1px solid var(--border-color); }
@@ -71,4 +72,3 @@ if ($token !== '' && strlen($token) === 64) {
   </div>
 </body>
 </html>
-

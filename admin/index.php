@@ -3,6 +3,7 @@
 
 declare(strict_types=1);
 session_start();
+header('Content-Type: text/html; charset=UTF-8');
 
 // ── 1. Authentication Check ──────────────────────────────────
 if (!isset($_SESSION['admin_id'])) {
@@ -665,12 +666,10 @@ foreach ($services as $svc) {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-  <!-- Google Fonts Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Custom Admin Stylesheet -->
-  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=2.3" />
   <style>
     .admin-nav-bar {
       background: #ffffff;

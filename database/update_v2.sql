@@ -5,6 +5,7 @@
 -- ============================================================
 
 USE `status_page_db`;
+SET NAMES utf8mb4;
 
 -- 1. Bổ sung cột `icon` và `check_url` vào bảng `services` nếu chưa có
 SET @dbname = DATABASE();
@@ -101,14 +102,15 @@ CREATE TABLE IF NOT EXISTS `service_status_history` (
 
 -- 5. Cập nhật tài khoản Admin và Editor với Bcrypt hash chuẩn:
 -- Admin: admin / Admin@123
+-- Chỉ tạo tài khoản mẫu nếu chưa có; không đặt lại mật khẩu/vai trò hiện tại.
 INSERT INTO `users` (`username`, `email`, `password`, `role`)
 VALUES ('admin', 'admin@utc.edu.vn', '$2y$10$OntUUzXIfsOfmaIrPFKl/OWKbf4iGGVIwvbhCUXCrpaRyW3pfa0Za', 'admin')
-ON DUPLICATE KEY UPDATE `password` = '$2y$10$OntUUzXIfsOfmaIrPFKl/OWKbf4iGGVIwvbhCUXCrpaRyW3pfa0Za', `role` = 'admin';
+ON DUPLICATE KEY UPDATE `id` = `id`;
 
 -- Editor: editor / Editor@123
 INSERT INTO `users` (`username`, `email`, `password`, `role`)
 VALUES ('editor', 'editor@utc.edu.vn', '$2y$10$speVxhNBxpiXp8PBQMnt8e..3y2I27hzbUQ41/hRlegoQYM7UETB2', 'editor')
-ON DUPLICATE KEY UPDATE `password` = '$2y$10$speVxhNBxpiXp8PBQMnt8e..3y2I27hzbUQ41/hRlegoQYM7UETB2', `role` = 'editor';
+ON DUPLICATE KEY UPDATE `id` = `id`;
 
 -- 6. Ghi lại một bản ghi khởi tạo trong nhật ký hoạt động
 INSERT INTO `activity_logs` (`username`, `action`, `target_type`, `details`, `ip_address`, `created_at`)

@@ -98,6 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // User Incident Report Form Handler
   document.getElementById('formUserReport')?.addEventListener('submit', handleUserReportSubmit);
+
+  // Theme Switcher & Campus Parking Real-time
+  initThemeSwitcher();
+  fetchParkingData();
+  startParkingPolling();
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -379,6 +384,21 @@ const STATUS_PAGE_FEATURES = [
     tooltip: 'Health Checks: Đo đạc độ trễ HTTP và kiểm tra endpoint live',
     actionRoute: '#health-checks',
     handler: 'openHealthChecksModal'
+  },
+  {
+    id: 'campus-parking',
+    code: 'PARKING',
+    title: 'Campus Parking',
+    subtitle: 'Bãi xe sân trường',
+    description: 'Theo dõi sức chứa bãi đỗ xe trực tiếp theo thời gian thực (Khu A, Khu B, Khu C).',
+    icon: 'fa-square-parking',
+    iconColor: '#059669', // Xanh lục bảo bãi xe
+    status: 'operational',
+    badgeColor: '#10b981',
+    badgeText: '',
+    tooltip: 'Bãi xe sân trường: Trạng thái & sức chứa chỗ đỗ xe thời gian thực',
+    actionRoute: '#campus-parking',
+    handler: 'openParkingModal'
   }
 ];
 
@@ -891,18 +911,22 @@ function openUserReportingModal() {
 async function handleUserReportSubmit(e) {
   e.preventDefault();
 
-  const nameEl    = document.getElementById('repName');
-  const emailEl   = document.getElementById('repEmail');
-  const serviceEl = document.getElementById('repServiceId');
-  const sevEl     = document.getElementById('repSeverity');
-  const titleEl   = document.getElementById('repTitle');
-  const descEl    = document.getElementById('repDesc');
-  const feedback  = document.getElementById('repFeedback');
-  const btn       = document.getElementById('btnSubmitReport');
+  const nameEl        = document.getElementById('repName');
+  const studentCodeEl = document.getElementById('repStudentCode');
+  const emailEl       = document.getElementById('repEmail');
+  const locationEl    = document.getElementById('repLocation');
+  const serviceEl     = document.getElementById('repServiceId');
+  const sevEl         = document.getElementById('repSeverity');
+  const titleEl       = document.getElementById('repTitle');
+  const descEl        = document.getElementById('repDesc');
+  const feedback      = document.getElementById('repFeedback');
+  const btn           = document.getElementById('btnSubmitReport');
 
   const payload = {
     reporter_name:  nameEl.value.trim(),
+    student_code:   studentCodeEl ? studentCodeEl.value.trim() : '',
     reporter_email: emailEl.value.trim(),
+    location:       locationEl ? locationEl.value.trim() : 'Khuôn viên trường',
     service_id:     serviceEl.value ? parseInt(serviceEl.value, 10) : null,
     severity:       sevEl.value,
     title:          titleEl.value.trim(),
@@ -1812,4 +1836,245 @@ function escHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  LIGHT / DARK MODE THEME SWITCHER
+// ══════════════════════════════════════════════════════════════
+function initThemeSwitcher() {
+  const savedTheme = localStorage.getItem('utc_theme') || 'light';
+  applyTheme(savedTheme);
+
+  // Hook change on slider switches
+  document.querySelectorAll('.utc-theme-switch-checkbox, #themeSwitchCheckbox').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const targetTheme = e.target.checked ? 'dark' : 'light';
+      applyTheme(targetTheme);
+    });
+  });
+
+  // Backward compatibility click handler for legacy buttons if any
+  const toggleBtn = document.getElementById('btnThemeToggle');
+  if (toggleBtn && !toggleBtn.hasAttribute('onclick')) {
+    toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    });
+  }
+}
+
+function applyTheme(theme) {
+  const isDark = (theme === 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-bs-theme', theme);
+  if (document.body) {
+    document.body.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-bs-theme', theme);
+  }
+  try { localStorage.setItem('utc_theme', theme); } catch (e) {}
+
+  // Synchronize all switch checkboxes
+  document.querySelectorAll('.utc-theme-switch-checkbox, #themeSwitchCheckbox').forEach(cb => {
+    cb.checked = isDark;
+  });
+
+  const icons = document.querySelectorAll('#iconThemeToggle, .icon-theme-toggle');
+  icons.forEach((iconEl) => {
+    if (isDark) {
+      iconEl.className = 'fa-solid fa-sun text-warning';
+      iconEl.parentElement?.setAttribute('title', 'Chuyển sang Giao diện Sáng (Light Mode)');
+    } else {
+      iconEl.className = 'fa-regular fa-moon';
+      iconEl.parentElement?.setAttribute('title', 'Chuyển sang Giao diện Tối (Dark Mode)');
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CAMPUS PARKING STATUS (REAL-TIME 10S POLLING)
+// ══════════════════════════════════════════════════════════════
+let parkingPollingTimer = null;
+let parkingCountdownTimer = null;
+let parkingCountdownSec = 10;
+
+function openParkingModal() {
+  const modalEl = document.getElementById('modalParkingStatus');
+  if (!modalEl) return;
+  fetchParkingData();
+  if (window.bootstrap && bootstrap.Modal) {
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    bsModal.show();
+  } else {
+    modalEl.classList.add('show');
+    modalEl.style.display = 'block';
+  }
+}
+
+async function fetchParkingData(showFlash = false) {
+  try {
+    const apiPath = window.location.pathname.includes('/admin/') ? '../api/parking.php' : 'api/parking.php';
+    const res = await fetch(`${apiPath}?t=${Date.now()}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data || !data.success) return;
+
+    renderParkingHomeCard(data.summary);
+    renderParkingModal(data);
+
+    if (showFlash) {
+      const flashBtn = document.querySelector('#modalParkingStatus .btn-outline-teal');
+      if (flashBtn) {
+        const orig = flashBtn.innerHTML;
+        flashBtn.innerHTML = '<i class="fa-solid fa-check text-success me-1"></i>Đã làm mới!';
+        setTimeout(() => { flashBtn.innerHTML = orig; }, 1500);
+      }
+    }
+  } catch (err) {
+    console.error('Fetch parking error:', err);
+  }
+}
+
+function renderParkingHomeCard(summary) {
+  if (!summary) return;
+
+  const countEl = document.getElementById('metricParkingCount');
+  const badgeEl = document.getElementById('metricParkingBadge');
+  const progressEl = document.getElementById('metricParkingProgressBar');
+
+  if (countEl) {
+    countEl.innerHTML = `${summary.occupied_count}/${summary.total_capacity} <span style="font-size: 0.95rem; font-weight: normal; opacity: 0.85;">(${summary.occupancy_pct}%)</span>`;
+  }
+
+  if (badgeEl) {
+    badgeEl.textContent = summary.status_label;
+    badgeEl.className = `badge ${summary.badge_class} rounded-pill px-2 py-0-5 small fw-700`;
+    if (summary.status === 'full' || summary.occupancy_pct >= 95) {
+      badgeEl.classList.add('pulse-danger');
+    } else {
+      badgeEl.classList.remove('pulse-danger');
+    }
+  }
+
+  if (progressEl) {
+    progressEl.style.width = `${summary.occupancy_pct}%`;
+    progressEl.className = 'parking-progress-bar';
+    if (summary.occupancy_pct >= 95 || summary.status === 'full') {
+      progressEl.classList.add('bg-danger');
+    } else if (summary.occupancy_pct >= 80) {
+      progressEl.classList.add('bg-warning');
+    } else {
+      progressEl.classList.add('bg-success');
+    }
+  }
+}
+
+function renderParkingModal(data) {
+  const s = data.summary;
+  const zones = data.zones || [];
+
+  const totalOccEl = document.getElementById('parkingModalTotalOccupied');
+  const totalCapEl = document.getElementById('parkingModalTotalCapacity');
+  const overallPctEl = document.getElementById('parkingModalOverallPct');
+  const overallBadgeEl = document.getElementById('parkingModalOverallBadge');
+  const lastUpdatedEl = document.getElementById('parkingLastUpdated');
+
+  if (totalOccEl) totalOccEl.textContent = s.occupied_count;
+  if (totalCapEl) totalCapEl.textContent = s.total_capacity;
+  if (overallPctEl) overallPctEl.textContent = `(${s.occupancy_pct}%)`;
+
+  if (overallBadgeEl) {
+    overallBadgeEl.textContent = s.status_label;
+    overallBadgeEl.className = `badge ${s.badge_class} px-3 py-2 rounded-pill fs-6 fw-700`;
+    if (s.status === 'full' || s.occupancy_pct >= 95) {
+      overallBadgeEl.classList.add('pulse-danger');
+    } else {
+      overallBadgeEl.classList.remove('pulse-danger');
+    }
+  }
+
+  if (lastUpdatedEl) {
+    lastUpdatedEl.textContent = `Cập nhật: ${s.last_updated}`;
+  }
+
+  const container = document.getElementById('parkingZonesContainer');
+  if (!container) return;
+
+  container.innerHTML = zones.map(z => {
+    const isFull = z.status === 'full' || z.occupancy_pct >= 95;
+    const isCrowded = !isFull && z.occupancy_pct >= 80;
+    const barCls = isFull ? 'bg-danger' : (isCrowded ? 'bg-warning' : 'bg-success');
+    const badgePulse = isFull ? 'pulse-danger' : '';
+
+    const icon = z.vehicle_type.includes('Ô tô') ? 'fa-car' : 'fa-motorcycle';
+
+    return `
+      <div class="col-md-4">
+        <div class="parking-zone-card h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge bg-secondary-subtle text-secondary-emphasis px-2 py-1 rounded small fw-600">
+                <i class="fa-solid ${icon} me-1"></i>${escHtml(z.vehicle_type)}
+              </span>
+              <span class="badge ${z.badge_class} rounded-pill px-2 py-1 small fw-700 ${badgePulse}">
+                ${escHtml(z.status_label)}
+              </span>
+            </div>
+            <h6 class="fw-700 mb-1 text-dark">${escHtml(z.name)}</h6>
+            <div class="small text-muted mb-3" style="font-size:0.8rem">
+              <i class="fa-solid fa-location-dot me-1 text-teal"></i>${escHtml(z.location_note)}
+            </div>
+          </div>
+
+          <div>
+            <div class="d-flex align-items-baseline justify-content-between mb-1">
+              <span class="small text-muted">Đã gửi:</span>
+              <span class="fw-800 fs-5 text-dark">${z.occupied_count} <span class="small fw-normal text-muted">/ ${z.total_capacity} xe</span></span>
+            </div>
+            <div class="progress" style="height: 10px; border-radius: 999px; background: rgba(0,0,0,0.06);">
+              <div class="progress-bar ${barCls}" style="width: ${z.occupancy_pct}%; transition: width 0.5s ease;"></div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
+              <span>Còn trống: <strong class="text-success">${z.available_count}</strong> chỗ</span>
+              <span class="fw-700 text-dark">${z.occupancy_pct}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function startParkingPolling() {
+  clearInterval(parkingPollingTimer);
+  clearInterval(parkingCountdownTimer);
+
+  parkingCountdownSec = 10;
+  parkingCountdownTimer = setInterval(() => {
+    parkingCountdownSec--;
+    const el = document.getElementById('parkingCountdown');
+    if (el) el.textContent = parkingCountdownSec;
+    if (parkingCountdownSec <= 0) {
+      parkingCountdownSec = 10;
+    }
+  }, 1000);
+
+  parkingPollingTimer = setInterval(async () => {
+    await fetchParkingData();
+    parkingCountdownSec = 10;
+  }, 10000); // 10 giây
+}
+
+// Expose functions globally for inline HTML onclick attributes
+window.openParkingModal = openParkingModal;
+window.fetchParkingData = fetchParkingData;
+window.applyUtcTheme = applyTheme;
+if (typeof window.toggleUtcTheme !== 'function') {
+  window.toggleUtcTheme = function() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+    localStorage.setItem('utc_theme', newTheme);
+  };
 }

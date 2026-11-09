@@ -30,7 +30,9 @@ if (!is_array($body)) {
 }
 
 $reporterName  = trim($body['reporter_name'] ?? '');
+$studentCode   = trim($body['student_code'] ?? '');
 $reporterEmail = trim($body['reporter_email'] ?? '');
+$location      = trim($body['location'] ?? 'Khuôn viên trường');
 $title         = trim($body['title'] ?? '');
 $description   = trim($body['description'] ?? '');
 $serviceId     = !empty($body['service_id']) ? (int) $body['service_id'] : null;
@@ -77,13 +79,15 @@ try {
 
     $stmt = $pdo->prepare(
         'INSERT INTO incident_reports 
-            (service_id, reporter_name, reporter_email, title, description, severity, status, created_at)
+            (service_id, location, reporter_name, student_code, reporter_email, title, description, severity, status, created_at, updated_at)
          VALUES 
-            (:service_id, :reporter_name, :reporter_email, :title, :description, :severity, "pending", NOW())'
+            (:service_id, :location, :reporter_name, :student_code, :reporter_email, :title, :description, :severity, "pending", NOW(), NOW())'
     );
     $stmt->execute([
         ':service_id'     => $serviceId,
+        ':location'       => $location ?: 'Khuôn viên trường',
         ':reporter_name'  => $reporterName,
+        ':student_code'   => $studentCode ?: null,
         ':reporter_email' => $reporterEmail,
         ':title'          => $title,
         ':description'    => $description,

@@ -231,18 +231,22 @@ CREATE TABLE IF NOT EXISTS `service_status_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
--- 13. INCIDENT_REPORTS (Tiếp nhận báo cáo sự cố từ người dùng / User Triage)
+-- 13. INCIDENT_REPORTS (Tiếp nhận báo cáo sự cố từ người dùng / User Triage & FIFO Queue)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `incident_reports` (
     `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `service_id`     INT UNSIGNED DEFAULT NULL,
+    `location`       VARCHAR(150) DEFAULT NULL,
     `reporter_name`  VARCHAR(100) NOT NULL,
+    `student_code`   VARCHAR(50) DEFAULT NULL,
     `reporter_email` VARCHAR(150) NOT NULL,
     `title`          VARCHAR(255) NOT NULL,
     `description`    TEXT NOT NULL,
+    `admin_note`     TEXT DEFAULT NULL,
     `severity`       ENUM('low', 'medium', 'high', 'critical') NOT NULL DEFAULT 'medium',
-    `status`         ENUM('pending', 'triaged', 'confirmed', 'rejected') NOT NULL DEFAULT 'pending',
+    `status`         ENUM('pending', 'in_progress', 'resolved', 'rejected', 'triaged', 'confirmed') NOT NULL DEFAULT 'pending',
     `created_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_ir_service_id` (`service_id`),
     KEY `idx_ir_status`     (`status`),
@@ -250,6 +254,24 @@ CREATE TABLE IF NOT EXISTS `incident_reports` (
     CONSTRAINT `fk_ir_service`
         FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
         ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- 14. PARKING_ZONES (Hệ thống thông báo trạng thái bãi xe sân trường UTC)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `parking_zones` (
+    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `zone_code`      VARCHAR(20) NOT NULL UNIQUE,
+    `name`           VARCHAR(100) NOT NULL,
+    `vehicle_type`   VARCHAR(50) NOT NULL DEFAULT 'Xe máy',
+    `total_capacity` INT UNSIGNED NOT NULL DEFAULT 500,
+    `occupied_count` INT UNSIGNED NOT NULL DEFAULT 0,
+    `status`         ENUM('available', 'crowded', 'full') NOT NULL DEFAULT 'available',
+    `location_note`  VARCHAR(255) DEFAULT NULL,
+    `sort_order`     TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    `updated_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_pz_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
@@ -295,15 +317,15 @@ ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 
 -- 3. Dịch Vụ Chuẩn UTC Status
 INSERT INTO `services` (`id`, `group_id`, `name`, `description`, `icon`, `status`, `sort_order`, `check_url`) VALUES
-(1, 3, 'Email sinh viên',          'Dịch vụ mail @student.utc.edu.vn',                'fa-envelope',       'operational',   1, 'https://mail.google.com'),
-(2, 2, 'LMS (Moodle)',             'Hệ thống bài giảng và thi trực tuyến của trường', 'fa-graduation-cap', 'major_outage',  2, 'https://elearning.utc.edu.vn'),
-(3, 2, 'Cổng thông tin sinh viên', 'Tra cứu điểm thi, lịch thi và thủ tục sinh viên', 'fa-user',           'operational',   3, 'https://sv.utc.edu.vn'),
-(4, 2, 'Đăng ký học phần',         'Hệ thống đăng ký tín chỉ và thời khóa biểu',      'fa-calendar-check', 'operational',   4, 'https://dkmh.utc.edu.vn'),
-(5, 2, 'Học phí trực tuyến',       'Cổng thanh toán học phí qua ngân hàng điện tử',   'fa-dollar-sign',    'operational',   5, 'https://hocphi.utc.edu.vn'),
+(1, 3, 'Email sinh viên',          'Dịch vụ mail @student.utc.edu.vn',                'fa-envelope',       'operational',   1, NULL),
+(2, 2, 'LMS (Moodle)',             'Hệ thống bài giảng và thi trực tuyến của trường', 'fa-graduation-cap', 'major_outage',  2, NULL),
+(3, 2, 'Cổng thông tin sinh viên', 'Tra cứu điểm thi, lịch thi và thủ tục sinh viên', 'fa-user',           'operational',   3, NULL),
+(4, 2, 'Đăng ký học phần',         'Hệ thống đăng ký tín chỉ và thời khóa biểu',      'fa-calendar-check', 'operational',   4, NULL),
+(5, 2, 'Học phí trực tuyến',       'Cổng thanh toán học phí qua ngân hàng điện tử',   'fa-dollar-sign',    'operational',   5, NULL),
 (6, 1, 'Wifi eduroam',             'Mạng Wi-Fi chuyển vùng toàn cầu khuôn viên UTC',  'fa-wifi',           'operational',   6, NULL),
-(7, 2, 'Thư viện số',              'Hệ thống mượn trả sách và tài liệu điện tử',      'fa-book-open',      'maintenance',   7, 'https://thuvien.utc.edu.vn'),
-(8, 2, 'Website trường',           'Cổng thông tin điện tử trường (utc.edu.vn)',      'fa-globe',          'operational',   8, 'https://utc.edu.vn'),
-(9, 3, 'Microsoft Teams',          'Hệ thống phòng họp và học online khoa/viện',      'fa-video',          'operational',   9, 'https://teams.microsoft.com')
+(7, 2, 'Thư viện số',              'Hệ thống mượn trả sách và tài liệu điện tử',      'fa-book-open',      'maintenance',   7, NULL),
+(8, 2, 'Website trường',           'Cổng thông tin điện tử trường (utc.edu.vn)',      'fa-globe',          'operational',   8, NULL),
+(9, 3, 'Microsoft Teams',          'Hệ thống phòng họp và học online khoa/viện',      'fa-video',          'operational',   9, NULL)
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `icon` = VALUES(`icon`), `status` = VALUES(`status`), `check_url` = VALUES(`check_url`);
 
 -- 4. Sự cố mẫu

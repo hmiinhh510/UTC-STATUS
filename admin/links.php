@@ -85,7 +85,7 @@ $linksData = [
       [
         'name' => 'Quản Lý Dịch Vụ (Services CRUD)',
         'path' => '/admin/index.php#tab-services',
-        'desc' => 'Thêm mới, chỉnh sửa thông tin, biểu tượng, check_url và xóa dịch vụ (Quyền Admin).',
+        'desc' => 'Thêm mới, chỉnh sửa thông tin, biểu tượng và xóa dịch vụ (Quyền Admin).',
         'method' => 'GET',
         'target' => '_self'
       ],

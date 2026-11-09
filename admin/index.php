@@ -66,7 +66,10 @@ function canPerform(string $action, string $role): bool {
             'resolve_incident',
             'create_maintenance',
             'update_maintenance_status',
-            'run_health_check'
+            'run_health_check',
+            'update_fifo_incident',
+            'update_parking_zone',
+            'quick_parking_status'
         ];
         return in_array($action, $editorAllowedActions, true);
     }
@@ -742,6 +745,99 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     setFlash('info', "Đã hủy yêu cầu #{$reqId}.");
                 }
                 break;
+
+            // ── CẬP NHẬT TRẠNG THÁI SỰ CỐ THEO HÀNG ĐỢI FIFO ─────────────────
+            case 'update_fifo_incident':
+                $reportId  = (int) ($_POST['report_id'] ?? 0);
+                $newStatus = trim($_POST['status'] ?? '');
+                $adminNote = trim($_POST['admin_note'] ?? '');
+
+                $allowedStatuses = ['pending', 'in_progress', 'resolved', 'rejected'];
+                if ($reportId <= 0 || !in_array($newStatus, $allowedStatuses, true)) {
+                    setFlash('danger', 'Mã sự cố hoặc trạng thái cập nhật không hợp lệ.');
+                    break;
+                }
+
+                $stmt = $pdo->prepare('SELECT id, title, status FROM incident_reports WHERE id = :id');
+                $stmt->execute([':id' => $reportId]);
+                $rep = $stmt->fetch();
+
+                if (!$rep) {
+                    setFlash('danger', 'Không tìm thấy sự cố.');
+                    break;
+                }
+
+                $upStmt = $pdo->prepare('UPDATE incident_reports SET status = :status, admin_note = :note, updated_at = NOW() WHERE id = :id');
+                $upStmt->execute([':status' => $newStatus, ':note' => $adminNote, ':id' => $reportId]);
+
+                logAction($pdo, $adminId, $adminName, 'update_fifo_incident', 'incident_report', $reportId, "Đổi trạng thái sự cố FIFO [#{$reportId}] sang [{$newStatus}] - Ghi chú: {$adminNote}");
+                setFlash('success', "Đã cập nhật trạng thái sự cố FIFO #{$reportId} sang [{$newStatus}] thành công!");
+                break;
+
+            // ── CẬP NHẬT CHI TIẾT SỨC CHỨA BÃI XE ──────────────────────────────
+            case 'update_parking_zone':
+                $zoneId   = (int) ($_POST['zone_id'] ?? 0);
+                $occupied = (int) ($_POST['occupied_count'] ?? 0);
+                $capacity = (int) ($_POST['total_capacity'] ?? 0);
+                $status   = trim($_POST['status'] ?? 'auto');
+                $note     = trim($_POST['location_note'] ?? '');
+
+                if ($zoneId <= 0 || $capacity <= 0 || $occupied < 0) {
+                    setFlash('danger', 'Thông tin bãi xe không hợp lệ.');
+                    break;
+                }
+
+                $pct = round(($occupied / $capacity) * 100);
+                if ($status === 'auto') {
+                    if ($pct >= 95) $status = 'full';
+                    elseif ($pct >= 80) $status = 'crowded';
+                    else $status = 'available';
+                }
+
+                $upPz = $pdo->prepare('UPDATE parking_zones SET occupied_count = :occ, total_capacity = :cap, status = :st, location_note = :note, updated_at = NOW() WHERE id = :id');
+                $upPz->execute([
+                    ':occ'  => $occupied,
+                    ':cap'  => $capacity,
+                    ':st'   => $status,
+                    ':note' => $note,
+                    ':id'   => $zoneId
+                ]);
+
+                logAction($pdo, $adminId, $adminName, 'update_parking_zone', 'parking_zone', $zoneId, "Cập nhật sức chứa bãi xe #{$zoneId}: {$occupied}/{$capacity} xe ({$status})");
+                setFlash('success', "Đã cập nhật dữ liệu bãi xe thành công!");
+                break;
+
+            // ── ĐỔI NHANH TRẠNG THÁI BÃI XE ("CÒN CHỖ" / "ĐÃ ĐẦY") ───────────
+            case 'quick_parking_status':
+                $zoneId = (int) ($_POST['zone_id'] ?? 0);
+                $target = trim($_POST['target_status'] ?? '');
+
+                $stmt = $pdo->prepare('SELECT id, name, total_capacity, occupied_count FROM parking_zones WHERE id = :id');
+                $stmt->execute([':id' => $zoneId]);
+                $pz = $stmt->fetch();
+
+                if (!$pz) {
+                    setFlash('danger', 'Không tìm thấy phân khu bãi xe.');
+                    break;
+                }
+
+                $cap = (int) $pz['total_capacity'];
+                if ($target === 'full') {
+                    $newOcc = $cap;
+                    $newSt = 'full';
+                    $msg = "Đã chuyển phân khu [{$pz['name']}] sang trạng thái ĐÃ ĐẦY (100%)!";
+                } else {
+                    $newOcc = (int) round($cap * 0.5);
+                    $newSt = 'available';
+                    $msg = "Đã chuyển phân khu [{$pz['name']}] sang trạng thái CÒN CHỖ (50%)!";
+                }
+
+                $upQuick = $pdo->prepare('UPDATE parking_zones SET occupied_count = :occ, status = :st, updated_at = NOW() WHERE id = :id');
+                $upQuick->execute([':occ' => $newOcc, ':st' => $newSt, ':id' => $zoneId]);
+
+                logAction($pdo, $adminId, $adminName, 'quick_parking_status', 'parking_zone', $zoneId, $msg);
+                setFlash('success', $msg);
+                break;
         }
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
@@ -751,7 +847,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         setFlash('danger', 'Lỗi hệ thống: ' . $e->getMessage());
     }
 
-    header('Location: index.php');
+    $targetHash = '';
+    if (in_array($action, ['create_user', 'reset_user_password', 'change_user_role', 'toggle_user_status', 'delete_user', 'approve_reset_request', 'cancel_reset_request'], true)) {
+        $targetHash = '#tab-subscribers';
+    } elseif (in_array($action, ['create_incident', 'add_incident_update', 'resolve_incident'], true)) {
+        $targetHash = '#tab-incidents';
+    } elseif (in_array($action, ['create_maintenance', 'update_maintenance_status'], true)) {
+        $targetHash = '#tab-maintenances';
+    } elseif (in_array($action, ['create_group', 'delete_group'], true)) {
+        $targetHash = '#tab-groups';
+    } elseif ($action === 'update_fifo_incident') {
+        $targetHash = '#tab-fifo-incidents';
+    } elseif (in_array($action, ['update_parking_zone', 'quick_parking_status'], true)) {
+        $targetHash = '#tab-parking';
+    }
+
+    header('Location: index.php' . $targetHash);
     exit;
 }
 
@@ -930,6 +1041,29 @@ for ($i = 2; $i >= 0; $i--) {
         'maintenances' => $maintCnt
     ];
 }
+
+// ── 6. Fetch FIFO Incident Reports (Thứ tự ưu tiên báo trước xử lý trước) ─────
+$fifoIncidentsStmt = $pdo->query('
+    SELECT ir.*, COALESCE(s.name, "Hệ thống chung") AS service_name, COALESCE(s.icon, "fa-server") AS service_icon
+    FROM incident_reports ir
+    LEFT JOIN services s ON ir.service_id = s.id
+    ORDER BY 
+        CASE WHEN ir.status NOT IN ("resolved", "rejected") THEN 0 ELSE 1 END ASC,
+        ir.created_at ASC
+');
+$fifoIncidents = $fifoIncidentsStmt->fetchAll();
+$pendingFifoCount = count(array_filter($fifoIncidents, fn($r) => in_array($r['status'], ['pending', 'in_progress', 'triaged', 'confirmed'], true)));
+
+// ── 7. Fetch Campus Parking Status (Sức chứa bãi xe sân trường UTC) ───────────
+$parkingZonesStmt = $pdo->query('SELECT * FROM parking_zones ORDER BY sort_order ASC, id ASC');
+$parkingZones = $parkingZonesStmt->fetchAll();
+$totalParkingCap = 0;
+$totalParkingOcc = 0;
+foreach ($parkingZones as $pz) {
+    $totalParkingCap += (int) $pz['total_capacity'];
+    $totalParkingOcc += (int) $pz['occupied_count'];
+}
+$parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalParkingCap) * 100, 1) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -945,14 +1079,59 @@ for ($i = 2; $i >= 0; $i--) {
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Custom Admin Stylesheet -->
-  <link rel="stylesheet" href="../assets/css/style.css?v=2.3" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=3.6" />
+  <script>
+    function applyUtcTheme(theme) {
+      var isDark = (theme === 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      if (document.body) {
+        document.body.setAttribute('data-theme', theme);
+        document.body.setAttribute('data-bs-theme', theme);
+      }
+      try { localStorage.setItem('utc_theme', theme); } catch (e) {}
+
+      // Đồng bộ checkbox slider switch
+      var cbs = document.querySelectorAll('.utc-theme-switch-checkbox, #adminThemeSwitchCheckbox, #themeSwitchCheckbox');
+      cbs.forEach(function(cb) {
+        cb.checked = isDark;
+      });
+
+      var icons = document.querySelectorAll('#iconThemeToggle, .icon-theme-toggle');
+      icons.forEach(function(icon) {
+        if (isDark) {
+          icon.className = 'fa-solid fa-sun text-warning';
+          if (icon.parentElement) icon.parentElement.setAttribute('title', 'Chuyển sang Giao diện Sáng (Light Mode)');
+        } else {
+          icon.className = 'fa-regular fa-moon';
+          if (icon.parentElement) icon.parentElement.setAttribute('title', 'Chuyển sang Giao diện Tối (Dark Mode)');
+        }
+      });
+    }
+
+    function toggleUtcTheme(forcedTheme) {
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      var next = (typeof forcedTheme === 'string') ? forcedTheme : (current === 'dark' ? 'light' : 'dark');
+      applyUtcTheme(next);
+    }
+
+    (function() {
+      var saved = 'light';
+      try { saved = localStorage.getItem('utc_theme') || 'light'; } catch (e) {}
+      document.documentElement.setAttribute('data-theme', saved);
+      document.documentElement.setAttribute('data-bs-theme', saved);
+      document.addEventListener('DOMContentLoaded', function() {
+        applyUtcTheme(saved);
+      });
+    })();
+  </script>
   <style>
     .admin-nav-bar {
-      background: #ffffff;
+      background: var(--bg-card);
       border-bottom: 1px solid var(--border-color);
     }
     .kpi-stat-box {
-      background: #ffffff;
+      background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 1.2rem;
@@ -1088,6 +1267,19 @@ for ($i = 2; $i >= 0; $i--) {
           </button>
         </form>
 
+        <!-- Nút gạt chuyển đổi giao diện Sáng / Tối (Toggle Switch Slider) -->
+        <div class="utc-theme-slider-container" title="Gạt để chuyển đổi Sáng / Tối">
+          <input type="checkbox" id="adminThemeSwitchCheckbox" class="utc-theme-switch-checkbox" aria-label="Chuyển đổi giao diện Sáng / Tối" onchange="toggleUtcTheme(this.checked ? 'dark' : 'light')">
+          <label for="adminThemeSwitchCheckbox" class="utc-theme-switch-track">
+            <span class="switch-side switch-side-light" title="Chế độ Sáng"><i class="fa-solid fa-sun"></i></span>
+            <span class="switch-side switch-side-dark" title="Chế độ Tối"><i class="fa-solid fa-moon"></i></span>
+            <span class="utc-theme-switch-knob">
+              <i class="fa-solid fa-sun knob-icon-sun"></i>
+              <i class="fa-solid fa-moon knob-icon-moon"></i>
+            </span>
+          </label>
+        </div>
+
         <div class="text-end d-none d-sm-block">
           <div class="fw-700 fs-6"><?= htmlspecialchars($adminName) ?></div>
           <div>
@@ -1195,6 +1387,24 @@ for ($i = 2; $i >= 0; $i--) {
           </div>
         </div>
       </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="kpi-stat-box" role="button" onclick="document.querySelector('button[data-bs-target=\'#tab-fifo-incidents\']').click()" title="Xem hàng đợi sự cố FIFO">
+          <div class="kpi-icon-box bg-danger-subtle text-danger"><i class="fa-solid fa-list-ol"></i></div>
+          <div>
+            <div class="fs-4 fw-800 text-danger"><?= $pendingFifoCount ?></div>
+            <div class="small text-muted text-uppercase">Hàng Đợi FIFO</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="kpi-stat-box" role="button" onclick="document.querySelector('button[data-bs-target=\'#tab-parking\']').click()" title="Xem quản lý bãi xe sân trường">
+          <div class="kpi-icon-box bg-success-subtle text-success"><i class="fa-solid fa-square-parking"></i></div>
+          <div>
+            <div class="fs-4 fw-800 text-success"><?= $totalParkingOcc ?>/<?= $totalParkingCap ?></div>
+            <div class="small text-muted text-uppercase">Bãi Xe (<?= $parkingOverallPct ?>%)</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Navigation Tabs -->
@@ -1218,6 +1428,19 @@ for ($i = 2; $i >= 0; $i--) {
         </button>
       </li>
       <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-fifo-incidents">
+          <i class="fa-solid fa-list-ol me-1"></i>Hàng Đợi Sự Cố (FIFO)
+          <?php if ($pendingFifoCount > 0): ?>
+            <span class="badge bg-danger rounded-pill ms-1" title="Có <?= $pendingFifoCount ?> sự cố đang chờ xử lý"><?= $pendingFifoCount ?></span>
+          <?php endif; ?>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-parking">
+          <i class="fa-solid fa-square-parking me-1"></i>Quản Lý Bãi Xe
+        </button>
+      </li>
+      <li class="nav-item">
         <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-groups">
           <i class="fa-solid fa-layer-group me-1"></i>Nhóm Dịch vụ
         </button>
@@ -1234,7 +1457,7 @@ for ($i = 2; $i >= 0; $i--) {
       </li>
       <li class="nav-item">
         <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-subscribers">
-          <i class="fa-solid fa-users-gear me-1"></i>Người Đăng ký &amp; Tài khoản
+          <i class="fa-solid fa-users-gear me-1"></i>Tài Khoản &amp; Sinh Viên
           <?php if ($pendingResetCount > 0): ?>
             <span class="badge bg-danger rounded-pill ms-1" title="Có <?= $pendingResetCount ?> yêu cầu cấp lại mật khẩu"><?= $pendingResetCount ?></span>
           <?php endif; ?>
@@ -2066,7 +2289,7 @@ for ($i = 2; $i >= 0; $i--) {
       </div>
 
       <!-- ========================================================
-           TAB 7: QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG & NGƯỜI ĐĂNG KÝ
+           TAB 7: QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG & SINH VIÊN
       ======================================================== -->
       <div class="tab-pane fade" id="tab-subscribers">
         <div class="utc-card p-4">
@@ -2074,9 +2297,9 @@ for ($i = 2; $i >= 0; $i--) {
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <div>
               <h5 class="fw-800 mb-0" style="color:var(--teal-primary)">
-                <i class="fa-solid fa-users-gear me-2"></i>Quản Lý Tài Khoản &amp; Người Đăng Ký
+                <i class="fa-solid fa-users-gear me-2"></i>Quản Lý Tài Khoản &amp; Sinh Viên
               </h5>
-              <p class="text-muted small mb-0">Quản trị danh sách tài khoản sinh viên/quản trị, xử lý yêu cầu quên mật khẩu và danh bạ đăng ký nhận cảnh báo.</p>
+              <p class="text-muted small mb-0">Quản trị danh sách tài khoản sinh viên/quản trị và xử lý các yêu cầu quên mật khẩu của sinh viên.</p>
             </div>
             <div class="d-flex align-items-center gap-2">
               <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreateUser" style="background-color:var(--teal-primary);border-color:var(--teal-primary)">
@@ -2101,12 +2324,6 @@ for ($i = 2; $i >= 0; $i--) {
                 <?php else: ?>
                   <span class="badge bg-light text-dark border ms-1"><?= count($resetRequests) ?></span>
                 <?php endif; ?>
-              </button>
-            </li>
-            <li class="nav-item">
-              <button class="nav-link btn-sm" data-bs-toggle="pill" data-bs-target="#subtab-subscribers">
-                <i class="fa-solid fa-envelope me-1"></i>Đăng Ký Nhận Cảnh Báo
-                <span class="badge bg-light text-dark border ms-1"><?= count($subscribers) ?></span>
               </button>
             </li>
           </ul>
@@ -2285,40 +2502,303 @@ for ($i = 2; $i >= 0; $i--) {
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- 3. SUBTAB: ĐĂNG KÝ NHẬN CẢNH BÁO (SUBSCRIPTIONS) -->
-            <div class="tab-pane fade" id="subtab-subscribers">
-              <div class="table-responsive admin-table border">
-                <table class="table align-middle mb-0">
-                  <thead>
-                    <tr><th>ID</th><th>Hình Thức</th><th>Địa Chỉ Nhận Thông Báo</th><th>Trạng Thái Xác Thực</th><th>Thời Gian Đăng Ký</th><th>Link Kích Hoạt / Hủy</th></tr>
-                  </thead>
-                  <tbody>
-                    <?php if (empty($subscribers)): ?>
-                      <tr><td colspan="6" class="text-center py-4 text-muted">Chưa có ai đăng ký.</td></tr>
-                    <?php else: foreach ($subscribers as $sub): ?>
-                      <tr>
-                        <td><code>#<?= $sub['id'] ?></code></td>
-                        <td><span class="badge bg-light text-dark border"><?= strtoupper($sub['type']) ?></span></td>
-                        <td><strong><?= htmlspecialchars($sub['endpoint']) ?></strong></td>
-                        <td>
-                          <?php if ((int)$sub['verified'] === 1): ?>
-                            <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Đã Xác Thực</span>
-                          <?php else: ?>
-                            <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Chờ Xác Minh</span>
-                          <?php endif; ?>
-                        </td>
-                        <td><?= date('d/m/Y H:i', strtotime($sub['created_at'])) ?></td>
-                        <td>
-                          <a href="../verify.php?token=<?= htmlspecialchars($sub['token']) ?>" target="_blank" class="btn btn-sm btn-outline-info py-0" style="font-size:0.75rem" title="Mở liên kết xác minh">Kích hoạt</a>
-                          <a href="../unsubscribe.php?token=<?= htmlspecialchars($sub['token']) ?>" target="_blank" class="btn btn-sm btn-outline-danger py-0 ms-1" style="font-size:0.75rem" title="Mở liên kết hủy">Hủy</a>
-                        </td>
-                      </tr>
-                    <?php endforeach; endif; ?>
-                  </tbody>
-                </table>
+      <!-- ========================================================
+           TAB 4: HÀNG ĐỢI SỰ CỐ FIFO & LỊCH BÁO CÁO (FIRST-IN, FIRST-OUT)
+      ======================================================== -->
+      <div class="tab-pane fade" id="tab-fifo-incidents">
+        <div class="utc-card p-4">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+              <h5 class="utc-card-title mb-1 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-list-ol text-danger"></i>Hàng Đợi &amp; Lịch Báo Cáo Sự Cố Ưu Tiên FIFO
+              </h5>
+              <p class="text-muted small mb-0">
+                Cơ chế hàng đợi FIFO (First-In, First-Out): Sự cố nào được người dùng/sinh viên gửi trước sẽ được đánh số thứ tự (#1, #2, #3...) và ưu tiên xử lý trước.
+              </p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1-5 rounded-pill fw-700">
+                <i class="fa-solid fa-clock me-1"></i><?= $pendingFifoCount ?> sự cố chờ xử lý
+              </span>
+            </div>
+          </div>
+
+          <!-- Bộ lọc hàng đợi FIFO theo ngày & trạng thái -->
+          <div class="fifo-calendar-filter mb-4 p-3 rounded-3" style="background: var(--bg-card); border: 1px solid var(--border-color);">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-3">
+                <label class="form-label small fw-700 mb-1 text-muted"><i class="fa-regular fa-calendar me-1 text-teal"></i>Lọc theo ngày gửi:</label>
+                <input type="date" id="fifoDateFilter" class="form-control form-control-sm" onchange="filterFifoTable()" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-700 mb-1 text-muted"><i class="fa-solid fa-filter me-1 text-primary"></i>Trạng thái xử lý:</label>
+                <select id="fifoStatusFilter" class="form-select form-select-sm" onchange="filterFifoTable()">
+                  <option value="all">-- Tất cả trạng thái --</option>
+                  <option value="pending">🟡 Chờ xử lý</option>
+                  <option value="in_progress">🔵 Đang xử lý</option>
+                  <option value="resolved">🟢 Đã hoàn thành</option>
+                  <option value="rejected">⚪ Đã từ chối</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-700 mb-1 text-muted"><i class="fa-solid fa-magnifying-glass me-1"></i>Tìm theo Mã SV / Tên / Dịch vụ:</label>
+                <input type="text" id="fifoSearchInput" class="form-control form-control-sm" placeholder="Nhập tên SV, mã sinh viên, phòng học..." oninput="filterFifoTable()" />
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="resetFifoFilters()">
+                  <i class="fa-solid fa-rotate-left me-1"></i>Đặt lại
+                </button>
               </div>
             </div>
+          </div>
+
+          <!-- Bảng danh sách hàng đợi sự cố FIFO -->
+          <div class="admin-table fifo-table-container">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="fifoTable">
+                <thead>
+                  <tr>
+                    <th class="text-center" style="width: 80px;">ƯU TIÊN FIFO</th>
+                    <th style="min-width: 170px;">MÃ SV &amp; NGƯỜI BÁO</th>
+                    <th style="min-width: 160px;">THỜI GIAN GỬI</th>
+                    <th style="min-width: 160px;">VỊ TRÍ &amp; DỊCH VỤ</th>
+                    <th style="min-width: 250px;">TIÊU ĐỀ &amp; CHI TIẾT SỰ CỐ</th>
+                    <th style="width: 110px;">MỨC ĐỘ</th>
+                    <th style="width: 130px;">TRẠNG THÁI</th>
+                    <th class="text-end" style="width: 120px;">THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if (empty($fifoIncidents)): ?>
+                    <tr>
+                      <td colspan="8" class="text-center text-muted py-5">
+                        <i class="fa-solid fa-circle-check text-success fs-2 mb-2 d-block"></i>
+                        Không có sự cố nào trong hàng đợi. Tất cả dịch vụ đang vận hành ổn định!
+                      </td>
+                    </tr>
+                  <?php else: 
+                    $fifoRank = 1;
+                    $now = time();
+                    foreach ($fifoIncidents as $rep): 
+                      $isUnresolved = ($rep['status'] !== 'resolved' && $rep['status'] !== 'rejected');
+                      $rankDisplay = $isUnresolved ? ('#' . $fifoRank++) : '-';
+                      $isTopPriority = ($rankDisplay === '#1');
+                      $createdTs = strtotime($rep['created_at']);
+                      $diffMins = max(0, (int) round(($now - $createdTs) / 60));
+                      $waitText = $diffMins < 60 ? "{$diffMins} phút trước" : (int) floor($diffMins / 60) . 'h ' . ($diffMins % 60) . 'm trước';
+                      $dateStr = date('Y-m-d', $createdTs);
+                  ?>
+                    <tr class="fifo-row <?= $isTopPriority ? 'table-warning' : '' ?>" 
+                        data-status="<?= htmlspecialchars($rep['status']) ?>"
+                        data-date="<?= $dateStr ?>"
+                        data-search="<?= htmlspecialchars(strtolower(($rep['student_code'] ?? '') . ' ' . $rep['reporter_name'] . ' ' . $rep['service_name'] . ' ' . $rep['title'] . ' ' . ($rep['location'] ?? ''))) ?>">
+                      <!-- Cột 1: Ưu tiên FIFO -->
+                      <td class="text-center">
+                        <?php if ($isTopPriority): ?>
+                          <span class="badge-fifo-rank badge-fifo-rank-top pulse-danger" title="Ưu tiên xử lý cao nhất trong hàng đợi FIFO">
+                            #1
+                          </span>
+                        <?php elseif ($isUnresolved): ?>
+                          <span class="badge-fifo-rank" title="Thứ tự xử lý trong hàng đợi">
+                            <?= $rankDisplay ?>
+                          </span>
+                        <?php else: ?>
+                          <span class="badge bg-secondary-subtle text-secondary border px-2 py-1" style="font-size:0.75rem">
+                            Xong
+                          </span>
+                        <?php endif; ?>
+                      </td>
+
+                      <!-- Cột 2: Mã SV & Người Báo -->
+                      <td>
+                        <div class="fw-700 text-dark"><?= htmlspecialchars($rep['reporter_name']) ?></div>
+                        <div class="small text-muted font-monospace">
+                          <i class="fa-solid fa-id-card me-1 text-teal"></i><?= htmlspecialchars($rep['student_code'] ?: 'Không có') ?>
+                        </div>
+                        <div class="small text-muted text-truncate" style="max-width: 170px;">
+                          <?= htmlspecialchars($rep['reporter_email']) ?>
+                        </div>
+                      </td>
+
+                      <!-- Cột 3: Thời Gian Gửi -->
+                      <td>
+                        <div class="fw-600 font-monospace small text-dark">
+                          <?= date('H:i:s', $createdTs) ?>
+                        </div>
+                        <div class="small text-muted"><?= date('d/m/Y', $createdTs) ?></div>
+                        <div class="small fw-600 text-primary mt-0-5" style="font-size: 0.72rem;">
+                          <i class="fa-regular fa-clock me-1"></i><?= $waitText ?>
+                        </div>
+                      </td>
+
+                      <!-- Cột 4: Vị Trí & Dịch Vụ -->
+                      <td>
+                        <div class="badge bg-teal-soft text-teal-primary border border-teal-subtle px-2 py-1 mb-1 small text-wrap text-start">
+                          <i class="fa-solid fa-location-dot me-1"></i><?= htmlspecialchars($rep['location'] ?: 'Khuôn viên trường') ?>
+                        </div>
+                        <div class="small fw-600 text-dark">
+                          <i class="fa-solid <?= htmlspecialchars($rep['service_icon']) ?> me-1 text-teal"></i><?= htmlspecialchars($rep['service_name']) ?>
+                        </div>
+                      </td>
+
+                      <!-- Cột 5: Tiêu Đề & Chi Tiết -->
+                      <td>
+                        <div class="fw-700 text-dark mb-1"><?= htmlspecialchars($rep['title']) ?></div>
+                        <div class="small text-secondary mb-1" style="max-width: 320px; line-height: 1.4;">
+                          <?= nl2br(htmlspecialchars($rep['description'])) ?>
+                        </div>
+                        <?php if (!empty($rep['admin_note'])): ?>
+                          <div class="p-1-5 px-2 rounded small border text-teal mt-1" style="background: var(--green-box-bg); border-color: var(--green-mint-border) !important; font-size:0.75rem">
+                            <strong><i class="fa-solid fa-comment-dots me-1"></i>IT Note:</strong> <?= htmlspecialchars($rep['admin_note']) ?>
+                          </div>
+                        <?php endif; ?>
+                      </td>
+
+                      <!-- Cột 6: Mức Độ -->
+                      <td>
+                        <?php if ($rep['severity'] === 'critical'): ?>
+                          <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-700">Nghiêm trọng</span>
+                        <?php elseif ($rep['severity'] === 'high'): ?>
+                          <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 fw-700">Cao</span>
+                        <?php elseif ($rep['severity'] === 'medium'): ?>
+                          <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle px-2 py-1 fw-600">Trung bình</span>
+                        <?php else: ?>
+                          <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle px-2 py-1 fw-600">Thấp</span>
+                        <?php endif; ?>
+                      </td>
+
+                      <!-- Cột 7: Trạng Thái -->
+                      <td>
+                        <?php if ($rep['status'] === 'pending'): ?>
+                          <span class="badge bg-warning text-dark px-2 py-1 fw-700"><i class="fa-solid fa-hourglass-half me-1"></i>Chờ xử lý</span>
+                        <?php elseif (in_array($rep['status'], ['in_progress', 'triaged', 'confirmed'], true)): ?>
+                          <span class="badge bg-info text-dark px-2 py-1 fw-700"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Đang xử lý</span>
+                        <?php elseif ($rep['status'] === 'resolved'): ?>
+                          <span class="badge bg-success text-white px-2 py-1 fw-700"><i class="fa-solid fa-circle-check me-1"></i>Đã xong</span>
+                        <?php else: ?>
+                          <span class="badge bg-secondary text-white px-2 py-1"><i class="fa-solid fa-ban me-1"></i>Từ chối</span>
+                        <?php endif; ?>
+                      </td>
+
+                      <!-- Cột 8: Thao Tác -->
+                      <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-teal px-2 py-1" style="font-size: 0.78rem;"
+                                onclick="openUpdateFifoModal(<?= $rep['id'] ?>, '<?= htmlspecialchars($rep['title'], ENT_QUOTES) ?>', '<?= htmlspecialchars($rep['status'], ENT_QUOTES) ?>', '<?= htmlspecialchars($rep['admin_note'] ?? '', ENT_QUOTES) ?>')">
+                          <i class="fa-solid fa-pen-to-square me-1"></i>Xử lý
+                        </button>
+                      </td>
+                    </tr>
+                  <?php endforeach; endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+           TAB 5: QUẢN LÝ BÃI XE SÂN TRƯỜNG UTC (CAMPUS PARKING)
+      ======================================================== -->
+      <div class="tab-pane fade" id="tab-parking">
+        <div class="utc-card p-4">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+              <h5 class="utc-card-title mb-1 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-square-parking text-success"></i>Quản Lý Trạng Thái &amp; Sức Chứa Bãi Xe Sân Trường UTC
+              </h5>
+              <p class="text-muted small mb-0">
+                Điều phối phương tiện thời gian thực qua bộ cảm biến và hệ thống đếm xe. Cho phép cập nhật nhanh trạng thái (Còn chỗ / Đầy) hoặc chỉnh sửa sức chứa từng phân khu.
+              </p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1-5 rounded-pill fw-700">
+                <i class="fa-solid fa-car me-1"></i>Đã đỗ: <?= $totalParkingOcc ?> / <?= $totalParkingCap ?> xe (<?= $parkingOverallPct ?>%)
+              </span>
+            </div>
+          </div>
+
+          <!-- Lưới 3 phân khu bãi xe -->
+          <div class="row g-3 mb-4">
+            <?php foreach ($parkingZones as $pz): 
+              $cap = (int) $pz['total_capacity'];
+              $occ = (int) $pz['occupied_count'];
+              $pct = $cap > 0 ? round(($occ / $cap) * 100, 1) : 0;
+              $isFull = ($pz['status'] === 'full' || $pct >= 95);
+              $isCrowded = (!$isFull && $pct >= 80);
+              $barColor = $isFull ? 'bg-danger' : ($isCrowded ? 'bg-warning' : 'bg-success');
+              $badgeCls = $isFull ? 'bg-danger' : ($isCrowded ? 'bg-warning text-dark' : 'bg-success');
+              $statusTxt = $isFull ? 'Đã đầy / Ngưng nhận xe' : ($isCrowded ? 'Sắp đầy' : 'Còn trống');
+              $pulseCls = $isFull ? 'pulse-danger' : '';
+              $vIcon = str_contains($pz['vehicle_type'], 'Ô tô') ? 'fa-car' : 'fa-motorcycle';
+            ?>
+              <div class="col-md-4">
+                <div class="parking-zone-card h-100 d-flex flex-column justify-content-between p-3" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                  <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <span class="badge bg-secondary-subtle text-secondary-emphasis px-2 py-1 rounded small fw-600">
+                        <i class="fa-solid <?= $vIcon ?> me-1"></i><?= htmlspecialchars($pz['vehicle_type']) ?>
+                      </span>
+                      <span class="badge <?= $badgeCls ?> rounded-pill px-2 py-1 small fw-700 <?= $pulseCls ?>">
+                        <?= $statusTxt ?>
+                      </span>
+                    </div>
+                    <h6 class="fw-700 mb-1 text-dark"><?= htmlspecialchars($pz['name']) ?></h6>
+                    <div class="small text-muted mb-3" style="font-size:0.8rem">
+                      <i class="fa-solid fa-location-dot me-1 text-teal"></i><?= htmlspecialchars($pz['location_note'] ?: 'Trong khuôn viên UTC') ?>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="d-flex align-items-baseline justify-content-between mb-1">
+                      <span class="small text-muted">Sức chứa hiện tại:</span>
+                      <span class="fw-800 fs-5 text-dark"><?= $occ ?> <span class="small fw-normal text-muted">/ <?= $cap ?> xe</span></span>
+                    </div>
+                    <div class="progress mb-2" style="height: 10px; border-radius: 999px; background: rgba(0,0,0,0.08);">
+                      <div class="progress-bar <?= $barColor ?>" style="width: <?= min(100, $pct) ?>%; transition: width 0.4s ease;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3 small text-muted">
+                      <span>Còn trống: <strong class="text-success"><?= max(0, $cap - $occ) ?></strong> chỗ</span>
+                      <span class="fw-700 text-dark"><?= $pct ?>%</span>
+                    </div>
+
+                    <!-- Thao tác nhanh cho Admin -->
+                    <div class="border-top pt-2">
+                      <div class="d-flex gap-1 justify-content-between align-items-center">
+                        <form method="POST" action="index.php" class="d-inline flex-grow-1">
+                          <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                          <input type="hidden" name="action" value="quick_parking_status" />
+                          <input type="hidden" name="zone_id" value="<?= $pz['id'] ?>" />
+                          <input type="hidden" name="target_status" value="available" />
+                          <button type="submit" class="btn btn-sm btn-outline-success w-100 py-1" style="font-size:0.75rem" title="Đổi nhanh về trạng thái Còn chỗ (50%)">
+                            <i class="fa-solid fa-check me-1"></i>Còn chỗ
+                          </button>
+                        </form>
+
+                        <form method="POST" action="index.php" class="d-inline flex-grow-1">
+                          <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                          <input type="hidden" name="action" value="quick_parking_status" />
+                          <input type="hidden" name="zone_id" value="<?= $pz['id'] ?>" />
+                          <input type="hidden" name="target_status" value="full" />
+                          <button type="submit" class="btn btn-sm btn-outline-danger w-100 py-1" style="font-size:0.75rem" title="Đổi nhanh về trạng thái Đã đầy (100%)">
+                            <i class="fa-solid fa-ban me-1"></i>Báo đầy
+                          </button>
+                        </form>
+
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" style="font-size:0.75rem"
+                                onclick="openEditParkingModal(<?= $pz['id'] ?>, '<?= htmlspecialchars($pz['name'], ENT_QUOTES) ?>', <?= $occ ?>, <?= $cap ?>, '<?= htmlspecialchars($pz['status'], ENT_QUOTES) ?>', '<?= htmlspecialchars($pz['location_note'] ?? '', ENT_QUOTES) ?>')"
+                                title="Chỉnh sửa chi tiết số lượng & sức chứa">
+                          <i class="fa-solid fa-gear"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <?php endforeach; ?>
           </div>
         </div>
       </div>
@@ -2715,6 +3195,104 @@ for ($i = 2; $i >= 0; $i--) {
     </div>
   </div>
 
+  <!-- Modal Cập Nhật Sự Cố Hàng Đợi FIFO -->
+  <div class="modal fade" id="modalUpdateFifoIncident" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content utc-modal">
+        <form method="POST" action="index.php">
+          <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+          <input type="hidden" name="action" value="update_fifo_incident" />
+          <input type="hidden" id="fifoModalReportId" name="report_id" value="" />
+          <div class="modal-header">
+            <h5 class="modal-title fw-700 text-teal">
+              <i class="fa-solid fa-list-check me-2"></i>Cập Nhật Tiến Độ Sự Cố (FIFO)
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-600">Sự cố đang xử lý:</label>
+              <div id="fifoModalTitle" class="fw-700 text-dark p-2 rounded bg-light border"></div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-600">Trạng thái xử lý <span class="text-danger">*</span></label>
+              <select id="fifoModalStatus" name="status" class="form-select" required>
+                <option value="pending">🟡 Chờ xử lý (Pending in FIFO queue)</option>
+                <option value="in_progress">🔵 Đang xử lý (In Progress)</option>
+                <option value="resolved">🟢 Đã hoàn thành (Resolved)</option>
+                <option value="rejected">⚪ Từ chối / Không hợp lệ (Rejected)</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-600">Ghi chú xử lý của Quản trị viên / Đội IT:</label>
+              <textarea id="fifoModalAdminNote" name="admin_note" class="form-control" rows="3" placeholder="Nhập nguyên nhân, biện pháp xử lý hoặc thông báo gửi cho sinh viên..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            <button type="submit" class="btn btn-success">
+              <i class="fa-solid fa-floppy-disk me-1"></i>Lưu Cập Nhật
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Chỉnh Sửa Sức Chứa Bãi Xe Sân Trường -->
+  <div class="modal fade" id="modalEditParkingZone" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content utc-modal">
+        <form method="POST" action="index.php">
+          <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+          <input type="hidden" name="action" value="update_parking_zone" />
+          <input type="hidden" id="editPzId" name="zone_id" value="" />
+          <div class="modal-header">
+            <h5 class="modal-title fw-700 text-success">
+              <i class="fa-solid fa-square-parking me-2"></i>Cài Đặt Sức Chứa &amp; Trạng Thái Bãi Xe
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-600">Khu vực bãi xe:</label>
+              <div id="editPzName" class="fw-700 text-dark p-2 rounded bg-light border"></div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-600">Số xe đã đỗ (Hiện tại) <span class="text-danger">*</span></label>
+                <input type="number" id="editPzOccupied" name="occupied_count" class="form-control" min="0" required />
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-600">Tổng sức chứa <span class="text-danger">*</span></label>
+                <input type="number" id="editPzCapacity" name="total_capacity" class="form-control" min="1" required />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-600">Chế độ trạng thái</label>
+              <select id="editPzStatus" name="status" class="form-select">
+                <option value="auto">⚡ Tự động tính theo tỷ lệ % (Khuyên dùng)</option>
+                <option value="available">🟢 Còn trống (&lt; 80%)</option>
+                <option value="crowded">🟡 Sắp đầy (80% - 95%)</option>
+                <option value="full">🔴 Đã đầy / Ngưng nhận xe (&gt;= 95%)</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-600">Vị trí / Ghi chú điều phối</label>
+              <input type="text" id="editPzNote" name="location_note" class="form-control" placeholder="Ghi chú vị trí cổng, hướng phân luồng..." />
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            <button type="submit" class="btn btn-success">
+              <i class="fa-solid fa-check me-1"></i>Lưu Thay Đổi
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Bootstrap 5 Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Chart.js Config & Modal Helpers -->
@@ -2923,6 +3501,61 @@ for ($i = 2; $i >= 0; $i--) {
     link.click();
     document.body.removeChild(link);
   }
+
+  // ── Modal Helpers for FIFO Incidents & Parking ────────────────
+  function openUpdateFifoModal(reportId, title, status, adminNote) {
+    document.getElementById('fifoModalReportId').value = reportId;
+    document.getElementById('fifoModalTitle').textContent = '#' + reportId + ' - ' + title;
+    document.getElementById('fifoModalStatus').value = status;
+    document.getElementById('fifoModalAdminNote').value = adminNote || '';
+    new bootstrap.Modal(document.getElementById('modalUpdateFifoIncident')).show();
+  }
+
+  function openEditParkingModal(zoneId, name, occupied, capacity, status, note) {
+    document.getElementById('editPzId').value = zoneId;
+    document.getElementById('editPzName').textContent = name;
+    document.getElementById('editPzOccupied').value = occupied;
+    document.getElementById('editPzCapacity').value = capacity;
+    document.getElementById('editPzStatus').value = status || 'auto';
+    document.getElementById('editPzNote').value = note || '';
+    new bootstrap.Modal(document.getElementById('modalEditParkingZone')).show();
+  }
+
+  function filterFifoTable() {
+    const dateVal = document.getElementById('fifoDateFilter')?.value;
+    const statusVal = document.getElementById('fifoStatusFilter')?.value;
+    const searchVal = document.getElementById('fifoSearchInput')?.value.trim().toLowerCase();
+
+    const rows = document.querySelectorAll('#fifoTable tbody tr.fifo-row');
+    rows.forEach(r => {
+      const rDate = r.getAttribute('data-date');
+      const rStatus = r.getAttribute('data-status');
+      const rSearch = r.getAttribute('data-search') || '';
+
+      let show = true;
+      if (dateVal && rDate !== dateVal) show = false;
+      if (statusVal && statusVal !== 'all' && rStatus !== statusVal) show = false;
+      if (searchVal && !rSearch.includes(searchVal)) show = false;
+
+      r.style.display = show ? '' : 'none';
+    });
+  }
+
+  function resetFifoFilters() {
+    const d = document.getElementById('fifoDateFilter');
+    const s = document.getElementById('fifoStatusFilter');
+    const q = document.getElementById('fifoSearchInput');
+    if (d) d.value = '';
+    if (s) s.value = 'all';
+    if (q) q.value = '';
+    filterFifoTable();
+  }
+
+  // ── Theme Switcher in Admin Panel ─────────────────────────────
+  (function initAdminTheme() {
+    const curTheme = localStorage.getItem('utc_theme') || 'light';
+    applyUtcTheme(curTheme);
+  })();
   </script>
 </body>
 </html>

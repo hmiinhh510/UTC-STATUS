@@ -65,7 +65,7 @@ $services = [
         'icon'        => 'fa-envelope',
         'status'      => 'operational',
         'sort_order'  => 1,
-        'check_url'   => 'https://mail.google.com'
+        'check_url'   => null
     ],
     [
         'id'          => 2,
@@ -75,7 +75,7 @@ $services = [
         'icon'        => 'fa-graduation-cap',
         'status'      => 'major_outage',
         'sort_order'  => 2,
-        'check_url'   => 'https://elearning.utc.edu.vn'
+        'check_url'   => null
     ],
     [
         'id'          => 3,
@@ -85,7 +85,7 @@ $services = [
         'icon'        => 'fa-user',
         'status'      => 'operational',
         'sort_order'  => 3,
-        'check_url'   => 'https://sv.utc.edu.vn'
+        'check_url'   => null
     ],
     [
         'id'          => 4,
@@ -95,7 +95,7 @@ $services = [
         'icon'        => 'fa-calendar-check',
         'status'      => 'operational',
         'sort_order'  => 4,
-        'check_url'   => 'https://dkmh.utc.edu.vn'
+        'check_url'   => null
     ],
     [
         'id'          => 5,
@@ -105,7 +105,7 @@ $services = [
         'icon'        => 'fa-dollar-sign',
         'status'      => 'operational',
         'sort_order'  => 5,
-        'check_url'   => 'https://hocphi.utc.edu.vn'
+        'check_url'   => null
     ],
     [
         'id'          => 6,
@@ -125,7 +125,7 @@ $services = [
         'icon'        => 'fa-book-open',
         'status'      => 'maintenance',
         'sort_order'  => 7,
-        'check_url'   => 'https://thuvien.utc.edu.vn'
+        'check_url'   => null
     ],
     [
         'id'          => 8,
@@ -135,7 +135,7 @@ $services = [
         'icon'        => 'fa-globe',
         'status'      => 'operational',
         'sort_order'  => 8,
-        'check_url'   => 'https://utc.edu.vn'
+        'check_url'   => null
     ],
     [
         'id'          => 9,
@@ -145,7 +145,7 @@ $services = [
         'icon'        => 'fa-video',
         'status'      => 'operational',
         'sort_order'  => 9,
-        'check_url'   => 'https://teams.microsoft.com'
+        'check_url'   => null
     ]
 ];
 

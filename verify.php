@@ -7,6 +7,7 @@
 declare(strict_types=1);
 header('Content-Type: text/html; charset=UTF-8');
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/mailer.php';
 
 $token = trim((string) ($_GET['token'] ?? ''));
 $status = 'error';
@@ -34,6 +35,11 @@ if ($token === '' || strlen($token) !== 64) {
             // Xác thực thành công
             $update = $pdo->prepare('UPDATE subscriptions SET verified = 1, verified_at = NOW() WHERE id = :id');
             $update->execute([':id' => $sub['id']]);
+
+            // Gửi email thông báo kích hoạt thành công
+            if ($sub['type'] === 'email') {
+                sendSubscriberActivationEmail($sub['endpoint'], $token);
+            }
 
             // Ghi nhật ký
             $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';

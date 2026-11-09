@@ -18,6 +18,41 @@ $adminName = $_SESSION['admin_name'] ?? 'Thành viên UTC';
 $adminRole = $_SESSION['admin_role'] ?? 'student'; // 'student', 'editor', 'admin'
 $flash     = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
+
+require_once __DIR__ . '/config/database.php';
+
+// Khởi tạo & nạp trước dữ liệu bãi xe phía máy chủ (Server-side Pre-rendering)
+$parkingZones = [];
+$totalParkingCap = 0;
+$totalParkingOcc = 0;
+$parkingOverallPct = 0.0;
+$parkingOverallStatus = 'available';
+$parkingOverallLabel = 'Còn trống';
+$parkingBadgeClass = 'bg-success';
+
+try {
+    $pdo = Database::getInstance();
+    $pStmt = $pdo->query('SELECT * FROM parking_zones ORDER BY sort_order ASC');
+    $parkingZones = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($parkingZones as $pz) {
+        $totalParkingCap += (int)$pz['total_capacity'];
+        $totalParkingOcc += (int)$pz['occupied_count'];
+    }
+    if ($totalParkingCap > 0) {
+        $parkingOverallPct = round(($totalParkingOcc / $totalParkingCap) * 100, 1);
+    }
+    if ($totalParkingOcc >= $totalParkingCap || $parkingOverallPct >= 95) {
+        $parkingOverallStatus = 'full';
+        $parkingOverallLabel = 'Đã đầy / Ngưng nhận xe';
+        $parkingBadgeClass = 'bg-danger';
+    } elseif ($parkingOverallPct >= 80) {
+        $parkingOverallStatus = 'crowded';
+        $parkingOverallLabel = 'Sắp đầy';
+        $parkingBadgeClass = 'bg-warning text-dark';
+    }
+} catch (\Throwable $e) {
+    // Fallback if table not ready
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -33,7 +68,67 @@ unset($_SESSION['flash']);
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <!-- Page Stylesheet -->
-  <link rel="stylesheet" href="assets/css/style.css?v=2.5" />
+  <link rel="stylesheet" href="assets/css/style.css?v=3.6" />
+  <script>
+    function applyUtcTheme(theme) {
+      var isDark = (theme === 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      if (document.body) {
+        document.body.setAttribute('data-theme', theme);
+        document.body.setAttribute('data-bs-theme', theme);
+      }
+      try { localStorage.setItem('utc_theme', theme); } catch (e) {}
+
+      // Đồng bộ toàn bộ các switch checkbox trên trang
+      var cbs = document.querySelectorAll('.utc-theme-switch-checkbox, #themeSwitchCheckbox');
+      cbs.forEach(function(cb) {
+        cb.checked = isDark;
+      });
+
+      var icons = document.querySelectorAll('#iconThemeToggle, .icon-theme-toggle');
+      icons.forEach(function(icon) {
+        if (isDark) {
+          icon.className = 'fa-solid fa-sun text-warning';
+          if (icon.parentElement) icon.parentElement.setAttribute('title', 'Chuyển sang Giao diện Sáng (Light Mode)');
+        } else {
+          icon.className = 'fa-regular fa-moon';
+          if (icon.parentElement) icon.parentElement.setAttribute('title', 'Chuyển sang Giao diện Tối (Dark Mode)');
+        }
+      });
+    }
+
+    function toggleUtcTheme(forcedTheme) {
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      var next = (typeof forcedTheme === 'string') ? forcedTheme : (current === 'dark' ? 'light' : 'dark');
+      applyUtcTheme(next);
+    }
+
+    function openParkingModal() {
+      var modalEl = document.getElementById('modalParkingStatus');
+      if (!modalEl) return;
+      if (window.bootstrap && bootstrap.Modal) {
+        var m = bootstrap.Modal.getOrCreateInstance(modalEl);
+        m.show();
+      } else {
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+      }
+      if (typeof window.fetchParkingData === 'function') {
+        window.fetchParkingData();
+      }
+    }
+
+    (function() {
+      var saved = 'light';
+      try { saved = localStorage.getItem('utc_theme') || 'light'; } catch (e) {}
+      document.documentElement.setAttribute('data-theme', saved);
+      document.documentElement.setAttribute('data-bs-theme', saved);
+      document.addEventListener('DOMContentLoaded', function() {
+        applyUtcTheme(saved);
+      });
+    })();
+  </script>
 </head>
 
 <body>
@@ -80,6 +175,19 @@ unset($_SESSION['flash']);
             <i class="fa-regular fa-bell"></i>
             <span id="navBellBadge" class="nav-badge-dot">1</span>
           </button>
+
+          <!-- Nút gạt chuyển đổi giao diện Sáng / Tối (Toggle Switch Slider) -->
+          <div class="utc-theme-slider-container" title="Gạt để chuyển đổi Sáng / Tối">
+            <input type="checkbox" id="themeSwitchCheckbox" class="utc-theme-switch-checkbox" aria-label="Chuyển đổi giao diện Sáng / Tối" onchange="toggleUtcTheme(this.checked ? 'dark' : 'light')">
+            <label for="themeSwitchCheckbox" class="utc-theme-switch-track" id="themeSwitchTrack">
+              <span class="switch-side switch-side-light" title="Chế độ Sáng"><i class="fa-solid fa-sun"></i></span>
+              <span class="switch-side switch-side-dark" title="Chế độ Tối"><i class="fa-solid fa-moon"></i></span>
+              <span class="utc-theme-switch-knob">
+                <i class="fa-solid fa-sun knob-icon-sun"></i>
+                <i class="fa-solid fa-moon knob-icon-moon"></i>
+              </span>
+            </label>
+          </div>
 
           <!-- Nút quay lại trang Quản trị (Dành riêng cho Admin & Editor) -->
           <?php if ($adminRole === 'admin' || $adminRole === 'editor'): ?>
@@ -245,16 +353,16 @@ unset($_SESSION['flash']);
           </div>
         </div>
 
-        <!-- 2 Thẻ Sự cố đang xử lý & Bảo trì trong tuần (NỀN XANH - CHỮ TRẮNG) -->
+        <!-- 3 Thẻ Trạng thái: Sự cố đang xử lý, Bảo trì trong tuần & Bãi xe sân trường -->
         <div class="row g-3">
           <!-- Thẻ 1: Sự cố đang xử lý (Nền xanh Teal, Chữ trắng, Icon trắng) -->
-          <div class="col-12 col-sm-6">
-            <div id="cardIncidentAction" class="utc-stat-card stat-card-green-incident" role="button" tabindex="0">
+          <div class="col-12 col-md-4">
+            <div id="cardIncidentAction" class="utc-stat-card stat-card-green-incident h-100" role="button" tabindex="0">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <span class="utc-stat-card-title text-white">Sự cố đang xử lý</span>
                 <span class="utc-stat-card-icon text-white"><i class="fa-regular fa-bell"></i></span>
               </div>
-              <div id="metricIncidentsCount" class="utc-stat-card-number text-white">1</div>
+              <div id="metricIncidentsCount" class="utc-stat-card-number text-white">0</div>
               <div class="utc-stat-card-link text-white">
                 <span>Xem chi tiết <i class="fa-solid fa-arrow-right ms-1"></i></span>
               </div>
@@ -262,15 +370,36 @@ unset($_SESSION['flash']);
           </div>
 
           <!-- Thẻ 2: Bảo trì trong tuần (Nền xanh rêu đậm, Chữ trắng, Icon trắng) -->
-          <div class="col-12 col-sm-6">
-            <div id="cardMaintenanceAction" class="utc-stat-card stat-card-green-maint" role="button" tabindex="0">
+          <div class="col-12 col-md-4">
+            <div id="cardMaintenanceAction" class="utc-stat-card stat-card-green-maint h-100" role="button" tabindex="0">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <span class="utc-stat-card-title text-white">Bảo trì trong tuần</span>
                 <span class="utc-stat-card-icon text-white"><i class="fa-regular fa-calendar-days"></i></span>
               </div>
-              <div id="metricMaintenancesCount" class="utc-stat-card-number text-white">2</div>
+              <div id="metricMaintenancesCount" class="utc-stat-card-number text-white">0</div>
               <div class="utc-stat-card-link text-white">
                 <span>Xem chi tiết <i class="fa-solid fa-arrow-right ms-1"></i></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thẻ 3: Bãi xe sân trường (Campus Parking - Thời gian thực) -->
+          <div class="col-12 col-md-4">
+            <div id="cardParkingAction" class="utc-stat-card stat-card-green-parking h-100" role="button" tabindex="0" onclick="openParkingModal()">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <span class="utc-stat-card-title text-white">Bãi xe sân trường</span>
+                <span class="utc-stat-card-icon text-white"><i class="fa-solid fa-square-parking"></i></span>
+              </div>
+              <div class="d-flex align-items-baseline gap-2">
+                <div id="metricParkingCount" class="utc-stat-card-number text-white" style="font-size:1.5rem"><?= $totalParkingOcc ?>/<?= $totalParkingCap ?> <span style="font-size: 0.95rem; font-weight: normal; opacity: 0.85;">(<?= $parkingOverallPct ?>%)</span></div>
+                <span id="metricParkingBadge" class="badge <?= $parkingBadgeClass ?> rounded-pill px-2 py-0-5 small fw-700 <?= ($parkingOverallStatus === 'full' || $parkingOverallPct >= 95) ? 'pulse-danger' : '' ?>"><?= $parkingOverallLabel ?></span>
+              </div>
+              <div class="parking-progress-bar-container">
+                <div id="metricParkingProgressBar" class="parking-progress-bar <?= ($parkingOverallPct >= 95 || $parkingOverallStatus === 'full') ? 'bg-danger' : (($parkingOverallPct >= 80) ? 'bg-warning' : 'bg-success') ?>" style="width: <?= $parkingOverallPct ?>%"></div>
+              </div>
+              <div class="utc-stat-card-link text-white d-flex justify-content-between align-items-center">
+                <span>Xem chi tiết 3 khu <i class="fa-solid fa-arrow-right ms-1"></i></span>
+                <span class="small opacity-75" style="font-size:0.75rem"><i class="fa-solid fa-rotate me-1"></i>10s</span>
               </div>
             </div>
           </div>
@@ -718,6 +847,18 @@ unset($_SESSION['flash']);
 
             <div class="row g-3 mb-3">
               <div class="col-md-6">
+                <label class="form-label small fw-600">Mã sinh viên / Cán bộ <span class="text-muted">(nếu có)</span></label>
+                <input type="text" id="repStudentCode" class="form-control" placeholder="VD: 201200189 hoặc K62-CNTT" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-600">Vị trí / Địa điểm gặp sự cố <span
+                    class="text-danger">*</span></label>
+                <input type="text" id="repLocation" class="form-control" placeholder="VD: Nhà A7 - P302, Thư viện, KTX Cầu Giấy..." required />
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
                 <label class="form-label small fw-600">Dịch vụ bị ảnh hưởng</label>
                 <select id="repServiceId" class="form-select">
                   <option value="">-- Chọn dịch vụ gặp lỗi --</option>
@@ -902,8 +1043,8 @@ unset($_SESSION['flash']);
               class="fa-solid fa-code me-2 text-info"></i>Dữ liệu JSON API</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-dark" href="#" onclick="openSubscribeModal(); return false;"><i
-              class="fa-regular fa-bell me-2 text-success"></i>Đăng ký nhận cảnh báo</a>
+          <a class="nav-link text-dark" href="#" onclick="openParkingModal(); return false;"><i
+              class="fa-solid fa-square-parking me-2 text-success"></i>Bãi xe sân trường UTC</a>
         </li>
         <?php if ($adminRole === 'admin' || $adminRole === 'editor'): ?>
         <li class="nav-item">
@@ -924,6 +1065,116 @@ unset($_SESSION['flash']);
     </div>
   </div>
 
+  <!-- 12. Modal: Campus Parking Status (Bãi xe sân trường UTC) -->
+  <div class="modal fade" id="modalParkingStatus" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content utc-modal">
+        <div class="modal-header border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success-subtle text-success fs-5 p-2 rounded-3">
+              <i class="fa-solid fa-square-parking"></i>
+            </span>
+            <div>
+              <h5 class="modal-title fw-700 mb-0">Campus Parking – Trạng Thái Bãi Xe Sân Trường UTC</h5>
+              <div class="small text-muted">Hệ thống cảm biến và bộ đếm giám sát chỗ đỗ xe thời gian thực</div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <!-- Tổng quan toàn trường -->
+          <div class="p-3 mb-4 rounded-3 d-flex flex-wrap align-items-center justify-content-between gap-3" style="background: var(--green-mint-soft); border: 1px solid var(--green-mint-border)">
+            <div>
+              <div class="small text-uppercase fw-700" style="color: var(--green-brand)">Tổng sức chứa toàn bộ khuôn viên</div>
+              <div class="fs-4 fw-800 text-dark">
+                <span id="parkingModalTotalOccupied"><?= $totalParkingOcc ?></span> / <span id="parkingModalTotalCapacity"><?= $totalParkingCap ?></span> xe
+                <span id="parkingModalOverallPct" class="fs-6 fw-600 ms-1">(<?= $parkingOverallPct ?>%)</span>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+              <span id="parkingModalOverallBadge" class="badge <?= $parkingBadgeClass ?> px-3 py-2 rounded-pill fs-6 fw-700 <?= ($parkingOverallStatus === 'full' || $parkingOverallPct >= 95) ? 'pulse-danger' : '' ?>"><?= $parkingOverallLabel ?></span>
+              <div class="small text-muted text-end">
+                <div>Tự làm mới: <strong id="parkingCountdown">10</strong>s</div>
+                <div class="small opacity-75" id="parkingLastUpdated">Cập nhật: <?= date('H:i:s - d/m/Y') ?></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Danh sách 3 phân khu bãi xe -->
+          <h6 class="fw-700 mb-3 d-flex align-items-center justify-content-between">
+            <span><i class="fa-solid fa-map-pin me-2 text-teal"></i>Chi tiết sức chứa từng khu vực</span>
+            <span class="small fw-normal text-muted"><i class="fa-solid fa-bolt text-warning me-1"></i>Fetch API mỗi 10 giây</span>
+          </h6>
+
+          <div class="row g-3" id="parkingZonesContainer">
+            <?php if (empty($parkingZones)): ?>
+              <div class="col-12 text-center py-4 text-muted">Đang cập nhật dữ liệu bãi xe...</div>
+            <?php else: foreach ($parkingZones as $z): 
+              $zCap = (int)$z['total_capacity'];
+              $zOcc = (int)$z['occupied_count'];
+              $zAvail = max(0, $zCap - $zOcc);
+              $zPct = $zCap > 0 ? round(($zOcc / $zCap) * 100, 1) : 0;
+              $zIsFull = ($z['status'] === 'full' || $zPct >= 95);
+              $zIsCrowded = (!$zIsFull && $zPct >= 80);
+              $zBarCls = $zIsFull ? 'bg-danger' : ($zIsCrowded ? 'bg-warning' : 'bg-success');
+              $zBadgeCls = $zIsFull ? 'bg-danger' : ($zIsCrowded ? 'bg-warning text-dark' : 'bg-success');
+              $zBadgePulse = $zIsFull ? 'pulse-danger' : '';
+              $zStatusLbl = $zIsFull ? 'Đã đầy / Ngưng nhận xe' : ($zIsCrowded ? 'Sắp đầy' : 'Còn trống');
+              $zIcon = (mb_stripos($z['vehicle_type'], 'Ô tô') !== false) ? 'fa-car' : 'fa-motorcycle';
+            ?>
+              <div class="col-md-4">
+                <div class="parking-zone-card h-100 d-flex flex-column justify-content-between">
+                  <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <span class="badge bg-secondary-subtle text-secondary-emphasis px-2 py-1 rounded small fw-600">
+                        <i class="fa-solid <?= $zIcon ?> me-1"></i><?= htmlspecialchars($z['vehicle_type']) ?>
+                      </span>
+                      <span class="badge <?= $zBadgeCls ?> rounded-pill px-2 py-1 small fw-700 <?= $zBadgePulse ?>">
+                        <?= $zStatusLbl ?>
+                      </span>
+                    </div>
+                    <h6 class="fw-700 mb-1 text-dark"><?= htmlspecialchars($z['name']) ?></h6>
+                    <div class="small text-muted mb-3" style="font-size:0.8rem">
+                      <i class="fa-solid fa-location-dot me-1 text-teal"></i><?= htmlspecialchars($z['location_note']) ?>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="d-flex align-items-baseline justify-content-between mb-1">
+                      <span class="small text-muted">Đã gửi:</span>
+                      <span class="fw-800 fs-5 text-dark"><?= $zOcc ?> <span class="small fw-normal text-muted">/ <?= $zCap ?> xe</span></span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 999px; background: rgba(0,0,0,0.06);">
+                      <div class="progress-bar <?= $zBarCls ?>" style="width: <?= $zPct ?>%; transition: width 0.5s ease;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
+                      <span>Còn trống: <strong class="text-success"><?= $zAvail ?></strong> chỗ</span>
+                      <span class="fw-700 text-dark"><?= $zPct ?>%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <?php endforeach; endif; ?>
+          </div>
+
+          <!-- Hướng dẫn và quy định đỗ xe -->
+          <div class="alert alert-info py-2 px-3 small mt-4 mb-0 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-circle-info fs-5"></i>
+            <div>
+              Sinh viên vui lòng tuân thủ biển báo hướng dẫn và vị trí phân luồng của lực lượng bảo vệ. Khi phân khu chuyển sang trạng thái <strong>"Đã đầy / Ngưng nhận xe"</strong>, vui lòng di chuyển sang các phân khu lân cận hoặc bãi xe dự phòng.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-outline-teal btn-sm" onclick="fetchParkingData(true)">
+            <i class="fa-solid fa-arrows-rotate me-1"></i>Làm mới ngay
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Global App Config -->
   <script>
     window.CURRENT_USER_ROLE = '<?= htmlspecialchars($adminRole, ENT_QUOTES, 'UTF-8') ?>';
@@ -932,8 +1183,8 @@ unset($_SESSION['flash']);
 
   <!-- Bootstrap 5 Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Application JS (v2.4 cache-buster) -->
-  <script src="assets/js/app.js?v=2.5"></script>
+  <!-- Application JS (v3.6 cache-buster) -->
+  <script src="assets/js/app.js?v=3.6"></script>
 </body>
 
 </html>

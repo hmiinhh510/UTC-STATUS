@@ -18,6 +18,7 @@ if (($_SESSION['admin_role'] ?? '') === 'student') {
 }
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/permissions.php';
 require_once __DIR__ . '/../config/service_status.php';
 require_once __DIR__ . '/../api/health_check_runner.php';
 
@@ -47,36 +48,7 @@ function verifyCsrf(): void {
     }
 }
 
-/**
- * Kiểm tra phân quyền:
- * - Admin: thực hiện mọi hành động
- * - Editor: chỉ được đổi trạng thái nhanh, quản lý sự cố, lên lịch bảo trì, chạy health check.
- *           Không được xóa dịch vụ, xóa nhóm, quản lý user.
- */
-function canPerform(string $action, string $role): bool {
-    if ($role === 'admin') {
-        return true;
-    }
-
-    if ($role === 'editor') {
-        $editorAllowedActions = [
-            'quick_status',
-            'create_incident',
-            'add_incident_update',
-            'resolve_incident',
-            'create_maintenance',
-            'update_maintenance_status',
-            'run_health_check',
-            'update_fifo_incident',
-            'update_parking_zone',
-            'quick_parking_status'
-        ];
-        return in_array($action, $editorAllowedActions, true);
-    }
-
-    // Role 'student' (Sinh viên / Người xem) chỉ có quyền tra cứu thông tin
-    return false;
-}
+// canPerform() được định nghĩa trong config/permissions.php
 
 /**
  * Ghi nhật ký hoạt động (Audit Log)

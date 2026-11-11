@@ -871,11 +871,13 @@ $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 
 // System Overview Counts
-$totalServices = (int) $pdo->query('SELECT COUNT(*) FROM services')->fetchColumn();
-$operationalCount = (int) $pdo->query('SELECT COUNT(*) FROM services WHERE status = "operational"')->fetchColumn();
-$outageCount = (int) $pdo->query('SELECT COUNT(*) FROM services WHERE status IN ("degraded", "partial_outage", "major_outage")')->fetchColumn();
-$maintenanceCount = (int) $pdo->query('SELECT COUNT(*) FROM services WHERE status = "maintenance"')->fetchColumn();
-$activeIncidentsCount = (int) $pdo->query('SELECT COUNT(*) FROM incidents WHERE status != "resolved"')->fetchColumn();
+$adminMetrics = getSystemMetrics($pdo);
+$totalServices = (int) $adminMetrics['total_services'];
+$operationalCount = (int) $adminMetrics['operational_count'];
+$outageCount = (int) $adminMetrics['troubled_services_count'];
+$maintenanceCount = (int) $adminMetrics['maintenance_services_count'];
+$activeIncidentsCount = (int) $adminMetrics['effective_active_incidents'];
+$effectiveMaintenanceCount = (int) $adminMetrics['effective_maintenances_count'];
 $totalSubscribers = (int) $pdo->query('SELECT COUNT(*) FROM subscriptions WHERE verified = 1')->fetchColumn();
 
 // Fetch Groups and Services
@@ -1425,6 +1427,9 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
       <li class="nav-item">
         <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-maintenances">
           <i class="fa-solid fa-screwdriver-wrench me-1"></i>Lịch Bảo trì
+          <?php if ($effectiveMaintenanceCount > 0): ?>
+            <span class="badge bg-warning text-dark rounded-pill ms-1"><?= $effectiveMaintenanceCount ?></span>
+          <?php endif; ?>
         </button>
       </li>
       <li class="nav-item">

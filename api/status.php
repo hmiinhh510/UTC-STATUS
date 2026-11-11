@@ -16,6 +16,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/auth_guard.php';
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/service_status.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -61,33 +62,9 @@ try {
     $stmtServices->execute();
     $allServices = $stmtServices->fetchAll();
 
-    // 2. Counts & Summary
-    $totalServices    = count($allServices);
-    $operationalCount = 0;
-    $outageCount      = 0;
-    $maintenanceCount = 0;
-    $degradedCount    = 0;
-
-    $troubledServiceName = '';
-
+    // Attach presentation labels to services
     foreach ($allServices as &$svc) {
         $st = $svc['status'];
-        if ($st === 'operational') {
-            $operationalCount++;
-        } elseif (in_array($st, ['major_outage', 'partial_outage'], true)) {
-            $outageCount++;
-            if ($troubledServiceName === '') {
-                $troubledServiceName = $svc['name'];
-            }
-        } elseif ($st === 'maintenance') {
-            $maintenanceCount++;
-        } elseif ($st === 'degraded') {
-            $degradedCount++;
-            if ($troubledServiceName === '') {
-                $troubledServiceName = $svc['name'];
-            }
-        }
-
         $info = STATUS_LABELS[$st] ?? STATUS_LABELS['operational'];
         $svc['status_label'] = $info['label'];
         $svc['status_color'] = $info['color'];
@@ -95,71 +72,55 @@ try {
     }
     unset($svc);
 
-    // 3. Overall status message
-    if ($outageCount > 0) {
-        $overallStatus  = 'major_outage';
-        $overallMessage = ($troubledServiceName !== '')
-            ? "{$troubledServiceName} đang gặp sự cố"
-            : "Một số hệ thống đang gặp sự cố";
-        $overallColor   = '#ef4444';
-    } elseif ($degradedCount > 0) {
-        $overallStatus  = 'degraded';
-        $overallMessage = ($troubledServiceName !== '')
-            ? "{$troubledServiceName} có hiệu năng giảm sút"
-            : "Một số hệ thống đang có hiệu năng giảm sút";
-        $overallColor   = '#eab308';
-    } elseif ($maintenanceCount > 0) {
-        $overallStatus  = 'maintenance';
-        $overallMessage = "Một số hệ thống đang trong thời gian bảo trì";
-        $overallColor   = '#3b82f6';
-    } else {
-        $overallStatus  = 'operational';
-        $overallMessage = "Tất cả hệ thống đang hoạt động bình thường";
-        $overallColor   = '#22c55e';
+    // 2. Load unified system metrics
+    $metrics = getSystemMetrics($pdo);
+
+    $totalServices    = $metrics['total_services'];
+    $operationalCount = $metrics['operational_count'];
+    $outageCount      = $metrics['outage_count'];
+    $maintenanceCount = $metrics['maintenance_services_count'];
+    $degradedCount    = $metrics['degraded_count'];
+    $overallStatus    = $metrics['overall_status'];
+    $overallMessage   = $metrics['overall_message'];
+    $overallColor     = $metrics['overall_color'];
+    $avgUptime        = $metrics['avg_uptime_90d'];
+    $activeIncidents  = $metrics['active_incidents'];
+    $upcomingMaintenances = $metrics['active_maintenances'];
+    $inProgressCount  = $metrics['in_progress_maint_count'];
+    $scheduledCount   = $metrics['scheduled_maint_count'];
+    $effectiveActiveIncidentsCount = $metrics['effective_active_incidents'];
+    $effectiveMaintenanceCount    = $metrics['effective_maintenances_count'];
+
+    // Append standalone troubled services to activeIncidents so modal & lists reflect them
+    foreach ($metrics['standalone_troubled_services'] as $stSvc) {
+        $activeIncidents[] = [
+            'id' => 'svc-' . $stSvc['id'],
+            'title' => 'Sự cố dịch vụ ' . $stSvc['name'],
+            'severity' => match($stSvc['status']) {
+                'major_outage' => 'critical',
+                'partial_outage' => 'major',
+                default => 'minor'
+            },
+            'status' => 'investigating',
+            'started_at' => $stSvc['updated_at'] ?? date('Y-m-d H:i:s'),
+            'resolved_at' => null,
+            'updated_at' => $stSvc['updated_at'] ?? date('Y-m-d H:i:s'),
+            'affected_services' => $stSvc['name'],
+        ];
     }
 
-    // 4. Average 90-day Uptime calculation
-    $stmtAvgUptime = $pdo->query(
-        'SELECT COALESCE(AVG(uptime_pct), 99.3) AS avg_uptime
-         FROM service_daily_uptime
-         WHERE snapshot_date >= DATE(NOW()) - INTERVAL 89 DAY'
-    );
-    $avgUptime = round((float) $stmtAvgUptime->fetchColumn(), 1);
-    if ($avgUptime <= 0) $avgUptime = 99.3;
-
-    // 5. Active incidents
-    $stmtInc = $pdo->prepare(
-        'SELECT i.id, i.title, i.severity, i.status, i.started_at, i.resolved_at, i.updated_at,
-                GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ", ") AS affected_services
-         FROM incidents i
-         LEFT JOIN incident_services isc ON isc.incident_id = i.id
-         LEFT JOIN services s            ON s.id = isc.service_id
-         WHERE i.status != "resolved"
-         GROUP BY i.id
-         ORDER BY i.started_at DESC'
-    );
-    $stmtInc->execute();
-    $activeIncidents = $stmtInc->fetchAll();
-
-    // 6. Upcoming and in-progress maintenances
-    $stmtMaint = $pdo->prepare(
-        'SELECT m.id, m.title, m.description, m.status, m.scheduled_at, m.expected_end,
-                GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ", ") AS affected_services
-         FROM maintenances m
-         LEFT JOIN maintenance_services ms ON ms.maintenance_id = m.id
-         LEFT JOIN services s              ON s.id = ms.service_id
-         WHERE m.status IN ("scheduled","in_progress")
-         GROUP BY m.id
-         ORDER BY (m.status = "in_progress") DESC, m.scheduled_at ASC'
-    );
-    $stmtMaint->execute();
-    $upcomingMaintenances = $stmtMaint->fetchAll();
-
-    $inProgressCount = 0;
-    $scheduledCount  = 0;
-    foreach ($upcomingMaintenances as $m) {
-        if ($m['status'] === 'in_progress') $inProgressCount++;
-        if ($m['status'] === 'scheduled')   $scheduledCount++;
+    // Append standalone maintenance services to upcomingMaintenances so modal & lists reflect them
+    foreach ($metrics['standalone_maint_services'] as $stMaint) {
+        $upcomingMaintenances[] = [
+            'id' => 'svc-' . $stMaint['id'],
+            'title' => 'Bảo trì kỹ thuật: ' . $stMaint['name'],
+            'description' => 'Dịch vụ ' . $stMaint['name'] . ' đang được bảo trì và nâng cấp kỹ thuật.',
+            'status' => 'in_progress',
+            'scheduled_at' => $stMaint['updated_at'] ?? date('Y-m-d H:i:s'),
+            'expected_end' => 'Đang thực hiện',
+            'updated_at' => $stMaint['updated_at'] ?? date('Y-m-d H:i:s'),
+            'affected_services' => $stMaint['name'],
+        ];
     }
 
     // 7. Calendar Events mapping purely from MySQL (incidents and maintenances)
@@ -185,6 +146,21 @@ try {
     while ($row = $stmtMaintDates->fetch()) {
         $calendarEvents[$row['event_date']]['maintenances'] = (int) $row['cnt'];
         $calendarEvents[$row['event_date']]['maintenance_titles'] = $row['titles'];
+    }
+
+    // Đảm bảo các sự cố và bảo trì đang hoạt động hôm nay hiển thị chấm trên lịch
+    $todayDate = date('Y-m-d');
+    if ($effectiveActiveIncidentsCount > 0) {
+        $calendarEvents[$todayDate]['incidents'] = max((int)($calendarEvents[$todayDate]['incidents'] ?? 0), $effectiveActiveIncidentsCount);
+        if (empty($calendarEvents[$todayDate]['incident_titles'])) {
+            $calendarEvents[$todayDate]['incident_titles'] = $overallMessage;
+        }
+    }
+    if ($effectiveMaintenanceCount > 0) {
+        $calendarEvents[$todayDate]['maintenances'] = max((int)($calendarEvents[$todayDate]['maintenances'] ?? 0), $effectiveMaintenanceCount);
+        if (empty($calendarEvents[$todayDate]['maintenance_titles'])) {
+            $calendarEvents[$todayDate]['maintenance_titles'] = 'Bảo trì hệ thống đang diễn ra';
+        }
     }
 
     // 8. Service Groups payload

@@ -171,9 +171,9 @@ function renderStatusSummary(data) {
   document.getElementById('statOutageCount').textContent = data.summary.outage_count + data.summary.degraded_count;
 
   document.getElementById('statAvgUptime').textContent = data.summary.avg_uptime_90d + '%';
-  document.getElementById('statActiveIncidents').textContent = data.summary.active_incidents_count;
-  document.getElementById('statUpcomingMaint').textContent = data.summary.upcoming_maintenances_count;
-  document.getElementById('statInProgressMaint').textContent = data.summary.in_progress_count;
+  document.getElementById('statActiveIncidents').textContent = data.summary.active_incidents_count ?? 0;
+  document.getElementById('statUpcomingMaint').textContent = data.summary.scheduled_count !== undefined ? data.summary.scheduled_count : (data.summary.upcoming_maintenances_count ?? 0);
+  document.getElementById('statInProgressMaint').textContent = data.summary.in_progress_count ?? 0;
 }
 
 // ══════════════════════════════════════════════════════════════

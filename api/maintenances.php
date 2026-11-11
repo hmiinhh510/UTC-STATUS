@@ -4,6 +4,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/auth_guard.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/service_status.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -40,6 +41,25 @@ try {
     );
     $stmtUpcoming->execute();
     $upcoming = $stmtUpcoming->fetchAll();
+
+    // Đồng bộ các dịch vụ đang được Admin đặt trạng thái bảo trì trực tiếp
+    $metrics = getSystemMetrics($pdo);
+    $syntheticMaintenances = [];
+    foreach ($metrics['standalone_maint_services'] as $stMaint) {
+        $syntheticMaintenances[] = [
+            'id' => 'svc-' . $stMaint['id'],
+            'title' => 'Bảo trì kỹ thuật: ' . $stMaint['name'],
+            'description' => 'Dịch vụ ' . $stMaint['name'] . ' đang được đội ngũ kỹ thuật bảo trì và nâng cấp theo kế hoạch.',
+            'status' => 'in_progress',
+            'scheduled_at' => $stMaint['updated_at'] ?? date('Y-m-d H:i:s'),
+            'expected_end' => 'Đang tiến hành',
+            'updated_at' => $stMaint['updated_at'] ?? date('Y-m-d H:i:s'),
+            'affected_services' => $stMaint['name'],
+        ];
+    }
+    if (!empty($syntheticMaintenances)) {
+        $upcoming = array_merge($syntheticMaintenances, $upcoming);
+    }
 
     // 2. Lấy các kế hoạch đã hoàn tất (completed)
     $stmtPast = $pdo->prepare(

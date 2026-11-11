@@ -20,6 +20,7 @@ $flash     = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/service_status.php';
 
 // Khởi tạo & nạp trước dữ liệu bãi xe phía máy chủ (Server-side Pre-rendering)
 $parkingZones = [];
@@ -29,6 +30,22 @@ $parkingOverallPct = 0.0;
 $parkingOverallStatus = 'available';
 $parkingOverallLabel = 'Còn trống';
 $parkingBadgeClass = 'bg-success';
+
+// Khởi tạo các chỉ số dịch vụ, sự cố & bảo trì
+$totalServices = 0;
+$operationalCount = 0;
+$outageCount = 0;
+$degradedCount = 0;
+$troubledServicesCount = 0;
+$overallStatus = 'operational';
+$overallMessage = 'Tất cả hệ thống đang hoạt động bình thường';
+$overallColor = '#22c55e';
+$avgUptime = 99.3;
+$effectiveActiveIncidentsCount = 0;
+$effectiveMaintenanceCount = 0;
+$scheduledMaintCount = 0;
+$inProgressMaintCount = 0;
+$totalAlerts = 0;
 
 try {
     $pdo = Database::getInstance();
@@ -50,6 +67,23 @@ try {
         $parkingOverallLabel = 'Sắp đầy';
         $parkingBadgeClass = 'bg-warning text-dark';
     }
+
+    // Nạp toàn bộ chỉ số sự cố, bảo trì và trạng thái hệ thống chuẩn xác từ máy chủ
+    $metrics = getSystemMetrics($pdo);
+    $totalServices                 = (int) $metrics['total_services'];
+    $operationalCount              = (int) $metrics['operational_count'];
+    $outageCount                   = (int) $metrics['outage_count'];
+    $degradedCount                 = (int) $metrics['degraded_count'];
+    $troubledServicesCount         = (int) $metrics['troubled_services_count'];
+    $overallStatus                 = $metrics['overall_status'];
+    $overallMessage                = $metrics['overall_message'];
+    $overallColor                  = $metrics['overall_color'];
+    $avgUptime                     = (float) $metrics['avg_uptime_90d'];
+    $effectiveActiveIncidentsCount = (int) $metrics['effective_active_incidents'];
+    $effectiveMaintenanceCount     = (int) $metrics['effective_maintenances_count'];
+    $scheduledMaintCount           = (int) $metrics['scheduled_maint_count'];
+    $inProgressMaintCount          = (int) $metrics['in_progress_maint_count'];
+    $totalAlerts                   = $effectiveActiveIncidentsCount + $inProgressMaintCount;
 } catch (\Throwable $e) {
     // Fallback if table not ready
 }
@@ -173,7 +207,7 @@ try {
           <!-- Notification bell button -->
           <button type="button" id="btnNavBell" class="nav-action-btn" title="Đăng ký nhận thông báo sự cố">
             <i class="fa-regular fa-bell"></i>
-            <span id="navBellBadge" class="nav-badge-dot">1</span>
+            <span id="navBellBadge" class="nav-badge-dot <?= $totalAlerts > 0 ? '' : 'd-none' ?>"><?= $totalAlerts ?></span>
           </button>
 
           <!-- Nút gạt chuyển đổi giao diện Sáng / Tối (Toggle Switch Slider) -->
@@ -318,16 +352,16 @@ try {
             <div class="col-12 col-sm">
               <div class="mb-2">
                 <div class="status-stat-label header-label">Tình trạng chung:</div>
-                <div id="statGeneralMsg" class="status-stat-val-bold red-alert">LMS (Moodle) đang gặp sự cố</div>
+                <div id="statGeneralMsg" class="status-stat-val-bold <?= $overallStatus === 'operational' ? 'green-ok' : 'red-alert' ?>"><?= htmlspecialchars($overallMessage) ?></div>
               </div>
               <div class="d-flex flex-column gap-1 small">
-                <div><span class="status-stat-label">Tổng số dịch vụ:</span> <strong id="statTotalServices">9</strong>
+                <div><span class="status-stat-label">Tổng số dịch vụ:</span> <strong id="statTotalServices"><?= $totalServices ?></strong>
                 </div>
-                <div><span class="status-stat-label">Hoạt động:</span> <strong id="statOperationalCount">7</strong>
+                <div><span class="status-stat-label">Hoạt động:</span> <strong id="statOperationalCount"><?= $operationalCount ?></strong>
                 </div>
                 <div><span class="status-stat-label">Lỗi:</span> <strong id="statOutageCount"
-                    class="text-danger">1</strong></div>
-                <div><span class="status-stat-label">Cập nhật lúc:</span> <strong id="statUpdatedTime">13:57</strong>
+                    class="<?= $troubledServicesCount > 0 ? 'text-danger' : '' ?>"><?= $troubledServicesCount ?></strong></div>
+                <div><span class="status-stat-label">Cập nhật lúc:</span> <strong id="statUpdatedTime"><?= date('H:i') ?></strong>
                 </div>
               </div>
             </div>
@@ -336,16 +370,16 @@ try {
             <div class="col-12 col-sm">
               <div class="mb-2">
                 <div class="status-stat-label header-label">Uptime TB 90 ngày: <strong id="statAvgUptime"
-                    class="text-dark">99.3%</strong></div>
+                    class="text-dark"><?= $avgUptime ?>%</strong></div>
               </div>
               <div class="d-flex flex-column gap-1 small">
                 <div><span class="status-stat-label">Sự cố đang xử lý:</span> <strong
-                    id="statActiveIncidents">1</strong></div>
-                <div><span class="status-stat-label">Bảo trì sắp tới:</span> <strong id="statUpcomingMaint">2</strong>
+                    id="statActiveIncidents"><?= $effectiveActiveIncidentsCount ?></strong></div>
+                <div><span class="status-stat-label">Bảo trì sắp tới:</span> <strong id="statUpcomingMaint"><?= $scheduledMaintCount ?></strong>
                 </div>
-                <div><span class="status-stat-label">Đang bảo trì:</span> <strong id="statInProgressMaint">1</strong>
+                <div><span class="status-stat-label">Đang bảo trì:</span> <strong id="statInProgressMaint"><?= $inProgressMaintCount ?></strong>
                 </div>
-                <div><span class="status-stat-label">Tự làm mới:</span> sau <span id="statCountdown">22</span> giây
+                <div><span class="status-stat-label">Tự làm mới:</span> sau <span id="statCountdown">30</span> giây
                 </div>
               </div>
             </div>
@@ -362,7 +396,7 @@ try {
                 <span class="utc-stat-card-title text-white">Sự cố đang xử lý</span>
                 <span class="utc-stat-card-icon text-white"><i class="fa-regular fa-bell"></i></span>
               </div>
-              <div id="metricIncidentsCount" class="utc-stat-card-number text-white">0</div>
+              <div id="metricIncidentsCount" class="utc-stat-card-number text-white"><?= $effectiveActiveIncidentsCount ?></div>
               <div class="utc-stat-card-link text-white">
                 <span>Xem chi tiết <i class="fa-solid fa-arrow-right ms-1"></i></span>
               </div>
@@ -376,7 +410,7 @@ try {
                 <span class="utc-stat-card-title text-white">Bảo trì trong tuần</span>
                 <span class="utc-stat-card-icon text-white"><i class="fa-regular fa-calendar-days"></i></span>
               </div>
-              <div id="metricMaintenancesCount" class="utc-stat-card-number text-white">0</div>
+              <div id="metricMaintenancesCount" class="utc-stat-card-number text-white"><?= $effectiveMaintenanceCount ?></div>
               <div class="utc-stat-card-link text-white">
                 <span>Xem chi tiết <i class="fa-solid fa-arrow-right ms-1"></i></span>
               </div>

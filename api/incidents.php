@@ -13,6 +13,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/auth_guard.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/service_status.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -108,6 +109,46 @@ try {
         $inc['updates'] = $updStmt->fetchAll();
     }
     unset($inc);
+
+    // Đồng bộ các dịch vụ đang gặp sự cố chưa gắn vào ticket chính thức
+    if ($statusFilter !== 'resolved' && $page === 1) {
+        $metrics = getSystemMetrics($pdo);
+        $syntheticIncidents = [];
+        foreach ($metrics['standalone_troubled_services'] as $stSvc) {
+            $sev = match($stSvc['status']) {
+                'major_outage'   => 'critical',
+                'partial_outage' => 'major',
+                default          => 'minor'
+            };
+            $desc = match($stSvc['status']) {
+                'major_outage'   => 'Sự cố nghiêm trọng (Major Outage)',
+                'partial_outage' => 'Gián đoạn một phần (Partial Outage)',
+                default          => 'Hiệu năng giảm sút (Degraded Performance)'
+            };
+            $syntheticIncidents[] = [
+                'id' => 'svc-' . $stSvc['id'],
+                'title' => 'Sự cố dịch vụ: ' . $stSvc['name'],
+                'severity' => $sev,
+                'status' => 'investigating',
+                'started_at' => $stSvc['updated_at'] ?? date('Y-m-d H:i:s'),
+                'resolved_at' => null,
+                'updated_at' => $stSvc['updated_at'] ?? date('Y-m-d H:i:s'),
+                'affected_services' => $stSvc['name'],
+                'updates' => [
+                    [
+                        'id' => 0,
+                        'status' => 'investigating',
+                        'message' => "Hệ thống ghi nhận trạng thái [{$desc}]. Đội ngũ kỹ thuật đang tiến hành kiểm tra và khắc phục.",
+                        'created_at' => $stSvc['updated_at'] ?? date('Y-m-d H:i:s')
+                    ]
+                ]
+            ];
+        }
+        if (!empty($syntheticIncidents)) {
+            $incidents = array_merge($syntheticIncidents, $incidents);
+            $total += count($syntheticIncidents);
+        }
+    }
 
     jsonOut(200, [
         'data'       => $incidents,

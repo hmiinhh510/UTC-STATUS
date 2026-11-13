@@ -123,3 +123,4 @@ class AuthAndRbacTest extends TestCase {
         $this->assertFalse(password_verify('WrongPassword', $hashed), 'Mật khẩu sai phải bị từ chối');
     }
 }
+

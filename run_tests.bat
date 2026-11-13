@@ -9,3 +9,4 @@ if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Unit Tests failed!
     exit /b %ERRORLEVEL%
 )
+

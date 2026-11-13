@@ -74,3 +74,4 @@ class MaintenancesApiTest extends TestCase {
         }
     }
 }
+

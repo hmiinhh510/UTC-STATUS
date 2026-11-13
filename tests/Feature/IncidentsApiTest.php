@@ -5,12 +5,14 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 
-class IncidentsApiTest extends TestCase {
+class IncidentsApiTest extends TestCase
+{
     protected bool $useTransaction = false;
 
-    public function testGetIncidentsListStructure(): void {
+    public function testGetIncidentsListStructure(): void
+    {
         $session = [
-            'admin_id'   => 8,
+            'admin_id' => 8,
             'admin_role' => 'student'
         ];
 
@@ -31,9 +33,10 @@ class IncidentsApiTest extends TestCase {
         $this->assertArrayHasKey('updates', $first);
     }
 
-    public function testFilterIncidentsByStatus(): void {
+    public function testFilterIncidentsByStatus(): void
+    {
         $session = [
-            'admin_id'   => 1,
+            'admin_id' => 1,
             'admin_role' => 'admin'
         ];
 
@@ -51,3 +54,4 @@ class IncidentsApiTest extends TestCase {
         }
     }
 }
+

@@ -81,3 +81,4 @@ class SystemMetricsTest extends TestCase {
         $this->assertEquals($initial['effective_maintenances_count'] + 1, $updated['effective_maintenances_count']);
     }
 }
+

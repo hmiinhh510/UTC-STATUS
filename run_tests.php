@@ -11,3 +11,4 @@ require_once __DIR__ . '/tests/TestRunner.php';
 $runner = new \Tests\TestRunner();
 $exitCode = $runner->run();
 exit($exitCode);
+

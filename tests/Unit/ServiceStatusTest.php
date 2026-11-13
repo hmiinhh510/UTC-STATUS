@@ -108,3 +108,4 @@ class ServiceStatusTest extends TestCase {
         $this->assertEquals('maintenance', $status, 'Khi có kế hoạch bảo trì in_progress, dịch vụ phải chuyển sang maintenance');
     }
 }
+

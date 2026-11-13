@@ -64,3 +64,4 @@ class ApiStatusTest extends TestCase {
         $this->assertGreaterThanOrEqual(1, $res['json']['summary']['total_services']);
     }
 }
+

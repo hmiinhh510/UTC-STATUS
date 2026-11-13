@@ -40,3 +40,4 @@ function canPerform(string $action, string $role): bool {
     // Role 'student' (Sinh viên / Người xem) chỉ có quyền tra cứu thông tin
     return false;
 }
+

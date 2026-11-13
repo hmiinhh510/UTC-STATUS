@@ -91,3 +91,4 @@ class ParkingZoneTest extends TestCase {
         $this->assertEquals('available', $zone['status']);
     }
 }
+

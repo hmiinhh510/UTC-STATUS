@@ -65,6 +65,7 @@ class AuthAndRbacTest extends TestCase {
         $forbiddenActions = [
             'delete_service',
             'delete_group',
+            'delete_maintenance',
             'create_user',
             'delete_user',
             'change_user_status',

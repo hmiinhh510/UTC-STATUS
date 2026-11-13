@@ -496,6 +496,57 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 }
                 break;
 
+            case 'delete_maintenance':
+                $maintId = (int) ($_POST['maintenance_id'] ?? 0);
+
+                if ($maintId <= 0) {
+                    setFlash('danger', 'Lịch bảo trì cần xóa không hợp lệ.');
+                    break;
+                }
+
+                $pdo->beginTransaction();
+                $maintenanceStmt = $pdo->prepare(
+                    'SELECT title, status FROM maintenances WHERE id = :id FOR UPDATE'
+                );
+                $maintenanceStmt->execute([':id' => $maintId]);
+                $maintenance = $maintenanceStmt->fetch();
+                if (!$maintenance) {
+                    throw new RuntimeException('Không tìm thấy lịch bảo trì cần xóa.');
+                }
+
+                $serviceStmt = $pdo->prepare(
+                    'SELECT service_id FROM maintenance_services WHERE maintenance_id = :id'
+                );
+                $serviceStmt->execute([':id' => $maintId]);
+                $affectedServiceIds = array_map('intval', $serviceStmt->fetchAll(PDO::FETCH_COLUMN));
+
+                $deleteStmt = $pdo->prepare('DELETE FROM maintenances WHERE id = :id');
+                $deleteStmt->execute([':id' => $maintId]);
+
+                if ($maintenance['status'] === 'in_progress') {
+                    foreach ($affectedServiceIds as $serviceId) {
+                        reconcileServiceStatus(
+                            $pdo,
+                            $serviceId,
+                            $adminId,
+                            "Xóa lịch bảo trì #{$maintId}"
+                        );
+                    }
+                }
+
+                $pdo->commit();
+                logAction(
+                    $pdo,
+                    $adminId,
+                    $adminName,
+                    'delete_maintenance',
+                    'maintenance',
+                    $maintId,
+                    "Xóa lịch bảo trì #{$maintId}: {$maintenance['title']}"
+                );
+                setFlash('success', "Đã xóa lịch bảo trì #{$maintId} thành công!");
+                break;
+
             // ── CHẠY HEALTH CHECK TỰ ĐỘNG ────────────────────
             case 'run_health_check':
                 $healthCheck = runHealthChecks($pdo, null, true, $adminId);
@@ -820,11 +871,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 
     $targetHash = '';
-    if (in_array($action, ['create_user', 'reset_user_password', 'change_user_role', 'toggle_user_status', 'delete_user', 'approve_reset_request', 'cancel_reset_request'], true)) {
+    if (in_array($action, ['create_user', 'reset_user_password', 'update_user_role', 'toggle_user_status', 'delete_user', 'approve_reset_request', 'cancel_reset_request'], true)) {
         $targetHash = '#tab-subscribers';
     } elseif (in_array($action, ['create_incident', 'add_incident_update', 'resolve_incident'], true)) {
         $targetHash = '#tab-incidents';
-    } elseif (in_array($action, ['create_maintenance', 'update_maintenance_status'], true)) {
+    } elseif (in_array($action, ['create_maintenance', 'update_maintenance_status', 'delete_maintenance'], true)) {
         $targetHash = '#tab-maintenances';
     } elseif (in_array($action, ['create_group', 'delete_group'], true)) {
         $targetHash = '#tab-groups';
@@ -906,17 +957,27 @@ $maintenances = $maintenancesStmt->fetchAll();
 $subscribers = $pdo->query('SELECT * FROM subscriptions ORDER BY created_at DESC LIMIT 50')->fetchAll();
 
 // Fetch Users (All Accounts: Sinh viên, Editor, Admin)
-$allUsers = $pdo->query('SELECT id, username, full_name, email, role, status, created_at FROM users ORDER BY id DESC')->fetchAll();
-$totalUsersCount = count($allUsers);
+$totalUsersCount = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+$allUsers = [];
+$resetRequests = [];
+$pendingResetCount = 0;
 
-// Fetch Password Reset Requests (Yêu cầu cấp lại mật khẩu từ sinh viên)
-$resetRequests = $pdo->query(
-    'SELECT prr.*, u.full_name AS user_fullname, u.email AS user_email, u.role AS user_role 
-     FROM password_reset_requests prr
-     LEFT JOIN users u ON u.id = prr.user_id
-     ORDER BY (prr.status = "pending") DESC, prr.created_at DESC'
-)->fetchAll();
-$pendingResetCount = count(array_filter($resetRequests, fn($r) => $r['status'] === 'pending'));
+if ($adminRole === 'admin') {
+    $allUsers = $pdo->query(
+        'SELECT id, username, full_name, email, role, status, created_at
+         FROM users
+         ORDER BY id DESC'
+    )->fetchAll();
+
+    // Chỉ Admin được xem yêu cầu đặt lại mật khẩu và mật khẩu tạm đã cấp.
+    $resetRequests = $pdo->query(
+        'SELECT prr.*, u.full_name AS user_fullname, u.email AS user_email, u.role AS user_role
+         FROM password_reset_requests prr
+         LEFT JOIN users u ON u.id = prr.user_id
+         ORDER BY (prr.status = "pending") DESC, prr.created_at DESC'
+    )->fetchAll();
+    $pendingResetCount = count(array_filter($resetRequests, fn($r) => $r['status'] === 'pending'));
+}
 
 // Fetch Activity Logs (Audit Trail)
 $activityLogs = $pdo->query(
@@ -1432,14 +1493,16 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
           <i class="fa-solid fa-clock-rotate-left me-1"></i>Nhật ký Hoạt động (Audit Log)
         </button>
       </li>
-      <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-subscribers">
-          <i class="fa-solid fa-users-gear me-1"></i>Tài Khoản &amp; Sinh Viên
-          <?php if ($pendingResetCount > 0): ?>
-            <span class="badge bg-danger rounded-pill ms-1" title="Có <?= $pendingResetCount ?> yêu cầu cấp lại mật khẩu"><?= $pendingResetCount ?></span>
-          <?php endif; ?>
-        </button>
-      </li>
+      <?php if ($adminRole === 'admin'): ?>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-subscribers">
+            <i class="fa-solid fa-users-gear me-1"></i>Tài Khoản &amp; Sinh Viên
+            <?php if ($pendingResetCount > 0): ?>
+              <span class="badge bg-danger rounded-pill ms-1" title="Có <?= $pendingResetCount ?> yêu cầu cấp lại mật khẩu"><?= $pendingResetCount ?></span>
+            <?php endif; ?>
+          </button>
+        </li>
+      <?php endif; ?>
     </ul>
 
     <!-- Tab Contents -->
@@ -2268,6 +2331,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
       <!-- ========================================================
            TAB 7: QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG & SINH VIÊN
       ======================================================== -->
+      <?php if ($adminRole === 'admin'): ?>
       <div class="tab-pane fade" id="tab-subscribers">
         <div class="utc-card p-4">
           <!-- Header & Actions -->
@@ -2482,6 +2546,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
           </div>
         </div>
       </div>
+      <?php endif; ?>
 
       <!-- ========================================================
            TAB 4: HÀNG ĐỢI SỰ CỐ FIFO & LỊCH BÁO CÁO (FIRST-IN, FIRST-OUT)
@@ -2987,6 +3052,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
     </div>
   </div>
 
+  <?php if ($adminRole === 'admin'): ?>
   <!-- Modal 1: Thêm Tài Khoản Người Dùng Mới -->
   <div class="modal fade" id="modalCreateUser" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -3171,6 +3237,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
       </div>
     </div>
   </div>
+  <?php endif; ?>
 
   <!-- Modal Cập Nhật Sự Cố Hàng Đợi FIFO -->
   <div class="modal fade" id="modalUpdateFifoIncident" tabindex="-1">

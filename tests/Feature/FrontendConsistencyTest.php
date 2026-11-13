@@ -32,6 +32,24 @@ class FrontendConsistencyTest extends TestCase {
         $this->assertFalse(str_contains($res['stdout'], 'Bảng Điều Khiển Quản Trị'), 'Tuyệt đối không render trang admin cho sinh viên.');
     }
 
+    public function testAdminFormsHaveMatchingPostHandlers(): void {
+        $adminSource = file_get_contents(__DIR__ . '/../../admin/index.php');
+        $this->assertTrue(is_string($adminSource), 'Không thể đọc trang quản trị để kiểm tra các action.');
+
+        preg_match_all('/name="action"\s+value="([^"]+)"/', $adminSource, $formMatches);
+        preg_match_all("/case\\s+'([^']+)'\\s*:/", $adminSource, $handlerMatches);
+
+        $formActions = array_values(array_unique($formMatches[1]));
+        $handlers = array_values(array_unique($handlerMatches[1]));
+        $unhandledActions = array_values(array_diff($formActions, $handlers));
+
+        $this->assertSame(
+            [],
+            $unhandledActions,
+            'Mọi action của form admin phải có handler POST tương ứng.'
+        );
+    }
+
     public function testPreRenderedMetricsConsistencyAcrossAllThreeRoles(): void {
         $roles = [
             'admin'   => ['admin_id' => 1, 'admin_name' => 'Admin User', 'admin_role' => 'admin'],

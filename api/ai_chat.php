@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 /**
- * UTC STATUS - AI Chatbot API Endpoint
+ * UTH STATUS - AI Chatbot API Endpoint
  * POST /api/ai_chat.php
- * Trợ lý ảo hỗ trợ tra cứu trạng thái dịch vụ, bãi xe sân trường và sự cố UTC
+ * Trợ lý ảo hỗ trợ tra cứu trạng thái dịch vụ, bãi xe sân trường và sự cố UTH
  */
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -23,7 +23,7 @@ if ($method === 'GET') {
     $hasKey = !empty(GEMINI_API_KEY);
     echo json_encode([
         'success'   => true,
-        'message'   => 'UTC AI Chatbot API sẵn sàng hoạt động.',
+        'message'   => 'UTH AI Chatbot API sẵn sàng hoạt động.',
         'providers' => [
             'gemini_available' => $hasKey,
             'smart_offline'    => true

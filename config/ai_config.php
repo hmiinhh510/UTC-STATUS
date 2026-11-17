@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * UTC STATUS - Cấu hình & Xử lý Ngữ cảnh Trợ lý Ảo AI (AI Assistant Engine)
+ * UTH STATUS - Cấu hình & Xử lý Ngữ cảnh Trợ lý Ảo AI (AI Assistant Engine)
  * Hỗ trợ song song:
  * 1. Google Gemini API (khi cấu hình API key)
  * 2. Smart Live Context Engine (chạy trực tiếp nội bộ trên XAMPP không cần API key)
@@ -18,7 +18,7 @@ if (!defined('AI_MODEL_NAME')) {
 }
 
 /**
- * Trích xuất toàn bộ dữ liệu thực tế của hệ thống UTC STATUS từ MySQL
+ * Trích xuất toàn bộ dữ liệu thực tế của hệ thống UTH STATUS từ MySQL
  */
 function getLiveSystemContext(PDO $pdo): array {
     // 1. Trạng thái dịch vụ
@@ -132,7 +132,7 @@ function getLiveSystemContext(PDO $pdo): array {
 function buildAiContextSummary(array $ctx): string {
     $out = "=== THỜI GIAN HIỆN TẠI: " . $ctx['current_time'] . " ===\n\n";
 
-    $out .= "=== 1. TÌNH TRẠNG DỊCH VỤ CNTT UTC ===\n";
+    $out .= "=== 1. TÌNH TRẠNG DỊCH VỤ CNTT UTH ===\n";
     $out .= "- Tổng số dịch vụ: {$ctx['services']['total']}\n";
     $out .= "- Đang hoạt động bình thường: {$ctx['services']['operational']}/{$ctx['services']['total']}\n";
     if (!empty($ctx['services']['outages'])) {
@@ -178,7 +178,7 @@ function callGeminiApi(string $userMessage, array $contextData, string $apiKey):
     $contextText = buildAiContextSummary($contextData);
 
     $systemInstruction = <<<TEXT
-Bạn là "UTC AI Assistant" - Trợ lý số thông minh của Hệ thống Theo dõi Trạng thái Dịch vụ & Bãi xe Đại học Giao thông Vận tải (UTC STATUS).
+Bạn là "UTH AI Assistant" - Trợ lý số thông minh của Hệ thống Theo dõi Trạng thái Dịch vụ & Bãi xe Đại học Giao thông Vận tải (UTH STATUS).
 Nhiệm vụ của bạn:
 1. Trả lời các thắc mắc của sinh viên, giảng viên và quản trị viên về trạng thái dịch vụ CNTT (LMS, Eduroam, Cổng tín chỉ, Học phí...), sức chứa bãi xe sân trường, sự cố và lịch bảo trì.
 2. Luôn sử dụng dữ liệu thực tế trong bản tóm tắt trạng thái hệ thống bên dưới để trả lời chính xác 100%, không bịa đặt số liệu.
@@ -267,7 +267,7 @@ function querySmartOfflineEngine(string $message, array $ctx): array {
         str_contains($msgLower, 'khu c')
     ) {
         $zones = $ctx['parking']['zones'];
-        $reply = "🅿️ **TÌNH TRẠNG BÃI XE SÂN TRƯỜNG UTC HIỆN TẠI**\n\n";
+        $reply = "🅿️ **TÌNH TRẠNG BÃI XE SÂN TRƯỜNG UTH HIỆN TẠI**\n\n";
 
         // Kiểm tra nếu hỏi cụ thể 1 khu
         if (str_contains($msgLower, 'khu a')) {
@@ -330,7 +330,7 @@ function querySmartOfflineEngine(string $message, array $ctx): array {
         str_contains($msgLower, 'chậm') ||
         str_contains($msgLower, 'đang xử lý')
     ) {
-        $reply = "⚠️ **THÔNG TIN SỰ CỐ & GIẢI QUYẾT TẠI UTC STATUS**\n\n";
+        $reply = "⚠️ **THÔNG TIN SỰ CỐ & GIẢI QUYẾT TẠI UTH STATUS**\n\n";
         if (empty($ctx['active_incidents'])) {
             $reply .= "🟢 **Hiện tại không có sự cố CNTT nghiêm trọng nào đang diễn ra!**\n";
             $reply .= "Tất cả các dịch vụ trọng yếu của trường đều đang ở trạng thái ổn định.\n\n";
@@ -355,7 +355,7 @@ function querySmartOfflineEngine(string $message, array $ctx): array {
         str_contains($msgLower, 'lịch bảo trì') || 
         str_contains($msgLower, 'bảo dưỡng')
     ) {
-        $reply = "🛠️ **LỊCH TRÌNH BẢO TRÌ HỆ THỐNG CNTT UTC**\n\n";
+        $reply = "🛠️ **LỊCH TRÌNH BẢO TRÌ HỆ THỐNG CNTT UTH**\n\n";
         if (empty($ctx['upcoming_maintenances'])) {
             $reply .= "🟢 **Trong tuần này không có lịch bảo trì nào được lên kế hoạch!**\n";
             $reply .= "Các hệ thống LMS, Cổng thông tin và Mạng Wi-Fi hoạt động bình thường 24/7.\n";
@@ -380,10 +380,10 @@ function querySmartOfflineEngine(string $message, array $ctx): array {
         str_contains($msgLower, 'mạng') || 
         str_contains($msgLower, 'internet')
     ) {
-        $reply = "📶 **HƯỚNG DẪN KẾT NỐI MẠNG WI-FI EDUROAM TẠI UTC**\n\n";
+        $reply = "📶 **HƯỚNG DẪN KẾT NỐI MẠNG WI-FI EDUROAM TẠI UTH**\n\n";
         $reply .= "Mạng **eduroam** là mạng Wi-Fi chuyển vùng quốc tế phủ sóng toàn khuôn viên Đại học Giao thông Vận tải.\n\n";
         $reply .= "🔑 **Thông tin đăng nhập:**\n";
-        $reply .= "• **Tài khoản**: `<mã_sinh_viên>@utc.edu.vn` (hoặc `@student.utc.edu.vn`)\n";
+        $reply .= "• **Tài khoản**: `<mã_sinh_viên>@uth.edu.vn` (hoặc `@student.uth.edu.vn`)\n";
         $reply .= "• **Mật khẩu**: Mật khẩu cổng thông tin sinh viên của bạn\n\n";
         $reply .= "⚙️ **Cài đặt kết nối (Trên điện thoại Android/iOS/Laptop):**\n";
         $reply .= "• Phương thức EAP (EAP method): **PEAP**\n";
@@ -417,7 +417,7 @@ function querySmartOfflineEngine(string $message, array $ctx): array {
         str_contains($msgLower, 'reset pass')
     ) {
         $reply = "🔑 **HƯỚNG DẪN CẤP LẠI MẬT KHẨU TÀI KHOẢN**\n\n";
-        $reply .= "1. Tại màn hình Đăng nhập UTC STATUS, nhấn vào liên kết **\"Quên mật khẩu?\"**.\n";
+        $reply .= "1. Tại màn hình Đăng nhập UTH STATUS, nhấn vào liên kết **\"Quên mật khẩu?\"**.\n";
         $reply .= "2. Nhập chính xác Mã sinh viên và Email đã đăng ký trong hệ thống.\n";
         $reply .= "3. Gửi yêu cầu; ban quản trị (Admin) sẽ xác minh danh tính và cấp lại mật khẩu cho bạn trong mục Quản lý Tài khoản.\n";
         $reply .= "4. Bạn cũng có thể liên hệ trực tiếp **Phòng Đào tạo / Trung tâm CNTT** tại Nhà A1 để được hỗ trợ trực tiếp.";
@@ -432,7 +432,7 @@ function querySmartOfflineEngine(string $message, array $ctx): array {
         str_contains($msgLower, 'ổn không') ||
         str_contains($msgLower, 'thế nào')
     ) {
-        $reply = "📊 **TỔNG HỢP TRẠNG THÁI HỆ THỐNG UTC STATUS**\n\n";
+        $reply = "📊 **TỔNG HỢP TRẠNG THÁI HỆ THỐNG UTH STATUS**\n\n";
         $reply .= "• Dịch vụ CNTT: **{$ctx['services']['operational']}/{$ctx['services']['total']}** dịch vụ hoạt động bình thường.\n";
         if (!empty($ctx['services']['outages'])) {
             $reply .= "• Dịch vụ lỗi: 🔴 **" . implode(', ', $ctx['services']['outages']) . "**\n";
@@ -447,7 +447,7 @@ function querySmartOfflineEngine(string $message, array $ctx): array {
     }
 
     // 8. Chào hỏi / Cảm ơn / Mặc định
-    $reply = "👋 **Xin chào! Mình là Trợ lý Ảo UTC STATUS.**\n\n";
+    $reply = "👋 **Xin chào! Mình là Trợ lý Ảo UTH STATUS.**\n\n";
     $reply .= "Mình có thể hỗ trợ bạn tra cứu tức thì thông tin hệ thống tại ĐH Giao thông Vận tải:\n";
     $reply .= "• 🅿️ **Tình trạng bãi xe sân trường**: Số lượng chỗ trống tại Khu A, Khu B, Khu C.\n";
     $reply .= "• 🟢 **Trạng thái dịch vụ CNTT**: LMS, Wifi eduroam, Cổng tín chỉ, Đăng ký học phần...\n";

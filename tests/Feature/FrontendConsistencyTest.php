@@ -63,7 +63,7 @@ class FrontendConsistencyTest extends TestCase {
             $res = $this->callEndpoint('index.php', [], [], $sessionData);
             $html = $res['stdout'];
 
-            $this->assertStringContainsString('UTC STATUS', $html);
+            $this->assertStringContainsString('UTH STATUS', $html);
             $this->assertStringContainsString('metricIncidentsCount', $html);
             $this->assertStringContainsString('metricMaintenancesCount', $html);
             $this->assertStringContainsString('cardParkingAction', $html);

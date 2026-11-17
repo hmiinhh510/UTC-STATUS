@@ -194,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Phân quyền chuyển hướng sau đăng nhập:
                 if ($user['role'] === 'student') {
-                    setFlash('success', 'Chào mừng sinh viên ' . htmlspecialchars($_SESSION['admin_name']) . ' đã đăng nhập vào Hệ thống Lịch Dịch Vụ UTC.');
+                    setFlash('success', 'Chào mừng sinh viên ' . htmlspecialchars($_SESSION['admin_name']) . ' đã đăng nhập vào Hệ thống Lịch Dịch Vụ UTH.');
                     header('Location: ../index.php');
                 } else {
                     setFlash('success', 'Đăng nhập thành công! Chào mừng ' . htmlspecialchars($_SESSION['admin_name']) . ' quay trở lại Bảng Quản trị.');
@@ -311,7 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "Đăng ký tài khoản Sinh viên mới: {$fullName} ({$username} - {$email})"
             );
 
-            setFlash('success', "Chúc mừng bạn đã tạo tài khoản Sinh viên thành công! Bạn có thể đăng nhập ngay để xem lịch dịch vụ UTC.");
+            setFlash('success', "Chúc mừng bạn đã tạo tài khoản Sinh viên thành công! Bạn có thể đăng nhập ngay để xem lịch dịch vụ UTH.");
             header('Location: login.php?tab=login');
             exit;
         } catch (Throwable $e) {
@@ -499,7 +499,7 @@ unset($_SESSION['flash']);
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cổng Xác Thực – UTC STATUS</title>
+  <title>Cổng Xác Thực – UTH STATUS</title>
   <meta name="robots" content="noindex, nofollow" />
   
   <!-- CSS Frameworks & Typography -->
@@ -877,7 +877,7 @@ unset($_SESSION['flash']);
         <div class="brand-badge">
           <i class="fa-solid fa-shield-halved"></i>
         </div>
-        <h1 class="auth-title">UTC STATUS</h1>
+        <h1 class="auth-title">UTH STATUS</h1>
         <p class="auth-subtitle mb-0">Hệ Thống Theo Dõi Trạng Thái & Lịch Dịch Vụ</p>
       </div>
 
@@ -934,7 +934,7 @@ unset($_SESSION['flash']);
                 id="login_account" 
                 name="account" 
                 class="form-control" 
-                placeholder="sinhvien, admin hoặc email@utc.edu.vn" 
+                placeholder="sinhvien, admin hoặc email@uth.edu.vn" 
                 required 
                 autocomplete="username"
                 autofocus
@@ -1066,7 +1066,7 @@ unset($_SESSION['flash']);
                 id="reg_email" 
                 name="email" 
                 class="form-control" 
-                placeholder="masv@student.utc.edu.vn" 
+                placeholder="masv@student.uth.edu.vn" 
                 required 
                 autocomplete="email"
               />
@@ -1242,7 +1242,7 @@ unset($_SESSION['flash']);
                   id="forgot_email" 
                   name="email" 
                   class="form-control" 
-                  placeholder="sinhvien@student.utc.edu.vn" 
+                  placeholder="sinhvien@student.uth.edu.vn" 
                   required 
                 />
               </div>

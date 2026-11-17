@@ -1,6 +1,6 @@
 <?php
 /**
- * UTC STATUS – Trang Trạng thái Dịch vụ CNTT Đại học Giao thông Vận tải
+ * UTH STATUS – Trang Trạng thái Dịch vụ CNTT Đại học Giao thông Vận tải (UTH)
  * Main Frontend Portal - Hệ thống Khép kín (Private Status Page)
  */
 declare(strict_types=1);
@@ -14,7 +14,7 @@ if (!isset($_SESSION['admin_id'])) {
 }
 
 $adminId   = (int) $_SESSION['admin_id'];
-$adminName = $_SESSION['admin_name'] ?? 'Thành viên UTC';
+$adminName = $_SESSION['admin_name'] ?? 'Thành viên UTH';
 $adminRole = $_SESSION['admin_role'] ?? 'student'; // 'student', 'editor', 'admin'
 $flash     = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
@@ -94,9 +94,9 @@ try {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UTC STATUS – Trạng thái dịch vụ Đại học GTVT</title>
+  <title>UTH STATUS – Trạng thái dịch vụ Đại học GTVT (UTH)</title>
   <meta name="description"
-    content="Trang trạng thái dịch vụ CNTT theo thời gian thực Trường Đại học Giao thông Vận tải (UTC)." />
+    content="Trang trạng thái dịch vụ CNTT theo thời gian thực Trường Đại học Giao thông Vận tải (UTH)." />
   <!-- Bootstrap 5.3 CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <!-- Font Awesome 6 -->
@@ -192,8 +192,8 @@ try {
               <div class="utc-logo-dot"></div>
             </div>
             <div>
-              <div class="utc-brand-title">UTC <span>STATUS</span></div>
-              <div class="utc-brand-subtitle">Trạng thái dịch vụ Đại học GTVT</div>
+              <div class="utc-brand-title">UTH <span>STATUS</span></div>
+              <div class="utc-brand-subtitle">Trạng thái dịch vụ Đại học GTVT (UTH)</div>
             </div>
           </a>
         </div>
@@ -517,7 +517,7 @@ try {
     <div class="container-fluid px-4">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div class="small">
-          <strong>UTC STATUS</strong> &bull; Trung tâm CNTT – Trường Đại học Giao thông Vận tải
+          <strong>UTH STATUS</strong> &bull; Trung tâm CNTT – Trường Đại học Giao thông Vận tải (UTH)
         </div>
         <div class="small">
           <a href="#" onclick="openJsonModal(); return false;" class="text-decoration-none text-muted me-3"><i
@@ -715,7 +715,7 @@ try {
             </div>
             <div class="mb-3">
               <label class="form-label small fw-600">Địa chỉ Email hoặc Slack URL:</label>
-              <input type="text" id="subEndpoint" class="form-control" placeholder="sinhvien@student.utc.edu.vn"
+              <input type="text" id="subEndpoint" class="form-control" placeholder="sinhvien@student.uth.edu.vn"
                 required />
             </div>
             <div id="subFeedback"></div>
@@ -801,7 +801,7 @@ try {
                   <div class="stats-card-icon-box text-success bg-success-subtle-box"><i class="fa-solid fa-shield-check"></i></div>
                 </div>
                 <div id="uptimeKpiSla" class="stats-card-value text-success">99.88%</div>
-                <div class="stats-card-meta"><i class="fa-solid fa-circle-check text-success me-1"></i>Đạt chuẩn SLA UTC</div>
+                <div class="stats-card-meta"><i class="fa-solid fa-circle-check text-success me-1"></i>Đạt chuẩn SLA UTH</div>
               </div>
             </div>
             <div class="col-6 col-md-3">
@@ -875,9 +875,9 @@ try {
                 <input type="text" id="repName" class="form-control" placeholder="Nguyễn Văn A" required />
               </div>
               <div class="col-md-6">
-                <label class="form-label small fw-600">Email liên hệ (@utc.edu.vn) <span
+                <label class="form-label small fw-600">Email liên hệ (@uth.edu.vn) <span
                     class="text-danger">*</span></label>
-                <input type="email" id="repEmail" class="form-control" placeholder="sv@student.utc.edu.vn" required />
+                <input type="email" id="repEmail" class="form-control" placeholder="sv@student.uth.edu.vn" required />
               </div>
             </div>
 
@@ -1056,7 +1056,7 @@ try {
   <!-- 7. Offcanvas: Sidebar Menu -->
   <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
     <div class="offcanvas-header border-bottom">
-      <h5 class="offcanvas-title fw-800 text-danger" id="offcanvasSidebarLabel">UTC <span
+      <h5 class="offcanvas-title fw-800 text-danger" id="offcanvasSidebarLabel">UTH <span
           style="color:var(--teal-primary)">STATUS</span></h5>
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
@@ -1080,7 +1080,7 @@ try {
         </li>
         <li class="nav-item">
           <a class="nav-link text-dark" href="#" onclick="openParkingModal(); return false;"><i
-              class="fa-solid fa-square-parking me-2 text-success"></i>Bãi xe sân trường UTC</a>
+              class="fa-solid fa-square-parking me-2 text-success"></i>Bãi xe sân trường UTH</a>
         </li>
         <?php if ($adminRole === 'admin' || $adminRole === 'editor'): ?>
         <li class="nav-item">
@@ -1096,12 +1096,12 @@ try {
         </li>
       </ul>
       <div class="text-muted small border-top pt-3">
-        Phiên bản 2.0 &bull; Đại học GTVT
+        Phiên bản 2.0 &bull; Đại học GTVT (UTH)
       </div>
     </div>
   </div>
 
-  <!-- 12. Modal: Campus Parking Status (Bãi xe sân trường UTC) -->
+  <!-- 12. Modal: Campus Parking Status (Bãi xe sân trường UTH) -->
   <div class="modal fade" id="modalParkingStatus" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content utc-modal">
@@ -1111,7 +1111,7 @@ try {
               <i class="fa-solid fa-square-parking"></i>
             </span>
             <div>
-              <h5 class="modal-title fw-700 mb-0">Campus Parking – Trạng Thái Bãi Xe Sân Trường UTC</h5>
+              <h5 class="modal-title fw-700 mb-0">Campus Parking – Trạng Thái Bãi Xe Sân Trường UTH</h5>
               <div class="small text-muted">Hệ thống cảm biến và bộ đếm giám sát chỗ đỗ xe thời gian thực</div>
             </div>
           </div>

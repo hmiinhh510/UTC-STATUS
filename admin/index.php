@@ -1105,7 +1105,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard – UTC STATUS Management</title>
+  <title>Admin Dashboard – UTH STATUS Management</title>
   <meta name="robots" content="noindex, nofollow" />
   <!-- Bootstrap 5.3 CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
@@ -1283,7 +1283,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
     <div class="d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center gap-3">
         <a href="index.php" class="text-decoration-none d-flex align-items-center gap-2">
-          <span class="fs-4 text-danger fw-800">UTC <span style="color:var(--teal-primary)">STATUS</span></span>
+          <span class="fs-4 text-danger fw-800">UTH <span style="color:var(--teal-primary)">STATUS</span></span>
           <span class="text-muted small fw-600">| Control Panel</span>
         </a>
         <a href="../index.php" class="btn btn-sm btn-outline-success d-none d-md-inline-flex align-items-center gap-1" title="Chuyển sang xem Trang Lịch Dịch Vụ bên ngoài">
@@ -1364,7 +1364,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
     <?php elseif ($adminRole === 'student'): ?>
       <div class="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-4">
         <i class="fa-solid fa-graduation-cap fs-5 text-teal me-1"></i>
-        <span>Chào mừng bạn đến với Cổng theo dõi dịch vụ UTC dành cho <strong>Sinh viên</strong>. Bạn đang xem ở chế độ tra cứu: theo dõi trạng thái các dịch vụ CNTT, lịch bảo trì sắp tới, tiến độ xử lý sự cố và báo cáo độ khả dụng (Uptime SLA).</span>
+        <span>Chào mừng bạn đến với Cổng theo dõi dịch vụ UTH dành cho <strong>Sinh viên</strong>. Bạn đang xem ở chế độ tra cứu: theo dõi trạng thái các dịch vụ CNTT, lịch bảo trì sắp tới, tiến độ xử lý sự cố và báo cáo độ khả dụng (Uptime SLA).</span>
       </div>
     <?php endif; ?>
 
@@ -1652,7 +1652,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
                               </div>
                               <div class="mb-3">
                                 <label class="form-label small fw-600">URL Kiểm Tra Tự Động (Health Check)</label>
-                                <input type="url" name="check_url" class="form-control" value="<?= htmlspecialchars($s['check_url'] ?? '') ?>" placeholder="https://sv.utc.edu.vn" />
+                                <input type="url" name="check_url" class="form-control" value="<?= htmlspecialchars($s['check_url'] ?? '') ?>" placeholder="https://sv.uth.edu.vn" />
                               </div>
                               <div class="mb-3">
                                 <label class="form-label small fw-600">Mô Tả</label>
@@ -2106,7 +2106,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
               <h6 class="fw-800 mb-1" style="color:var(--teal-primary)">
                 <i class="fa-solid fa-timeline me-2"></i>Xu Hướng Vận Hành: Sự Cố Đột Xuất vs Nâng Cấp Định Kỳ (3 Tháng Gần Nhất)
               </h6>
-              <span class="text-muted small">So sánh tần suất sự cố phát sinh ngoài ý muốn và số phiên bảo trì hệ thống được thực hiện chủ động tại UTC</span>
+              <span class="text-muted small">So sánh tần suất sự cố phát sinh ngoài ý muốn và số phiên bảo trì hệ thống được thực hiện chủ động tại UTH</span>
             </div>
             <div class="d-flex align-items-center gap-3">
               <span class="small"><i class="fa-solid fa-square me-1" style="color:#f87171"></i>Sự cố đột xuất</span>
@@ -2752,7 +2752,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <div>
               <h5 class="utc-card-title mb-1 d-flex align-items-center gap-2">
-                <i class="fa-solid fa-square-parking text-success"></i>Quản Lý Trạng Thái &amp; Sức Chứa Bãi Xe Sân Trường UTC
+                <i class="fa-solid fa-square-parking text-success"></i>Quản Lý Trạng Thái &amp; Sức Chứa Bãi Xe Sân Trường UTH
               </h5>
               <p class="text-muted small mb-0">
                 Điều phối phương tiện thời gian thực qua bộ cảm biến và hệ thống đếm xe. Cho phép cập nhật nhanh trạng thái (Còn chỗ / Đầy) hoặc chỉnh sửa sức chứa từng phân khu.
@@ -2792,7 +2792,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
                     </div>
                     <h6 class="fw-700 mb-1 text-dark"><?= htmlspecialchars($pz['name']) ?></h6>
                     <div class="small text-muted mb-3" style="font-size:0.8rem">
-                      <i class="fa-solid fa-location-dot me-1 text-teal"></i><?= htmlspecialchars($pz['location_note'] ?: 'Trong khuôn viên UTC') ?>
+                      <i class="fa-solid fa-location-dot me-1 text-teal"></i><?= htmlspecialchars($pz['location_note'] ?: 'Trong khuôn viên UTH') ?>
                     </div>
                   </div>
 
@@ -2890,7 +2890,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
             </div>
             <div class="mb-3">
               <label class="form-label small fw-600">URL Kiểm tra Tự động (Health Check)</label>
-              <input type="url" name="check_url" class="form-control" placeholder="https://sv.utc.edu.vn" />
+              <input type="url" name="check_url" class="form-control" placeholder="https://sv.uth.edu.vn" />
             </div>
             <div class="mb-3">
               <label class="form-label small fw-600">Mô tả</label>
@@ -3079,7 +3079,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
             </div>
             <div class="mb-3">
               <label class="form-label small fw-600">Địa chỉ Email <span class="text-danger">*</span></label>
-              <input type="email" name="email" class="form-control" required placeholder="sinhvien@student.utc.edu.vn" />
+              <input type="email" name="email" class="form-control" required placeholder="sinhvien@student.uth.edu.vn" />
             </div>
             <div class="mb-3">
               <div class="d-flex justify-content-between align-items-center mb-1">
@@ -3225,7 +3225,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
                   <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Tạo mật khẩu tự động
                 </button>
               </div>
-              <input type="text" id="appReqPassword" name="new_password" class="form-control font-monospace" required placeholder="Ví dụ: Utc@2026..." />
+              <input type="text" id="appReqPassword" name="new_password" class="form-control font-monospace" required placeholder="Ví dụ: Uth@2026..." />
               <div class="form-text small">Mật khẩu mới này sẽ được lưu để sinh viên đăng nhập. Khi duyệt xong, mật khẩu sẽ hiển thị trên bảng để Admin copy gửi sinh viên.</div>
             </div>
           </div>
@@ -3345,7 +3345,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
   <script>
   function generateRandomPassword() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
-    let pwd = 'Utc@';
+    let pwd = 'Uth@';
     for (let i = 0; i < 6; i++) {
       pwd += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -3542,7 +3542,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "Bao_Cao_SLA_UTC_STATUS_90_Ngay_" + new Date().toISOString().slice(0, 10) + ".csv");
+    link.setAttribute("download", "Bao_Cao_SLA_UTH_STATUS_90_Ngay_" + new Date().toISOString().slice(0, 10) + ".csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

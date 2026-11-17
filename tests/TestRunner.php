@@ -137,7 +137,7 @@ class TestRunner {
     private function printHeader(): void {
         echo "\n";
         echo "\033[1;36m======================================================================\033[0m\n";
-        echo "\033[1;36m  UTC STATUS – BỘ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITE)\033[0m\n";
+        echo "\033[1;36m  UTH STATUS – BỘ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITE)\033[0m\n";
         echo "\033[1;36m  Môi trường: PHP " . PHP_VERSION . " | Cơ sở dữ liệu: MySQL (InnoDB Transactions)\033[0m\n";
         echo "\033[1;36m======================================================================\033[0m\n\n";
     }

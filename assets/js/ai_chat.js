@@ -1,6 +1,6 @@
 /**
- * UTC STATUS – AI Assistant Client Script
- * Trợ lý ảo AI hỗ trợ thông tin trạng thái dịch vụ, bãi xe và sự cố UTC
+ * UTH STATUS – AI Assistant Client Script
+ * Trợ lý ảo AI hỗ trợ thông tin trạng thái dịch vụ, bãi xe và sự cố UTH
  */
 
 (function () {
@@ -68,9 +68,9 @@
     launcher.innerHTML = `
       <div class="utc-ai-pill-label" id="utcAiPill" onclick="window.utcAiToggle(true)">
         <i class="fa-solid fa-sparkles text-warning"></i>
-        <span>Hỏi Trợ lý AI UTC</span>
+        <span>Hỏi Trợ lý AI UTH</span>
       </div>
-      <button class="utc-ai-btn" id="utcAiBtn" title="Trợ lý ảo UTC STATUS" onclick="window.utcAiToggle()">
+      <button class="utc-ai-btn" id="utcAiBtn" title="Trợ lý ảo UTH STATUS" onclick="window.utcAiToggle()">
         <i class="fa-solid fa-robot"></i>
         <span class="utc-ai-online-dot"></span>
       </button>
@@ -88,7 +88,7 @@
             <i class="fa-solid fa-robot"></i>
           </div>
           <div class="utc-ai-title-group">
-            <h6>Trợ Lý Ảo UTC STATUS</h6>
+            <h6>Trợ Lý Ảo UTH STATUS</h6>
             <div class="utc-ai-status-text">
               <span class="badge bg-success p-1 rounded-circle" style="width:7px;height:7px;"></span>
               Trực tuyến • Hỗ trợ 24/7
@@ -145,7 +145,7 @@
     if (history.length === 0) {
       // Tin nhắn mở đầu mặc định
       appendBotMessage(
-        "👋 **Xin chào bạn!**\n\nMình là **Trợ lý số UTC STATUS**, sẵn sàng hỗ trợ bạn tra cứu trực tiếp:\n• 🅿️ Sức chứa & chỗ trống tại **Bãi xe sân trường**\n• 🟢 Trạng thái hệ thống: **LMS, Wifi eduroam, Cổng tín chỉ**\n• 🛠️ Sự cố đang giải quyết & lịch trình bảo trì trong tuần.\n\nBạn có thể gõ câu hỏi hoặc bấm vào các câu hỏi mẫu bên dưới nhé!",
+        "👋 **Xin chào bạn!**\n\nMình là **Trợ lý số UTH STATUS**, sẵn sàng hỗ trợ bạn tra cứu trực tiếp:\n• 🅿️ Sức chứa & chỗ trống tại **Bãi xe sân trường**\n• 🟢 Trạng thái hệ thống: **LMS, Wifi eduroam, Cổng tín chỉ**\n• 🛠️ Sự cố đang giải quyết & lịch trình bảo trì trong tuần.\n\nBạn có thể gõ câu hỏi hoặc bấm vào các câu hỏi mẫu bên dưới nhé!",
         [
           "🅿️ Bãi xe sân trường lúc này thế nào?",
           "⚠️ Có dịch vụ nào đang gặp sự cố không?",
@@ -206,7 +206,7 @@
         ${renderMarkdown(markdownText)}
         ${chipsHtml}
       </div>
-      <div class="utc-ai-time">${timeStr} • UTC Assistant</div>
+      <div class="utc-ai-time">${timeStr} • UTH Assistant</div>
     `;
     container.appendChild(group);
     scrollToBottom();

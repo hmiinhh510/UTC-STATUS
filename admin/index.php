@@ -1115,6 +1115,8 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Custom Admin Stylesheet -->
   <link rel="stylesheet" href="../assets/css/style.css?v=3.6" />
+  <!-- AI Chatbot Stylesheet -->
+  <link rel="stylesheet" href="../assets/css/ai_chat.css?v=1.0" />
   <script>
     function applyUtcTheme(theme) {
       var isDark = (theme === 'dark');
@@ -3601,5 +3603,7 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
     applyUtcTheme(curTheme);
   })();
   </script>
+  <!-- AI Assistant Chatbot JS -->
+  <script src="../assets/js/ai_chat.js?v=1.0"></script>
 </body>
 </html>

@@ -103,6 +103,8 @@ try {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <!-- Page Stylesheet -->
   <link rel="stylesheet" href="assets/css/style.css?v=3.6" />
+  <!-- AI Chatbot Stylesheet -->
+  <link rel="stylesheet" href="assets/css/ai_chat.css?v=1.0" />
   <script>
     function applyUtcTheme(theme) {
       var isDark = (theme === 'dark');
@@ -1219,6 +1221,8 @@ try {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Application JS (v3.6 cache-buster) -->
   <script src="assets/js/app.js?v=3.6"></script>
+  <!-- AI Assistant Chatbot JS -->
+  <script src="assets/js/ai_chat.js?v=1.0"></script>
 </body>
 
 </html>

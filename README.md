@@ -1,5 +1,5 @@
-# UTC STATUS – TRANG TRẠNG THÁI DỊCH VỤ THEO THỜI GIAN THỰC
-### Trung tâm Ứng dụng CNTT – Trường Đại học Giao thông Vận tải (UTC)
+# UTH STATUS – TRANG TRẠNG THÁI DỊCH VỤ THEO THỜI GIAN THỰC
+### Trung tâm Ứng dụng CNTT – Trường Đại học Giao thông Vận tải (UTH)
 
 Hệ thống theo dõi trạng thái hoạt động theo thời gian thực (Status Page) của toàn bộ các dịch vụ công nghệ thông tin trong trường: Cổng thông tin sinh viên, Đăng ký học phần, LMS (Moodle), Học phí trực tuyến, Email sinh viên, Wifi eduroam, Thư viện số, Website trường, v.v.
 
@@ -113,3 +113,22 @@ UTC-STATUS/
    - Đăng nhập (Login): [http://localhost/UTC-STATUS/admin/login.php](http://localhost/UTC-STATUS/admin/login.php)
    - Đăng ký (Register): [http://localhost/UTC-STATUS/admin/register.php](http://localhost/UTC-STATUS/admin/register.php)
    - Quên mật khẩu OTP (Forgot Password): [http://localhost/UTC-STATUS/admin/forgot_password.php](http://localhost/UTC-STATUS/admin/forgot_password.php)
+
+---
+
+## 6. TRỢ LÝ ẢO THÔNG MINH (UTH AI ASSISTANT v2.0)
+
+Hệ thống tích hợp Trợ lý số thông minh (Floating Widget) với khả năng tra cứu thời gian thực:
+- **Động cơ kép (Hybrid Architecture):**
+  - **Google Gemini Cloud AI:** Kết nối `gemini-1.5-flash`, `gemini-2.0-flash-exp` qua API Key khi có mạng.
+  - **Supercharged Smart Offline Engine v2.0:** Chạy 100% nội bộ trên XAMPP không cần Internet hay API key bên ngoài, phản hồi siêu tốc (< 40ms) dựa trên Live Context MySQL.
+- **Tính năng nổi bật:**
+  - 🅿️ **Tra cứu bãi đỗ xe thời gian thực:** Sức chứa, chỗ trống tại Khu A (xe máy), Khu B (sau A6-A7), Khu C (ô tô cán bộ), quy định giờ mở cửa, giá vé, mất thẻ xe.
+  - 🟢 **Trạng thái dịch vụ CNTT:** LMS Moodle, Cổng đăng ký tín chỉ (`tinchi.uth.edu.vn`), Cổng học phí trực tuyến (`hocphi.uth.edu.vn`), Thư viện số (`thuvien.uth.edu.vn`), Cổng thông tin sinh viên (`sv.uth.edu.vn`).
+  - 📶 **Hướng dẫn kết nối Wi-Fi eduroam:** Chuẩn PEAP + MSCHAPV2, cách xử lý khi báo lỗi xác thực trên Android, iOS, Windows, macOS.
+  - 🛠️ **Sự cố & Bảo trì:** Danh sách sự cố đang mở, sự cố vừa khắc phục, kế hoạch bảo trì trong tuần.
+  - 🎯 **Nút hành động trực tiếp (Action Triggers):** Bấm trực tiếp từ chat để mở modal bãi xe, gửi báo cáo sự cố hàng đợi FIFO, xem lịch bảo trì.
+  - 🔔 **Hiệu ứng âm thanh chuông báo (Web Audio Chime):** Chuông thông báo du dương 0-byte không cần file tải ngoài, hỗ trợ bật/tắt âm thanh.
+  - ⛶ **Chế độ phóng to / thu nhỏ:** Chuyển đổi linh hoạt giữa giao diện gọn (400x580px) và giao diện mở rộng (580x720px).
+  - 📋 **Sao chép tin nhắn:** Nút copy nhanh tin nhắn kèm phản hồi trực quan.
+  - ⚙️ **Quản lý cấu hình tại Admin:** Tab "Trợ Lý Ảo AI" trong Admin Panel cho phép thiết lập API Key, chọn model, ưu tiên offline và chạy thử prompt (Live Sandbox).

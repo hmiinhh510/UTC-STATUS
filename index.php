@@ -155,6 +155,27 @@ try {
       }
     }
 
+    function openIncidentsModal() {
+      var modalEl = document.getElementById('modalIncidentsDetail');
+      if (modalEl && window.bootstrap && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+    }
+
+    function openMaintenancesModal() {
+      var modalEl = document.getElementById('modalMaintenancesDetail');
+      if (modalEl && window.bootstrap && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+    }
+
+    function openIncidentReportModal() {
+      var modalEl = document.getElementById('modalUserReport');
+      if (modalEl && window.bootstrap && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+    }
+
     (function() {
       var saved = 'light';
       try { saved = localStorage.getItem('utc_theme') || 'light'; } catch (e) {}

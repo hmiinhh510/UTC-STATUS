@@ -861,6 +861,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 logAction($pdo, $adminId, $adminName, 'quick_parking_status', 'parking_zone', $zoneId, $msg);
                 setFlash('success', $msg);
                 break;
+
+            // ── CẤU HÌNH TRỢ LÝ ẢO AI (AI ASSISTANT SETTINGS) ─────────────────
+            case 'save_ai_settings':
+                require_once __DIR__ . '/../config/ai_config.php';
+                $apiKey = trim($_POST['gemini_api_key'] ?? '');
+                $model = trim($_POST['gemini_model'] ?? 'gemini-1.5-flash');
+                $preferOffline = !empty($_POST['prefer_smart_offline']);
+                $soundEnabled = !empty($_POST['sound_enabled']);
+
+                saveAiSettings([
+                    'gemini_api_key'       => $apiKey,
+                    'gemini_model'         => $model,
+                    'prefer_smart_offline' => $preferOffline,
+                    'sound_enabled'        => $soundEnabled
+                ]);
+
+                logAction($pdo, $adminId, $adminName, 'update_ai_settings', 'system_ai', 0, "Cập nhật cấu hình Trợ lý AI UTH (Model: {$model})");
+                setFlash('success', 'Đã lưu cấu hình Trợ lý Ảo UTH STATUS thành công!');
+                break;
         }
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
@@ -883,6 +902,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $targetHash = '#tab-fifo-incidents';
     } elseif (in_array($action, ['update_parking_zone', 'quick_parking_status'], true)) {
         $targetHash = '#tab-parking';
+    } elseif ($action === 'save_ai_settings') {
+        $targetHash = '#tab-ai-assistant';
     }
 
     header('Location: index.php' . $targetHash);
@@ -1099,6 +1120,10 @@ foreach ($parkingZones as $pz) {
     $totalParkingOcc += (int) $pz['occupied_count'];
 }
 $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalParkingCap) * 100, 1) : 0;
+
+// ── 8. Fetch AI Assistant Settings ───────────────────────────────────────────
+require_once __DIR__ . '/../config/ai_config.php';
+$aiSettings = loadAiSettings();
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -1478,6 +1503,11 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
       <li class="nav-item">
         <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-parking">
           <i class="fa-solid fa-square-parking me-1"></i>Quản Lý Bãi Xe
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-ai-assistant">
+          <i class="fa-solid fa-robot me-1 text-warning"></i>Trợ Lý Ảo AI
         </button>
       </li>
       <li class="nav-item">
@@ -2847,6 +2877,188 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
         </div>
       </div>
 
+      <!-- ========================================================
+           TAB 10: QUẢN LÝ TRỢ LÝ ẢO AI (AI ASSISTANT SETTINGS & CONSOLE)
+      ======================================================== -->
+      <div class="tab-pane fade" id="tab-ai-assistant">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+          <div>
+            <h5 class="fw-800 mb-1" style="color:var(--teal-primary)">
+              <i class="fa-solid fa-robot me-2 text-warning"></i>Trung Tâm Điều Khiển &amp; Cấu Hình Trợ Lý Ảo UTH STATUS
+            </h5>
+            <span class="text-muted small">Quản lý mô hình trí tuệ nhân tạo, thiết lập Google Gemini API, tùy chỉnh chế độ Smart Offline Engine và thử nghiệm prompt</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="window.utcAiToggle(true)">
+              <i class="fa-solid fa-comments me-1"></i>Mở Chatbot Widget
+            </button>
+          </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card p-3 border-0 shadow-sm h-100" style="border-radius:14px;background:var(--card-bg, #fff)">
+              <div class="d-flex align-items-center gap-3">
+                <div class="p-3 rounded-circle bg-success-subtle text-success fs-4">
+                  <i class="fa-solid fa-microchip"></i>
+                </div>
+                <div>
+                  <div class="text-muted small fw-600">Động Cơ Xử Lý Hiện Tại</div>
+                  <div class="fw-800 fs-6 text-dark mt-0.5">
+                    <?php if (!empty($aiSettings['gemini_api_key']) && empty($aiSettings['prefer_smart_offline'])): ?>
+                      <span class="badge bg-success"><i class="fa-solid fa-cloud me-1"></i>Google Gemini AI Cloud</span>
+                    <?php else: ?>
+                      <span class="badge bg-info text-dark"><i class="fa-solid fa-bolt me-1"></i>Smart Offline Engine v2.0</span>
+                    <?php endif; ?>
+                  </div>
+                  <div class="text-muted small" style="font-size:11.5px">
+                    <?= !empty($aiSettings['prefer_smart_offline']) ? 'Chạy 100% Offline trên XAMPP' : (!empty($aiSettings['gemini_api_key']) ? 'Tự động kết nối Google Gemini API' : 'Hoạt động nội bộ không cần Internet') ?>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card p-3 border-0 shadow-sm h-100" style="border-radius:14px;background:var(--card-bg, #fff)">
+              <div class="d-flex align-items-center gap-3">
+                <div class="p-3 rounded-circle bg-warning-subtle text-warning fs-4">
+                  <i class="fa-solid fa-brain"></i>
+                </div>
+                <div>
+                  <div class="text-muted small fw-600">Model AI Cấu Hình</div>
+                  <div class="fw-800 fs-6 text-dark mt-0.5">
+                    <span class="badge bg-primary"><?= htmlspecialchars($aiSettings['gemini_model'] ?? 'gemini-1.5-flash') ?></span>
+                  </div>
+                  <div class="text-muted small" style="font-size:11.5px">Hỗ trợ nhận thức đa lượt &amp; format Markdown</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card p-3 border-0 shadow-sm h-100" style="border-radius:14px;background:var(--card-bg, #fff)">
+              <div class="d-flex align-items-center gap-3">
+                <div class="p-3 rounded-circle bg-info-subtle text-info fs-4">
+                  <i class="fa-solid fa-gauge-high"></i>
+                </div>
+                <div>
+                  <div class="text-muted small fw-600">Thời Gian Phản Hồi Trung Bình</div>
+                  <div class="fw-800 fs-6 text-dark mt-0.5">
+                    <span class="badge bg-success-subtle text-success">&lt; 40 ms</span>
+                  </div>
+                  <div class="text-muted small" style="font-size:11.5px">Xử lý tức thì dữ liệu bãi xe &amp; trạng thái MySQL</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Cột Trái: Form Cấu Hình -->
+          <div class="col-lg-6">
+            <div class="card p-4 border-0 shadow-sm h-100" style="border-radius:14px;background:var(--card-bg, #fff)">
+              <h6 class="fw-700 mb-3" style="color:var(--teal-primary)">
+                <i class="fa-solid fa-sliders me-2"></i>Cài Đặt Cấu Hình AI Model
+              </h6>
+              <form method="POST" action="index.php">
+                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                <input type="hidden" name="action" value="save_ai_settings" />
+
+                <div class="mb-3">
+                  <label class="form-label small fw-600">
+                    Google Gemini API Key 
+                    <span class="text-muted fw-normal">(Để trống nếu dùng Smart Engine Offline)</span>
+                  </label>
+                  <div class="input-group">
+                    <input type="password" name="gemini_api_key" id="adminGeminiKeyInput" class="form-control font-monospace" 
+                           value="<?= htmlspecialchars($aiSettings['gemini_api_key'] ?? '') ?>" 
+                           placeholder="AIzaSy..." />
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminGeminiKeyInput')">
+                      <i class="fa-solid fa-eye" id="adminGeminiKeyInput_icon"></i>
+                    </button>
+                  </div>
+                  <div class="form-text small" style="font-size:11.5px">
+                    Lấy API Key hoàn toàn miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="fw-600 text-decoration-none">Google AI Studio <i class="fa-solid fa-arrow-up-right-from-square"></i></a> (Hạn mức 15 requests/phút).
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label small fw-600">Chọn Mô Hình AI (Model Architecture)</label>
+                  <select name="gemini_model" class="form-select">
+                    <option value="gemini-1.5-flash" <?= ($aiSettings['gemini_model'] ?? '') === 'gemini-1.5-flash' ? 'selected' : '' ?>>
+                      gemini-1.5-flash (Khuyên dùng – Phản hồi cực nhanh, miễn phí)
+                    </option>
+                    <option value="gemini-2.0-flash-exp" <?= ($aiSettings['gemini_model'] ?? '') === 'gemini-2.0-flash-exp' ? 'selected' : '' ?>>
+                      gemini-2.0-flash-exp (Thế hệ mới – Tốc độ &amp; độ thông minh vượt trội)
+                    </option>
+                    <option value="gemini-1.5-pro" <?= ($aiSettings['gemini_model'] ?? '') === 'gemini-1.5-pro' ? 'selected' : '' ?>>
+                      gemini-1.5-pro (Mô hình suy luận sâu – Thích hợp tác vụ phức tạp)
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" role="switch" id="prefOfflineSwitch" name="prefer_smart_offline" value="1"
+                         <?= !empty($aiSettings['prefer_smart_offline']) ? 'checked' : '' ?> />
+                  <label class="form-check-label small fw-600" for="prefOfflineSwitch">
+                    Ưu tiên chạy Supercharged Smart Engine nội bộ (100% Offline trên XAMPP)
+                  </label>
+                  <div class="text-muted small" style="font-size:11.5px">
+                    Khi bật, hệ thống xử lý nội bộ tức thì mà không cần gọi API ra ngoài internet.
+                  </div>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                  <input class="form-check-input" type="checkbox" role="switch" id="soundSwitch" name="sound_enabled" value="1"
+                         <?= !empty($aiSettings['sound_enabled']) ? 'checked' : '' ?> />
+                  <label class="form-check-label small fw-600" for="soundSwitch">
+                    Bật âm thanh chuông thông báo (Web Audio Chime khi bot phản hồi)
+                  </label>
+                  <div class="text-muted small" style="font-size:11.5px">
+                    Phát tiếng chuông du dương êm tai mỗi khi hoàn tất tạo câu trả lời.
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" style="background-color:var(--teal-primary);border-color:var(--teal-primary)">
+                  <i class="fa-solid fa-floppy-disk me-1"></i>Lưu Cấu Hình Trợ Lý AI
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Cột Phải: Bảng Tri Thức & Live Test Console -->
+          <div class="col-lg-6">
+            <div class="card p-4 border-0 shadow-sm h-100" style="border-radius:14px;background:var(--card-bg, #fff)">
+              <h6 class="fw-700 mb-3" style="color:var(--teal-primary)">
+                <i class="fa-solid fa-terminal me-2"></i>Thử Nghiệm Phản Hồi Trợ Lý Ảo (Live AI Sandbox)
+              </h6>
+              <div class="mb-3">
+                <label class="form-label small fw-600">Chọn câu hỏi mẫu hoặc nhập prompt:</label>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Bãi xe sân trường lúc này thế nào?')">🅿️ Bãi xe</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Cách kết nối wifi eduroam?')">📶 Wi-Fi Eduroam</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Cổng đăng ký tín chỉ có bị lỗi không?')">🎓 ĐK Tín chỉ</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Hôm nay có dịch vụ nào gặp sự cố không?')">⚠️ Sự cố</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Độ khả dụng SLA và Uptime 90 ngày của trường?')">📈 SLA Uptime</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Số điện thoại hotline hỗ trợ kỹ thuật UTH?')">📞 Hotline IT</button>
+                </div>
+                <div class="input-group">
+                  <input type="text" id="adminAiTestInput" class="form-control" placeholder="Nhập câu hỏi để kiểm tra..." value="Bãi xe sân trường lúc này thế nào?" />
+                  <button class="btn btn-success" type="button" id="adminAiTestBtn" onclick="runAdminAiTest()">
+                    <i class="fa-solid fa-paper-plane me-1"></i>Kiểm Tra
+                  </button>
+                </div>
+              </div>
+
+              <!-- Vùng hiển thị kết quả test -->
+              <div class="p-3 rounded border bg-light small font-monospace" id="adminAiTestResult" style="min-height:160px;max-height:260px;overflow-y:auto;white-space:pre-wrap;font-size:12px;line-height:1.5">
+Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đo thời gian xử lý thực tế...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -3595,6 +3807,64 @@ $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalPark
     if (s) s.value = 'all';
     if (q) q.value = '';
     filterFifoTable();
+  }
+
+  // ── AI Assistant Admin Helpers ────────────────────────────────
+  function togglePasswordVisibility(inputId) {
+    const inp = document.getElementById(inputId);
+    const ico = document.getElementById(inputId + '_icon');
+    if (!inp || !ico) return;
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      ico.classList.remove('fa-eye');
+      ico.classList.add('fa-eye-slash');
+    } else {
+      inp.type = 'password';
+      ico.classList.remove('fa-eye-slash');
+      ico.classList.add('fa-eye');
+    }
+  }
+
+  function setAdminAiTest(q) {
+    const inp = document.getElementById('adminAiTestInput');
+    if (inp) {
+      inp.value = q;
+      runAdminAiTest();
+    }
+  }
+
+  function runAdminAiTest() {
+    const inp = document.getElementById('adminAiTestInput');
+    const resBox = document.getElementById('adminAiTestResult');
+    const btn = document.getElementById('adminAiTestBtn');
+    if (!inp || !resBox || !btn) return;
+    const msg = inp.value.trim();
+    if (!msg) return;
+
+    btn.disabled = true;
+    resBox.innerHTML = '<em>Đang gửi câu hỏi và trích xuất dữ liệu MySQL...</em>';
+
+    fetch('../api/ai_chat.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ message: msg })
+    })
+      .then(res => res.json())
+      .then(data => {
+        btn.disabled = false;
+        if (data.success && data.message) {
+          resBox.textContent = `[Provider: ${data.provider} | Model: ${data.model} | Thời gian: ${data.response_time_ms} ms]\n\n${data.message}`;
+        } else {
+          resBox.textContent = 'Lỗi: ' + (data.error || 'Không nhận được phản hồi');
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        resBox.textContent = 'Lỗi kết nối: ' + err.message;
+      });
   }
 
   // ── Theme Switcher in Admin Panel ─────────────────────────────

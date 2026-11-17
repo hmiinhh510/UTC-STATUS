@@ -86,4 +86,52 @@ class AiChatApiTest extends TestCase {
         $this->assertTrue($json['success'] ?? false);
         $this->assertStringContainsString('SỰ CỐ', $json['message']);
     }
+
+    public function testAiChatReturnsActionTriggersForParkingAndIncidents(): void {
+        // Test bãi xe có action openParkingModal
+        $resPark = $this->callEndpoint('api/ai_chat.php', [], [
+            'message' => 'Kiểm tra bãi đỗ xe'
+        ], [], 'POST');
+        $this->assertTrue($resPark['is_json']);
+        $jsonPark = $resPark['json'];
+        $this->assertTrue($jsonPark['success'] ?? false);
+        $this->assertArrayHasKey('actions', $jsonPark);
+        $actionsPark = array_column($jsonPark['actions'], 'action');
+        $this->assertTrue(in_array('openParkingModal', $actionsPark, true), 'Phải có action openParkingModal');
+
+        // Test sự cố có action openIncidentModal
+        $resInc = $this->callEndpoint('api/ai_chat.php', [], [
+            'message' => 'Hệ thống đang gặp lỗi sự cố gì?'
+        ], [], 'POST');
+        $this->assertTrue($resInc['is_json']);
+        $jsonInc = $resInc['json'];
+        $this->assertTrue($jsonInc['success'] ?? false);
+        $this->assertArrayHasKey('actions', $jsonInc);
+        $actionsInc = array_column($jsonInc['actions'], 'action');
+        $this->assertTrue(in_array('openIncidentModal', $actionsInc, true), 'Phải có action openIncidentModal');
+    }
+
+    public function testAiChatAnswersSlaMetrics(): void {
+        $res = $this->callEndpoint('api/ai_chat.php', [], [
+            'message' => 'Độ khả dụng SLA và uptime 90 ngày của trường thế nào?'
+        ], [], 'POST');
+
+        $this->assertTrue($res['is_json']);
+        $json = $res['json'];
+        $this->assertTrue($json['success'] ?? false);
+        $this->assertStringContainsString('99.88%', $json['message']);
+        $this->assertStringContainsString('SLA', $json['message']);
+    }
+
+    public function testAiChatAnswersHotlineAndContacts(): void {
+        $res = $this->callEndpoint('api/ai_chat.php', [], [
+            'message' => 'Số điện thoại hotline hỗ trợ kỹ thuật IT của UTH là gì?'
+        ], [], 'POST');
+
+        $this->assertTrue($res['is_json']);
+        $json = $res['json'];
+        $this->assertTrue($json['success'] ?? false);
+        $this->assertStringContainsString('it@uth.edu.vn', $json['message']);
+        $this->assertStringContainsString('Trung tâm CNTT', $json['message']);
+    }
 }

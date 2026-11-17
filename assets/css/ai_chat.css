@@ -1,6 +1,6 @@
 /* ============================================================
-   UTC STATUS – AI Chatbot Widget Styles
-   Trợ lý ảo thông minh Trường Đại học Giao thông Vận tải
+   UTH STATUS – AI Chatbot Widget Styles v2.0
+   Trợ lý ảo thông minh Trường Đại học Giao thông Vận tải (UTH)
    Compatible with Light Mode & Dark Mode
    ============================================================ */
 
@@ -97,18 +97,18 @@
   position: fixed;
   bottom: 94px;
   right: 24px;
-  width: 380px;
-  height: 560px;
+  width: 400px;
+  height: 580px;
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 120px);
   background: #ffffff;
-  border-radius: 18px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   z-index: 1060;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
   transform-origin: bottom right;
   opacity: 0;
   pointer-events: none;
@@ -121,15 +121,24 @@
   transform: scale(1) translateY(0);
 }
 
+/* Chế độ Phóng to Toàn màn hình / Mở rộng */
+.utc-ai-window.maximized {
+  width: 580px;
+  height: 720px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 110px);
+}
+
 /* ── HEADER CỬA SỔ CHAT ───────────────────────────────────── */
 .utc-ai-header {
   background: linear-gradient(135deg, #0c6b58 0%, #004d40 100%);
   color: #ffffff;
-  padding: 14px 18px;
+  padding: 12px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  user-select: none;
 }
 
 .utc-ai-bot-info {
@@ -148,6 +157,7 @@
   justify-content: center;
   font-size: 20px;
   border: 1.5px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .utc-ai-title-group h6 {
@@ -159,7 +169,7 @@
 
 .utc-ai-status-text {
   font-size: 11.5px;
-  opacity: 0.9;
+  opacity: 0.92;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -181,15 +191,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13.5px;
   cursor: pointer;
-  opacity: 0.8;
+  opacity: 0.85;
   transition: all 0.2s ease;
 }
 
 .utc-ai-tool-btn:hover {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.utc-ai-tool-btn.active {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fef08a;
 }
 
 /* ── NỘI DUNG CUỘN TIN NHẮN (MESSAGES CONTAINER) ──────────── */
@@ -201,13 +217,15 @@
   flex-direction: column;
   gap: 14px;
   background-color: #f8fafc;
+  scroll-behavior: smooth;
 }
 
 .utc-ai-msg-group {
   display: flex;
   flex-direction: column;
-  max-width: 85%;
+  max-width: 88%;
   animation: utcFadeIn 0.3s ease-out;
+  position: relative;
 }
 
 .utc-ai-msg-group.bot {
@@ -219,11 +237,12 @@
 }
 
 .utc-ai-bubble {
-  padding: 12px 16px;
-  border-radius: 14px;
+  padding: 13px 17px;
+  border-radius: 16px;
   font-size: 13.5px;
-  line-height: 1.55;
+  line-height: 1.6;
   word-break: break-word;
+  position: relative;
 }
 
 .utc-ai-msg-group.bot .utc-ai-bubble {
@@ -231,56 +250,139 @@
   color: #1e293b;
   border: 1px solid #e2e8f0;
   border-top-left-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .utc-ai-msg-group.user .utc-ai-bubble {
-  background: #0c6b58;
+  background: linear-gradient(135deg, #0c6b58 0%, #085243 100%);
   color: #ffffff;
   border-top-right-radius: 4px;
-  box-shadow: 0 2px 6px rgba(12, 107, 88, 0.2);
+  box-shadow: 0 3px 10px rgba(12, 107, 88, 0.25);
 }
 
 .utc-ai-bubble p:last-child {
   margin-bottom: 0;
 }
 
-.utc-ai-time {
-  font-size: 10.5px;
-  color: #94a3b8;
+.utc-ai-time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 4px;
   padding: 0 4px;
 }
 
+.utc-ai-time {
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
 .utc-ai-msg-group.user .utc-ai-time {
   text-align: right;
+  width: 100%;
 }
+
+/* Nút Copy nội dung tin nhắn */
+.utc-ai-copy-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.utc-ai-copy-btn:hover {
+  opacity: 1;
+  color: #0c6b58;
+  background: #e2e8f0;
+}
+
+/* ── HÀNH ĐỘNG TƯƠNG TÁC TRỰC TIẾP (INTERACTIVE ACTION BUTTONS) ── */
+.utc-ai-actions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.utc-ai-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #0c6b58;
+  background: #ecfdf5;
+  color: #0c6b58;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.utc-ai-action-btn:hover {
+  background: #0c6b58;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(12, 107, 88, 0.3);
+}
+
+/* ── THANH TIẾN ĐỘ SỨC CHỨA BÃI XE (MINI PROGRESS BAR) ─────── */
+.utc-ai-progress {
+  height: 7px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 6px 0 10px 0;
+}
+
+.utc-ai-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.utc-ai-progress-bar.success { background-color: #22c55e; }
+.utc-ai-progress-bar.warning { background-color: #f59e0b; }
+.utc-ai-progress-bar.danger  { background-color: #ef4444; }
 
 /* ── GỢI Ý CÂU HỎI NHANH (QUICK CHIPS) ─────────────────────── */
 .utc-ai-chips-container {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 
 .utc-ai-chip {
   background: #ffffff;
   border: 1px solid #cbd5e1;
   color: #0c6b58;
-  padding: 6px 11px;
+  padding: 6px 12px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .utc-ai-chip:hover {
   background: #e6f4f1;
   border-color: #0c6b58;
   transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(12, 107, 88, 0.15);
 }
 
 /* ── TYPING INDICATOR (3 CHẤM ĐANG NHẬP) ──────────────────── */
@@ -288,14 +390,14 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 10px 14px;
+  padding: 10px 16px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   border-top-left-radius: 4px;
   width: fit-content;
   align-self: flex-start;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .utc-ai-dot {
@@ -375,117 +477,167 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
-   CHẾ ĐỘ TỐI (DARK MODE CONFIGURATION - [data-theme="dark"])
+   CHẾ ĐỘ TỐI (DARK MODE - HỖ TRỢ CẢ [data-theme="dark"] & body.dark-mode)
    ══════════════════════════════════════════════════════════════ */
-[data-theme="dark"] .utc-ai-btn {
+[data-theme="dark"] .utc-ai-btn,
+body.dark-mode .utc-ai-btn {
   background: linear-gradient(135deg, #10b981 0%, #065f46 100%);
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="dark"] .utc-ai-pill-label {
+[data-theme="dark"] .utc-ai-pill-label,
+body.dark-mode .utc-ai-pill-label {
   background: #1e293b;
   color: #34d399;
   border-color: #334155;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme="dark"] .utc-ai-pill-label:hover {
+[data-theme="dark"] .utc-ai-pill-label:hover,
+body.dark-mode .utc-ai-pill-label:hover {
   background: #243248;
 }
 
-[data-theme="dark"] .utc-ai-window {
+[data-theme="dark"] .utc-ai-window,
+body.dark-mode .utc-ai-window {
   background: #1e293b;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px #334155;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px #334155;
 }
 
-[data-theme="dark"] .utc-ai-header {
+[data-theme="dark"] .utc-ai-header,
+body.dark-mode .utc-ai-header {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border-bottom-color: #334155;
 }
 
-[data-theme="dark"] .utc-ai-title-group h6 {
+[data-theme="dark"] .utc-ai-title-group h6,
+body.dark-mode .utc-ai-title-group h6 {
   color: #f8fafc;
 }
 
-[data-theme="dark"] .utc-ai-status-text {
+[data-theme="dark"] .utc-ai-status-text,
+body.dark-mode .utc-ai-status-text {
   color: #34d399;
 }
 
-[data-theme="dark"] .utc-ai-messages {
+[data-theme="dark"] .utc-ai-messages,
+body.dark-mode .utc-ai-messages {
   background-color: #0f172a;
 }
 
-[data-theme="dark"] .utc-ai-msg-group.bot .utc-ai-bubble {
+[data-theme="dark"] .utc-ai-msg-group.bot .utc-ai-bubble,
+body.dark-mode .utc-ai-msg-group.bot .utc-ai-bubble {
   background: #1e293b;
   color: #f8fafc;
   border-color: #334155;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="dark"] .utc-ai-msg-group.user .utc-ai-bubble {
-  background: #10b981;
+[data-theme="dark"] .utc-ai-msg-group.user .utc-ai-bubble,
+body.dark-mode .utc-ai-msg-group.user .utc-ai-bubble {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: #ffffff;
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
 }
 
-[data-theme="dark"] .utc-ai-time {
+[data-theme="dark"] .utc-ai-time,
+body.dark-mode .utc-ai-time {
   color: #64748b;
 }
 
-[data-theme="dark"] .utc-ai-chip {
+[data-theme="dark"] .utc-ai-copy-btn,
+body.dark-mode .utc-ai-copy-btn {
+  color: #64748b;
+}
+
+[data-theme="dark"] .utc-ai-copy-btn:hover,
+body.dark-mode .utc-ai-copy-btn:hover {
+  color: #34d399;
+  background: #334155;
+}
+
+[data-theme="dark"] .utc-ai-actions-container,
+body.dark-mode .utc-ai-actions-container {
+  border-top-color: #334155;
+}
+
+[data-theme="dark"] .utc-ai-action-btn,
+body.dark-mode .utc-ai-action-btn {
+  background: #0f2d25;
+  border-color: #10b981;
+  color: #34d399;
+}
+
+[data-theme="dark"] .utc-ai-action-btn:hover,
+body.dark-mode .utc-ai-action-btn:hover {
+  background: #10b981;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .utc-ai-chip,
+body.dark-mode .utc-ai-chip {
   background: #1e293b;
   border-color: #334155;
   color: #34d399;
 }
 
-[data-theme="dark"] .utc-ai-chip:hover {
+[data-theme="dark"] .utc-ai-chip:hover,
+body.dark-mode .utc-ai-chip:hover {
   background: #132337;
   border-color: #10b981;
 }
 
-[data-theme="dark"] .utc-ai-typing {
+[data-theme="dark"] .utc-ai-typing,
+body.dark-mode .utc-ai-typing {
   background: #1e293b;
   border-color: #334155;
 }
 
-[data-theme="dark"] .utc-ai-dot {
+[data-theme="dark"] .utc-ai-dot,
+body.dark-mode .utc-ai-dot {
   background-color: #10b981;
 }
 
-[data-theme="dark"] .utc-ai-footer {
+[data-theme="dark"] .utc-ai-footer,
+body.dark-mode .utc-ai-footer {
   background: #1e293b;
   border-top-color: #334155;
 }
 
-[data-theme="dark"] .utc-ai-input {
+[data-theme="dark"] .utc-ai-input,
+body.dark-mode .utc-ai-input {
   background: #0f172a;
   border-color: #334155;
   color: #f8fafc;
 }
 
-[data-theme="dark"] .utc-ai-input:focus {
+[data-theme="dark"] .utc-ai-input:focus,
+body.dark-mode .utc-ai-input:focus {
   border-color: #10b981;
   background: #132337;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
-[data-theme="dark"] .utc-ai-send-btn {
+[data-theme="dark"] .utc-ai-send-btn,
+body.dark-mode .utc-ai-send-btn {
   background: #10b981;
 }
 
-[data-theme="dark"] .utc-ai-send-btn:hover:not(:disabled) {
+[data-theme="dark"] .utc-ai-send-btn:hover:not(:disabled),
+body.dark-mode .utc-ai-send-btn:hover:not(:disabled) {
   background: #059669;
 }
 
 /* ── RESPONSIVE MOBILE TỐI ƯU ─────────────────────────────── */
 @media (max-width: 576px) {
-  .utc-ai-window {
+  .utc-ai-window,
+  .utc-ai-window.maximized {
     right: 12px;
     left: 12px;
     bottom: 84px;
     width: auto;
-    height: 70vh;
+    height: 72vh;
   }
   .utc-ai-launcher {
     right: 16px;

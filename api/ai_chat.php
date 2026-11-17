@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * UTH STATUS - AI Chatbot API Endpoint
+ * UTH STATUS – AI Chatbot API Endpoint v2.0
  * POST /api/ai_chat.php
  * Trợ lý ảo hỗ trợ tra cứu trạng thái dịch vụ, bãi xe sân trường và sự cố UTH
  */
@@ -19,14 +19,19 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+// ── GET Endpoint: Trả về trạng thái sẵn sàng của Trợ lý AI ───────────────────
 if ($method === 'GET') {
-    $hasKey = !empty(GEMINI_API_KEY);
+    $settings = loadAiSettings();
+    $hasKey = !empty($settings['gemini_api_key'] ?? '') || !empty(getenv('GEMINI_API_KEY'));
+
     echo json_encode([
         'success'   => true,
         'message'   => 'UTH AI Chatbot API sẵn sàng hoạt động.',
         'providers' => [
             'gemini_available' => $hasKey,
-            'smart_offline'    => true
+            'smart_offline'    => true,
+            'active_model'     => $settings['gemini_model'] ?? 'gemini-1.5-flash',
+            'sound_enabled'    => $settings['sound_enabled'] ?? true
         ],
         'default_suggestions' => [
             '🅿️ Bãi xe sân trường lúc này thế nào?',
@@ -47,7 +52,7 @@ if ($method !== 'POST') {
     exit;
 }
 
-// ── Rate Limiting bảo vệ hệ thống (Tối đa 30 requests / phút / session) ───────
+// ── Rate Limiting bảo vệ hệ thống (Tối đa 40 requests / phút / session) ───────
 $now = time();
 if (!isset($_SESSION['ai_chat_rate'])) {
     $_SESSION['ai_chat_rate'] = ['count' => 0, 'start' => $now];
@@ -57,7 +62,7 @@ if ($now - $_SESSION['ai_chat_rate']['start'] > 60) {
     $_SESSION['ai_chat_rate'] = ['count' => 1, 'start' => $now];
 } else {
     $_SESSION['ai_chat_rate']['count']++;
-    if ($_SESSION['ai_chat_rate']['count'] > 30) {
+    if ($_SESSION['ai_chat_rate']['count'] > 40) {
         http_response_code(429);
         echo json_encode([
             'success' => false,
@@ -67,7 +72,7 @@ if ($now - $_SESSION['ai_chat_rate']['start'] > 60) {
     }
 }
 
-// ── Lấy nội dung câu hỏi (hỗ trợ cả JSON body lẫn $_POST) ─────────────────────
+// ── Lấy nội dung câu hỏi & lịch sử trò chuyện (hỗ trợ cả JSON body lẫn $_POST) ─
 $rawInput = file_get_contents('php://input');
 $data = [];
 if (!empty($rawInput)) {
@@ -77,7 +82,11 @@ if (!empty($rawInput)) {
     }
 }
 
-$userMessage = trim($data['message'] ?? $_POST['message'] ?? '');
+$userMessage = trim((string) ($data['message'] ?? $_POST['message'] ?? ''));
+$history = $data['history'] ?? [];
+if (!is_array($history)) {
+    $history = [];
+}
 
 if (empty($userMessage)) {
     http_response_code(400);
@@ -97,24 +106,36 @@ if (mb_strlen($userMessage, 'UTF-8') > 1000) {
     exit;
 }
 
+$startTime = microtime(true);
+
 try {
     $pdo = Database::getInstance();
     $contextData = getLiveSystemContext($pdo);
+    $settings = loadAiSettings();
 
     $aiResponse = null;
+    $apiKey = $settings['gemini_api_key'] ?: (getenv('GEMINI_API_KEY') ?: '');
+    $modelName = $settings['gemini_model'] ?: 'gemini-1.5-flash';
+    $preferOffline = !empty($settings['prefer_smart_offline']);
 
-    // 1. Thử gọi Google Gemini API nếu đã cấu hình Key
-    if (!empty(GEMINI_API_KEY)) {
-        $geminiResult = callGeminiApi($userMessage, $contextData, GEMINI_API_KEY);
-        if ($geminiResult['success']) {
+    // 1. Nếu có Gemini API Key và không ép chạy Offline thì gọi Google Gemini
+    if (!empty($apiKey) && !$preferOffline) {
+        $geminiResult = callGeminiApi($userMessage, $contextData, $apiKey, $history, $modelName);
+        if (!empty($geminiResult['success'])) {
             $aiResponse = $geminiResult;
+            // Bổ sung actions và suggestions từ smart engine để giao diện có nút bấm
+            $offlineBackup = querySmartOfflineEngine($userMessage, $contextData, $history);
+            $aiResponse['actions'] = $offlineBackup['actions'] ?? [];
+            $aiResponse['suggestions'] = $offlineBackup['suggestions'] ?? [];
         }
     }
 
     // 2. Tự động fallback về Smart Live Context Engine nếu chưa có key hoặc Gemini bận
     if (!$aiResponse || empty($aiResponse['success'])) {
-        $aiResponse = querySmartOfflineEngine($userMessage, $contextData);
+        $aiResponse = querySmartOfflineEngine($userMessage, $contextData, $history);
     }
+
+    $elapsedMs = round((microtime(true) - $startTime) * 1000, 1);
 
     $defaultSuggestions = [
         '🅿️ Bãi xe sân trường còn chỗ không?',
@@ -124,11 +145,14 @@ try {
     ];
 
     echo json_encode([
-        'success'     => true,
-        'message'     => $aiResponse['message'],
-        'provider'    => $aiResponse['provider'] ?? 'smart_offline',
-        'timestamp'   => date('H:i:s - d/m/Y'),
-        'suggestions' => $defaultSuggestions
+        'success'          => true,
+        'message'          => $aiResponse['message'],
+        'provider'         => $aiResponse['provider'] ?? 'smart_offline',
+        'model'            => $aiResponse['model'] ?? 'Supercharged Smart Engine v2.0',
+        'actions'          => $aiResponse['actions'] ?? [],
+        'suggestions'      => !empty($aiResponse['suggestions']) ? $aiResponse['suggestions'] : $defaultSuggestions,
+        'response_time_ms' => $elapsedMs,
+        'timestamp'        => date('H:i:s - d/m/Y')
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (Throwable $e) {

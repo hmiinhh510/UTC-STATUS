@@ -65,7 +65,7 @@ try {
     $stmtCheck->execute([':ep' => $endpoint]);
     $existing = $stmtCheck->fetch();
 
-    $configuredBaseUrl = rtrim((string) (getenv('UTC_STATUS_BASE_URL') ?: ''), '/');
+    $configuredBaseUrl = rtrim((string) (getenv('UTH_STATUS_BASE_URL') ?: getenv('UTC_STATUS_BASE_URL') ?: ''), '/');
     if ($configuredBaseUrl !== '') {
         $baseUrl = $configuredBaseUrl;
     } else {

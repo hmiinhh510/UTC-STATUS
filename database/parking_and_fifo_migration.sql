@@ -1,41 +1,9 @@
 -- ============================================================
--- UTC STATUS - Migration: Parking Zones & Incident FIFO Queue
--- Trường Đại học Giao thông Vận tải (UTC)
+-- UTH STATUS - Migration: Incident FIFO Queue
+-- Trường Đại học Giao thông Vận tải (UTH)
 -- ============================================================
 
--- 1. BẢNG BÃI XE SÂN TRƯỜNG (PARKING ZONES)
-CREATE TABLE IF NOT EXISTS `parking_zones` (
-    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `zone_code`      VARCHAR(20) NOT NULL UNIQUE,
-    `name`           VARCHAR(100) NOT NULL,
-    `vehicle_type`   VARCHAR(50) NOT NULL DEFAULT 'Xe máy',
-    `total_capacity` INT UNSIGNED NOT NULL DEFAULT 500,
-    `occupied_count` INT UNSIGNED NOT NULL DEFAULT 0,
-    `status`         ENUM('available', 'crowded', 'full') NOT NULL DEFAULT 'available',
-    `location_note`  VARCHAR(255) DEFAULT NULL,
-    `sort_order`     TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    `updated_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_pz_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Thêm dữ liệu khởi tạo mẫu cho 3 khu vực bãi xe sân trường UTC
-INSERT INTO `parking_zones` (`zone_code`, `name`, `vehicle_type`, `total_capacity`, `occupied_count`, `status`, `location_note`, `sort_order`, `updated_at`)
-VALUES 
-    ('KHU_A', 'Khu A - Sân Nhà A1 (Xe máy)', 'Xe máy', 500, 450, 'crowded', 'Khu vực cổng số 1 đường Cầu Giấy (Gần Hội trường A1)', 1, NOW()),
-    ('KHU_B', 'Khu B - Sau Giảng Đường (Xe máy)', 'Xe máy', 350, 210, 'available', 'Khu vực phía sau Nhà A6 - A7 (Gần Thư viện số)', 2, NOW()),
-    ('KHU_C', 'Khu C - Cán Bộ & Giảng Viên (Ô tô)', 'Ô tô / Giảng viên', 50, 50, 'full', 'Bãi đỗ xe ô tô cán bộ trước Nhà Hiệu Bộ', 3, NOW())
-ON DUPLICATE KEY UPDATE 
-    `name` = VALUES(`name`),
-    `vehicle_type` = VALUES(`vehicle_type`),
-    `total_capacity` = VALUES(`total_capacity`),
-    `occupied_count` = VALUES(`occupied_count`),
-    `status` = VALUES(`status`),
-    `location_note` = VALUES(`location_note`),
-    `sort_order` = VALUES(`sort_order`),
-    `updated_at` = NOW();
-
--- 2. CẬP NHẬT BẢNG BÁO CÁO SỰ CỐ (INCIDENT REPORTS) CHO HÀNG ĐỢI FIFO
+-- 1. CẬP NHẬT BẢNG BÁO CÁO SỰ CỐ (INCIDENT REPORTS) CHO HÀNG ĐỢI FIFO
 ALTER TABLE `incident_reports` 
     ADD COLUMN IF NOT EXISTS `student_code` VARCHAR(50) DEFAULT NULL AFTER `reporter_name`,
     ADD COLUMN IF NOT EXISTS `location` VARCHAR(150) DEFAULT NULL AFTER `service_id`,

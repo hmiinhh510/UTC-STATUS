@@ -66,7 +66,6 @@ class FrontendConsistencyTest extends TestCase {
             $this->assertStringContainsString('UTH STATUS', $html);
             $this->assertStringContainsString('metricIncidentsCount', $html);
             $this->assertStringContainsString('metricMaintenancesCount', $html);
-            $this->assertStringContainsString('cardParkingAction', $html);
 
             preg_match('/id="metricIncidentsCount"[^>]*>([^<]+)<\/div>/', $html, $incMatch);
             preg_match('/id="metricMaintenancesCount"[^>]*>([^<]+)<\/div>/', $html, $maintMatch);

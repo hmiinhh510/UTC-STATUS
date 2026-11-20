@@ -12,7 +12,7 @@ const ROLE_STUDENT = 'student';
 /**
  * Kiểm tra phân quyền thực hiện hành động:
  * - Admin: toàn quyền quản trị
- * - Editor: chỉ được đổi trạng thái nhanh, quản lý sự cố, lên lịch bảo trì, health check, hàng đợi FIFO, bãi xe.
+ * - Editor: chỉ được đổi trạng thái nhanh, quản lý sự cố, lên lịch bảo trì, health check, hàng đợi FIFO.
  *           Không được xóa dịch vụ, xóa nhóm, quản lý user.
  * - Student: chỉ được xem thông tin, gửi báo cáo sự cố và đổi mật khẩu.
  */
@@ -30,9 +30,7 @@ function canPerform(string $action, string $role): bool {
             'create_maintenance',
             'update_maintenance_status',
             'run_health_check',
-            'update_fifo_incident',
-            'update_parking_zone',
-            'quick_parking_status'
+            'update_fifo_incident'
         ];
         return in_array($action, $editorAllowedActions, true);
     }

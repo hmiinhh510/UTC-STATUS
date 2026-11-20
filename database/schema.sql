@@ -257,24 +257,6 @@ CREATE TABLE IF NOT EXISTS `incident_reports` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
--- 14. PARKING_ZONES (Hệ thống thông báo trạng thái bãi xe sân trường UTC)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `parking_zones` (
-    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `zone_code`      VARCHAR(20) NOT NULL UNIQUE,
-    `name`           VARCHAR(100) NOT NULL,
-    `vehicle_type`   VARCHAR(50) NOT NULL DEFAULT 'Xe máy',
-    `total_capacity` INT UNSIGNED NOT NULL DEFAULT 500,
-    `occupied_count` INT UNSIGNED NOT NULL DEFAULT 0,
-    `status`         ENUM('available', 'crowded', 'full') NOT NULL DEFAULT 'available',
-    `location_note`  VARCHAR(255) DEFAULT NULL,
-    `sort_order`     TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    `updated_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_pz_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ------------------------------------------------------------
 -- 10. PASSWORD RESET REQUESTS (Yêu cầu cấp lại mật khẩu cho sinh viên)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `password_reset_requests` (

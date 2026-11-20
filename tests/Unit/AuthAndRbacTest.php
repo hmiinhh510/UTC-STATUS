@@ -26,8 +26,6 @@ class AuthAndRbacTest extends TestCase {
             'update_maintenance_status',
             'run_health_check',
             'update_fifo_incident',
-            'update_parking_zone',
-            'quick_parking_status',
             'any_custom_action'
         ];
 
@@ -48,9 +46,7 @@ class AuthAndRbacTest extends TestCase {
             'create_maintenance',
             'update_maintenance_status',
             'run_health_check',
-            'update_fifo_incident',
-            'update_parking_zone',
-            'quick_parking_status'
+            'update_fifo_incident'
         ];
 
         foreach ($allowedActions as $action) {
@@ -91,7 +87,6 @@ class AuthAndRbacTest extends TestCase {
             'resolve_incident',
             'create_maintenance',
             'update_maintenance_status',
-            'update_parking_zone',
             'update_fifo_incident',
             'run_health_check'
         ];

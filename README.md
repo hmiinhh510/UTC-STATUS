@@ -123,11 +123,10 @@ Hệ thống tích hợp Trợ lý số thông minh (Floating Widget) với kh�
   - **Google Gemini Cloud AI:** Kết nối `gemini-1.5-flash`, `gemini-2.0-flash-exp` qua API Key khi có mạng.
   - **Supercharged Smart Offline Engine v2.0:** Chạy 100% nội bộ trên XAMPP không cần Internet hay API key bên ngoài, phản hồi siêu tốc (< 40ms) dựa trên Live Context MySQL.
 - **Tính năng nổi bật:**
-  - 🅿️ **Tra cứu bãi đỗ xe thời gian thực:** Sức chứa, chỗ trống tại Khu A (xe máy), Khu B (sau A6-A7), Khu C (ô tô cán bộ), quy định giờ mở cửa, giá vé, mất thẻ xe.
   - 🟢 **Trạng thái dịch vụ CNTT:** LMS Moodle, Cổng đăng ký tín chỉ (`tinchi.uth.edu.vn`), Cổng học phí trực tuyến (`hocphi.uth.edu.vn`), Thư viện số (`thuvien.uth.edu.vn`), Cổng thông tin sinh viên (`sv.uth.edu.vn`).
   - 📶 **Hướng dẫn kết nối Wi-Fi eduroam:** Chuẩn PEAP + MSCHAPV2, cách xử lý khi báo lỗi xác thực trên Android, iOS, Windows, macOS.
   - 🛠️ **Sự cố & Bảo trì:** Danh sách sự cố đang mở, sự cố vừa khắc phục, kế hoạch bảo trì trong tuần.
-  - 🎯 **Nút hành động trực tiếp (Action Triggers):** Bấm trực tiếp từ chat để mở modal bãi xe, gửi báo cáo sự cố hàng đợi FIFO, xem lịch bảo trì.
+  - 🎯 **Nút hành động trực tiếp (Action Triggers):** Bấm trực tiếp từ chat để gửi báo cáo sự cố hàng đợi FIFO, xem lịch bảo trì, hướng dẫn hệ thống.
   - 🔔 **Hiệu ứng âm thanh chuông báo (Web Audio Chime):** Chuông thông báo du dương 0-byte không cần file tải ngoài, hỗ trợ bật/tắt âm thanh.
   - ⛶ **Chế độ phóng to / thu nhỏ:** Chuyển đổi linh hoạt giữa giao diện gọn (400x580px) và giao diện mở rộng (580x720px).
   - 📋 **Sao chép tin nhắn:** Nút copy nhanh tin nhắn kèm phản hồi trực quan.

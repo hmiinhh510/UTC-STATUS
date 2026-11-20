@@ -115,24 +115,6 @@
 
     const isInsideAdmin = window.location.pathname.includes('/admin');
 
-    if (actionName === 'openParkingModal') {
-      if (isInsideAdmin) {
-        const parkingTabBtn = document.querySelector('button[data-bs-target="#tab-parking"]');
-        if (parkingTabBtn && typeof bootstrap !== 'undefined') {
-          bootstrap.Tab.getOrCreateInstance(parkingTabBtn).show();
-          window.utcAiToggle(false);
-          return;
-        }
-      } else {
-        const modalEl = document.getElementById('modalParkingStatus');
-        if (modalEl && typeof bootstrap !== 'undefined') {
-          bootstrap.Modal.getOrCreateInstance(modalEl).show();
-          window.utcAiToggle(false);
-          return;
-        }
-      }
-    }
-
     if (actionName === 'openIncidentModal') {
       if (isInsideAdmin) {
         const fifoTabBtn = document.querySelector('button[data-bs-target="#tab-fifo-incidents"]');
@@ -214,7 +196,7 @@
         <i class="fa-solid fa-sparkles text-warning"></i>
         <span>Hỏi Trợ lý AI UTH</span>
       </div>
-      <button class="utc-ai-btn" id="utcAiBtn" title="Trợ lý ảo UTH STATUS (Hỏi bãi xe, LMS, Wifi...)" onclick="window.utcAiToggle()">
+      <button class="utc-ai-btn" id="utcAiBtn" title="Trợ lý ảo UTH STATUS (Hỏi sự cố, LMS, Wifi...)" onclick="window.utcAiToggle()">
         <i class="fa-solid fa-robot"></i>
         <span class="utc-ai-online-dot"></span>
       </button>
@@ -263,7 +245,7 @@
           type="text" 
           id="utcAiInput" 
           class="utc-ai-input" 
-          placeholder="Hỏi về bãi xe, LMS, Wifi eduroam..." 
+          placeholder="Hỏi về sự cố, LMS, Wifi eduroam, tín chỉ..." 
           maxlength="500" 
           autocomplete="off"
         />
@@ -305,16 +287,16 @@
     if (history.length === 0) {
       // Tin nhắn mở đầu mặc định
       appendBotMessage(
-        "👋 **Xin chào bạn!**\n\nMình là **Trợ lý số UTH STATUS**, sẵn sàng hỗ trợ bạn tra cứu trực tiếp:\n• 🅿️ Sức chứa & chỗ trống tại **Bãi xe sân trường (Khu A, B, C)**\n• 🟢 Trạng thái hệ thống: **LMS Moodle, Wifi eduroam, Cổng tín chỉ**\n• 🛠️ Sự cố đang giải quyết & lịch trình bảo trì trong tuần.\n\nBạn có thể gõ câu hỏi hoặc bấm vào các câu hỏi mẫu bên dưới nhé!",
+        "👋 **Xin chào bạn!**\n\nMình là **Trợ lý số UTH STATUS**, sẵn sàng hỗ trợ bạn tra cứu trực tiếp:\n• 🟢 Trạng thái hệ thống: **LMS Moodle, Wifi eduroam, Cổng tín chỉ**\n• 🛠️ Sự cố đang giải quyết & lịch trình bảo trì trong tuần.\n• 📞 Đường dây nóng hỗ trợ CNTT & hướng dẫn khắc phục sự cố.\n\nBạn có thể gõ câu hỏi hoặc bấm vào các câu hỏi mẫu bên dưới nhé!",
         [
-          "🅿️ Bãi xe sân trường lúc này thế nào?",
+          "🎓 Cổng đăng ký tín chỉ có ổn định không?",
           "⚠️ Có dịch vụ nào đang gặp sự cố không?",
           "🛠️ Lịch bảo trì trong tuần tới?",
           "📶 Hướng dẫn kết nối Wi-Fi eduroam?"
         ],
         [
-          { label: "🅿️ Bản Đồ Bãi Xe", action: "openParkingModal" },
-          { label: "⚠️ Báo Cáo Sự Cố", action: "openIncidentModal" }
+          { label: "⚠️ Báo Cáo Sự Cố", action: "openIncidentModal" },
+          { label: "🛠️ Lịch Bảo Trì", action: "openMaintenanceModal" }
         ],
         false
       );
@@ -570,8 +552,8 @@
         } else {
           appendBotMessage(
             '⚠️ ' + (data.error || 'Hệ thống đang bận. Vui lòng thử lại sau giây lát!'),
-            ['🅿️ Kiểm tra bãi xe', '⚠️ Dịch vụ nào lỗi?'],
-            [{ label: '🅿️ Xem Bãi Xe', action: 'openParkingModal' }],
+            ['🎓 Cổng đăng ký tín chỉ', '⚠️ Dịch vụ nào lỗi?'],
+            [{ label: '⚠️ Báo Cáo Sự Cố', action: 'openIncidentModal' }],
             true
           );
         }
@@ -583,8 +565,8 @@
         input.focus();
         appendBotMessage(
           '❌ Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau!',
-          ['🅿️ Bãi xe sân trường', '🛠️ Lịch bảo trì'],
-          [{ label: '🅿️ Xem Bãi Xe', action: 'openParkingModal' }],
+          ['🎓 Cổng đăng ký tín chỉ', '🛠️ Lịch bảo trì'],
+          [{ label: '🛠️ Lịch Bảo Trì', action: 'openMaintenanceModal' }],
           true
         );
       });

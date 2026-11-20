@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * UTH STATUS – AI Chatbot API Endpoint v2.0
  * POST /api/ai_chat.php
- * Trợ lý ảo hỗ trợ tra cứu trạng thái dịch vụ, bãi xe sân trường và sự cố UTH
+ * Trợ lý ảo hỗ trợ tra cứu trạng thái dịch vụ và sự cố UTH
  */
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -34,7 +34,7 @@ if ($method === 'GET') {
             'sound_enabled'    => $settings['sound_enabled'] ?? true
         ],
         'default_suggestions' => [
-            '🅿️ Bãi xe sân trường lúc này thế nào?',
+            '🎓 Cổng đăng ký tín chỉ có ổn định không?',
             '⚠️ Có dịch vụ nào đang gặp sự cố không?',
             '🛠️ Lịch trình bảo trì trong tuần tới?',
             '📶 Hướng dẫn kết nối Wi-Fi eduroam?'
@@ -138,7 +138,7 @@ try {
     $elapsedMs = round((microtime(true) - $startTime) * 1000, 1);
 
     $defaultSuggestions = [
-        '🅿️ Bãi xe sân trường còn chỗ không?',
+        '🎓 Cổng đăng ký tín chỉ có ổn định không?',
         '⚠️ Dịch vụ CNTT nào đang bảo trì?',
         '📶 Cách kết nối Wi-Fi eduroam?',
         '📝 Hướng dẫn gửi báo cáo sự cố?'

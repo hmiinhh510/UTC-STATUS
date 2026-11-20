@@ -1356,55 +1356,7 @@ body.modal-open {
   box-shadow: 0 8px 20px rgba(0, 122, 120, 0.12);
 }
 
-/* ══════════════════════════════════════════════════════════════
-   1. PARKING STATUS STYLES (BÃI XE SÂN TRƯỜNG UTC)
-   ══════════════════════════════════════════════════════════════ */
-.stat-card-green-parking {
-  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-md);
-  padding: 1.25rem 1.5rem;
-  color: #ffffff;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(6, 95, 70, 0.25);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-}
-
-.stat-card-green-parking:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(6, 95, 70, 0.35);
-}
-
-.parking-progress-bar-container {
-  height: 8px;
-  background-color: rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  overflow: hidden;
-  margin: 0.6rem 0;
-}
-
-.parking-progress-bar {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
-}
-
-.parking-zone-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 1.25rem;
-  transition: all 0.2s ease;
-}
-
-.parking-zone-card:hover {
-  border-color: var(--green-brand);
-  box-shadow: var(--shadow-hover);
-}
-
-/* Hiệu ứng nhấp nháy cảnh báo bãi xe đã đầy (Pulse danger) */
+/* Hiệu ứng nhấp nháy cảnh báo (Pulse danger) */
 @keyframes pulseDangerBadge {
   0% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -1653,7 +1605,6 @@ body[data-theme="dark"],
 [data-theme="dark"] .service-box,
 [data-theme="dark"] .service-icon-card,
 [data-theme="dark"] .calendar-card,
-[data-theme="dark"] .parking-zone-card,
 [data-theme="dark"] .fifo-calendar-filter {
   background: var(--bg-card) !important;
   border-color: var(--border-color) !important;

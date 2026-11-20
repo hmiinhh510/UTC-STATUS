@@ -797,71 +797,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 setFlash('success', "Đã cập nhật trạng thái sự cố FIFO #{$reportId} sang [{$newStatus}] thành công!");
                 break;
 
-            // ── CẬP NHẬT CHI TIẾT SỨC CHỨA BÃI XE ──────────────────────────────
-            case 'update_parking_zone':
-                $zoneId   = (int) ($_POST['zone_id'] ?? 0);
-                $occupied = (int) ($_POST['occupied_count'] ?? 0);
-                $capacity = (int) ($_POST['total_capacity'] ?? 0);
-                $status   = trim($_POST['status'] ?? 'auto');
-                $note     = trim($_POST['location_note'] ?? '');
-
-                if ($zoneId <= 0 || $capacity <= 0 || $occupied < 0) {
-                    setFlash('danger', 'Thông tin bãi xe không hợp lệ.');
-                    break;
-                }
-
-                $pct = round(($occupied / $capacity) * 100);
-                if ($status === 'auto') {
-                    if ($pct >= 95) $status = 'full';
-                    elseif ($pct >= 80) $status = 'crowded';
-                    else $status = 'available';
-                }
-
-                $upPz = $pdo->prepare('UPDATE parking_zones SET occupied_count = :occ, total_capacity = :cap, status = :st, location_note = :note, updated_at = NOW() WHERE id = :id');
-                $upPz->execute([
-                    ':occ'  => $occupied,
-                    ':cap'  => $capacity,
-                    ':st'   => $status,
-                    ':note' => $note,
-                    ':id'   => $zoneId
-                ]);
-
-                logAction($pdo, $adminId, $adminName, 'update_parking_zone', 'parking_zone', $zoneId, "Cập nhật sức chứa bãi xe #{$zoneId}: {$occupied}/{$capacity} xe ({$status})");
-                setFlash('success', "Đã cập nhật dữ liệu bãi xe thành công!");
-                break;
-
-            // ── ĐỔI NHANH TRẠNG THÁI BÃI XE ("CÒN CHỖ" / "ĐÃ ĐẦY") ───────────
-            case 'quick_parking_status':
-                $zoneId = (int) ($_POST['zone_id'] ?? 0);
-                $target = trim($_POST['target_status'] ?? '');
-
-                $stmt = $pdo->prepare('SELECT id, name, total_capacity, occupied_count FROM parking_zones WHERE id = :id');
-                $stmt->execute([':id' => $zoneId]);
-                $pz = $stmt->fetch();
-
-                if (!$pz) {
-                    setFlash('danger', 'Không tìm thấy phân khu bãi xe.');
-                    break;
-                }
-
-                $cap = (int) $pz['total_capacity'];
-                if ($target === 'full') {
-                    $newOcc = $cap;
-                    $newSt = 'full';
-                    $msg = "Đã chuyển phân khu [{$pz['name']}] sang trạng thái ĐÃ ĐẦY (100%)!";
-                } else {
-                    $newOcc = (int) round($cap * 0.5);
-                    $newSt = 'available';
-                    $msg = "Đã chuyển phân khu [{$pz['name']}] sang trạng thái CÒN CHỖ (50%)!";
-                }
-
-                $upQuick = $pdo->prepare('UPDATE parking_zones SET occupied_count = :occ, status = :st, updated_at = NOW() WHERE id = :id');
-                $upQuick->execute([':occ' => $newOcc, ':st' => $newSt, ':id' => $zoneId]);
-
-                logAction($pdo, $adminId, $adminName, 'quick_parking_status', 'parking_zone', $zoneId, $msg);
-                setFlash('success', $msg);
-                break;
-
             // ── CẤU HÌNH TRỢ LÝ ẢO AI (AI ASSISTANT SETTINGS) ─────────────────
             case 'save_ai_settings':
                 require_once __DIR__ . '/../config/ai_config.php';
@@ -900,8 +835,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $targetHash = '#tab-groups';
     } elseif ($action === 'update_fifo_incident') {
         $targetHash = '#tab-fifo-incidents';
-    } elseif (in_array($action, ['update_parking_zone', 'quick_parking_status'], true)) {
-        $targetHash = '#tab-parking';
     } elseif ($action === 'save_ai_settings') {
         $targetHash = '#tab-ai-assistant';
     }
@@ -1109,17 +1042,6 @@ $fifoIncidentsStmt = $pdo->query('
 ');
 $fifoIncidents = $fifoIncidentsStmt->fetchAll();
 $pendingFifoCount = count(array_filter($fifoIncidents, fn($r) => in_array($r['status'], ['pending', 'in_progress', 'triaged', 'confirmed'], true)));
-
-// ── 7. Fetch Campus Parking Status (Sức chứa bãi xe sân trường UTC) ───────────
-$parkingZonesStmt = $pdo->query('SELECT * FROM parking_zones ORDER BY sort_order ASC, id ASC');
-$parkingZones = $parkingZonesStmt->fetchAll();
-$totalParkingCap = 0;
-$totalParkingOcc = 0;
-foreach ($parkingZones as $pz) {
-    $totalParkingCap += (int) $pz['total_capacity'];
-    $totalParkingOcc += (int) $pz['occupied_count'];
-}
-$parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalParkingCap) * 100, 1) : 0;
 
 // ── 8. Fetch AI Assistant Settings ───────────────────────────────────────────
 require_once __DIR__ . '/../config/ai_config.php';
@@ -1458,15 +1380,6 @@ $aiSettings = loadAiSettings();
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="kpi-stat-box" role="button" onclick="document.querySelector('button[data-bs-target=\'#tab-parking\']').click()" title="Xem quản lý bãi xe sân trường">
-          <div class="kpi-icon-box bg-success-subtle text-success"><i class="fa-solid fa-square-parking"></i></div>
-          <div>
-            <div class="fs-4 fw-800 text-success"><?= $totalParkingOcc ?>/<?= $totalParkingCap ?></div>
-            <div class="small text-muted text-uppercase">Bãi Xe (<?= $parkingOverallPct ?>%)</div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Navigation Tabs -->
@@ -1498,11 +1411,6 @@ $aiSettings = loadAiSettings();
           <?php if ($pendingFifoCount > 0): ?>
             <span class="badge bg-danger rounded-pill ms-1" title="Có <?= $pendingFifoCount ?> sự cố đang chờ xử lý"><?= $pendingFifoCount ?></span>
           <?php endif; ?>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-parking">
-          <i class="fa-solid fa-square-parking me-1"></i>Quản Lý Bãi Xe
         </button>
       </li>
       <li class="nav-item">
@@ -2775,109 +2683,6 @@ $aiSettings = loadAiSettings();
       </div>
 
       <!-- ========================================================
-           TAB 5: QUẢN LÝ BÃI XE SÂN TRƯỜNG UTC (CAMPUS PARKING)
-      ======================================================== -->
-      <div class="tab-pane fade" id="tab-parking">
-        <div class="utc-card p-4">
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-            <div>
-              <h5 class="utc-card-title mb-1 d-flex align-items-center gap-2">
-                <i class="fa-solid fa-square-parking text-success"></i>Quản Lý Trạng Thái &amp; Sức Chứa Bãi Xe Sân Trường UTH
-              </h5>
-              <p class="text-muted small mb-0">
-                Điều phối phương tiện thời gian thực qua bộ cảm biến và hệ thống đếm xe. Cho phép cập nhật nhanh trạng thái (Còn chỗ / Đầy) hoặc chỉnh sửa sức chứa từng phân khu.
-              </p>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1-5 rounded-pill fw-700">
-                <i class="fa-solid fa-car me-1"></i>Đã đỗ: <?= $totalParkingOcc ?> / <?= $totalParkingCap ?> xe (<?= $parkingOverallPct ?>%)
-              </span>
-            </div>
-          </div>
-
-          <!-- Lưới 3 phân khu bãi xe -->
-          <div class="row g-3 mb-4">
-            <?php foreach ($parkingZones as $pz): 
-              $cap = (int) $pz['total_capacity'];
-              $occ = (int) $pz['occupied_count'];
-              $pct = $cap > 0 ? round(($occ / $cap) * 100, 1) : 0;
-              $isFull = ($pz['status'] === 'full' || $pct >= 95);
-              $isCrowded = (!$isFull && $pct >= 80);
-              $barColor = $isFull ? 'bg-danger' : ($isCrowded ? 'bg-warning' : 'bg-success');
-              $badgeCls = $isFull ? 'bg-danger' : ($isCrowded ? 'bg-warning text-dark' : 'bg-success');
-              $statusTxt = $isFull ? 'Đã đầy / Ngưng nhận xe' : ($isCrowded ? 'Sắp đầy' : 'Còn trống');
-              $pulseCls = $isFull ? 'pulse-danger' : '';
-              $vIcon = str_contains($pz['vehicle_type'], 'Ô tô') ? 'fa-car' : 'fa-motorcycle';
-            ?>
-              <div class="col-md-4">
-                <div class="parking-zone-card h-100 d-flex flex-column justify-content-between p-3" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-                  <div>
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                      <span class="badge bg-secondary-subtle text-secondary-emphasis px-2 py-1 rounded small fw-600">
-                        <i class="fa-solid <?= $vIcon ?> me-1"></i><?= htmlspecialchars($pz['vehicle_type']) ?>
-                      </span>
-                      <span class="badge <?= $badgeCls ?> rounded-pill px-2 py-1 small fw-700 <?= $pulseCls ?>">
-                        <?= $statusTxt ?>
-                      </span>
-                    </div>
-                    <h6 class="fw-700 mb-1 text-dark"><?= htmlspecialchars($pz['name']) ?></h6>
-                    <div class="small text-muted mb-3" style="font-size:0.8rem">
-                      <i class="fa-solid fa-location-dot me-1 text-teal"></i><?= htmlspecialchars($pz['location_note'] ?: 'Trong khuôn viên UTH') ?>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div class="d-flex align-items-baseline justify-content-between mb-1">
-                      <span class="small text-muted">Sức chứa hiện tại:</span>
-                      <span class="fw-800 fs-5 text-dark"><?= $occ ?> <span class="small fw-normal text-muted">/ <?= $cap ?> xe</span></span>
-                    </div>
-                    <div class="progress mb-2" style="height: 10px; border-radius: 999px; background: rgba(0,0,0,0.08);">
-                      <div class="progress-bar <?= $barColor ?>" style="width: <?= min(100, $pct) ?>%; transition: width 0.4s ease;"></div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3 small text-muted">
-                      <span>Còn trống: <strong class="text-success"><?= max(0, $cap - $occ) ?></strong> chỗ</span>
-                      <span class="fw-700 text-dark"><?= $pct ?>%</span>
-                    </div>
-
-                    <!-- Thao tác nhanh cho Admin -->
-                    <div class="border-top pt-2">
-                      <div class="d-flex gap-1 justify-content-between align-items-center">
-                        <form method="POST" action="index.php" class="d-inline flex-grow-1">
-                          <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
-                          <input type="hidden" name="action" value="quick_parking_status" />
-                          <input type="hidden" name="zone_id" value="<?= $pz['id'] ?>" />
-                          <input type="hidden" name="target_status" value="available" />
-                          <button type="submit" class="btn btn-sm btn-outline-success w-100 py-1" style="font-size:0.75rem" title="Đổi nhanh về trạng thái Còn chỗ (50%)">
-                            <i class="fa-solid fa-check me-1"></i>Còn chỗ
-                          </button>
-                        </form>
-
-                        <form method="POST" action="index.php" class="d-inline flex-grow-1">
-                          <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
-                          <input type="hidden" name="action" value="quick_parking_status" />
-                          <input type="hidden" name="zone_id" value="<?= $pz['id'] ?>" />
-                          <input type="hidden" name="target_status" value="full" />
-                          <button type="submit" class="btn btn-sm btn-outline-danger w-100 py-1" style="font-size:0.75rem" title="Đổi nhanh về trạng thái Đã đầy (100%)">
-                            <i class="fa-solid fa-ban me-1"></i>Báo đầy
-                          </button>
-                        </form>
-
-                        <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" style="font-size:0.75rem"
-                                onclick="openEditParkingModal(<?= $pz['id'] ?>, '<?= htmlspecialchars($pz['name'], ENT_QUOTES) ?>', <?= $occ ?>, <?= $cap ?>, '<?= htmlspecialchars($pz['status'], ENT_QUOTES) ?>', '<?= htmlspecialchars($pz['location_note'] ?? '', ENT_QUOTES) ?>')"
-                                title="Chỉnh sửa chi tiết số lượng & sức chứa">
-                          <i class="fa-solid fa-gear"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      </div>
-
-      <!-- ========================================================
            TAB 10: QUẢN LÝ TRỢ LÝ ẢO AI (AI ASSISTANT SETTINGS & CONSOLE)
       ======================================================== -->
       <div class="tab-pane fade" id="tab-ai-assistant">
@@ -2946,7 +2751,7 @@ $aiSettings = loadAiSettings();
                   <div class="fw-800 fs-6 text-dark mt-0.5">
                     <span class="badge bg-success-subtle text-success">&lt; 40 ms</span>
                   </div>
-                  <div class="text-muted small" style="font-size:11.5px">Xử lý tức thì dữ liệu bãi xe &amp; trạng thái MySQL</div>
+                  <div class="text-muted small" style="font-size:11.5px">Xử lý tức thì trạng thái hệ thống &amp; dữ liệu MySQL</div>
                 </div>
               </div>
             </div>
@@ -3035,7 +2840,7 @@ $aiSettings = loadAiSettings();
               <div class="mb-3">
                 <label class="form-label small fw-600">Chọn câu hỏi mẫu hoặc nhập prompt:</label>
                 <div class="d-flex flex-wrap gap-1 mb-2">
-                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Bãi xe sân trường lúc này thế nào?')">🅿️ Bãi xe</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Hướng dẫn sử dụng LMS Moodle?')">📚 LMS Moodle</button>
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Cách kết nối wifi eduroam?')">📶 Wi-Fi Eduroam</button>
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Cổng đăng ký tín chỉ có bị lỗi không?')">🎓 ĐK Tín chỉ</button>
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Hôm nay có dịch vụ nào gặp sự cố không?')">⚠️ Sự cố</button>
@@ -3043,7 +2848,7 @@ $aiSettings = loadAiSettings();
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Số điện thoại hotline hỗ trợ kỹ thuật UTH?')">📞 Hotline IT</button>
                 </div>
                 <div class="input-group">
-                  <input type="text" id="adminAiTestInput" class="form-control" placeholder="Nhập câu hỏi để kiểm tra..." value="Bãi xe sân trường lúc này thế nào?" />
+                  <input type="text" id="adminAiTestInput" class="form-control" placeholder="Nhập câu hỏi để kiểm tra..." value="Hôm nay có dịch vụ nào gặp sự cố không?" />
                   <button class="btn btn-success" type="button" id="adminAiTestBtn" onclick="runAdminAiTest()">
                     <i class="fa-solid fa-paper-plane me-1"></i>Kiểm Tra
                   </button>
@@ -3497,60 +3302,6 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
     </div>
   </div>
 
-  <!-- Modal Chỉnh Sửa Sức Chứa Bãi Xe Sân Trường -->
-  <div class="modal fade" id="modalEditParkingZone" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content utc-modal">
-        <form method="POST" action="index.php">
-          <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
-          <input type="hidden" name="action" value="update_parking_zone" />
-          <input type="hidden" id="editPzId" name="zone_id" value="" />
-          <div class="modal-header">
-            <h5 class="modal-title fw-700 text-success">
-              <i class="fa-solid fa-square-parking me-2"></i>Cài Đặt Sức Chứa &amp; Trạng Thái Bãi Xe
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label small fw-600">Khu vực bãi xe:</label>
-              <div id="editPzName" class="fw-700 text-dark p-2 rounded bg-light border"></div>
-            </div>
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="form-label small fw-600">Số xe đã đỗ (Hiện tại) <span class="text-danger">*</span></label>
-                <input type="number" id="editPzOccupied" name="occupied_count" class="form-control" min="0" required />
-              </div>
-              <div class="col-6">
-                <label class="form-label small fw-600">Tổng sức chứa <span class="text-danger">*</span></label>
-                <input type="number" id="editPzCapacity" name="total_capacity" class="form-control" min="1" required />
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label small fw-600">Chế độ trạng thái</label>
-              <select id="editPzStatus" name="status" class="form-select">
-                <option value="auto">⚡ Tự động tính theo tỷ lệ % (Khuyên dùng)</option>
-                <option value="available">🟢 Còn trống (&lt; 80%)</option>
-                <option value="crowded">🟡 Sắp đầy (80% - 95%)</option>
-                <option value="full">🔴 Đã đầy / Ngưng nhận xe (&gt;= 95%)</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label small fw-600">Vị trí / Ghi chú điều phối</label>
-              <input type="text" id="editPzNote" name="location_note" class="form-control" placeholder="Ghi chú vị trí cổng, hướng phân luồng..." />
-            </div>
-          </div>
-          <div class="modal-footer border-0">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-            <button type="submit" class="btn btn-success">
-              <i class="fa-solid fa-check me-1"></i>Lưu Thay Đổi
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- Bootstrap 5 Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Chart.js Config & Modal Helpers -->
@@ -3760,23 +3511,13 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
     document.body.removeChild(link);
   }
 
-  // ── Modal Helpers for FIFO Incidents & Parking ────────────────
+  // ── Modal Helpers for FIFO Incidents ────────────────
   function openUpdateFifoModal(reportId, title, status, adminNote) {
     document.getElementById('fifoModalReportId').value = reportId;
     document.getElementById('fifoModalTitle').textContent = '#' + reportId + ' - ' + title;
     document.getElementById('fifoModalStatus').value = status;
     document.getElementById('fifoModalAdminNote').value = adminNote || '';
     new bootstrap.Modal(document.getElementById('modalUpdateFifoIncident')).show();
-  }
-
-  function openEditParkingModal(zoneId, name, occupied, capacity, status, note) {
-    document.getElementById('editPzId').value = zoneId;
-    document.getElementById('editPzName').textContent = name;
-    document.getElementById('editPzOccupied').value = occupied;
-    document.getElementById('editPzCapacity').value = capacity;
-    document.getElementById('editPzStatus').value = status || 'auto';
-    document.getElementById('editPzNote').value = note || '';
-    new bootstrap.Modal(document.getElementById('modalEditParkingZone')).show();
   }
 
   function filterFifoTable() {

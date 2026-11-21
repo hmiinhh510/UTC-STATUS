@@ -75,7 +75,7 @@ try {
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <!-- Page Stylesheet -->
-  <link rel="stylesheet" href="assets/css/style.css?v=3.6" />
+  <link rel="stylesheet" href="assets/css/style.css?v=3.7" />
   <!-- AI Chatbot Stylesheet -->
   <link rel="stylesheet" href="assets/css/ai_chat.css?v=1.0" />
   <script>

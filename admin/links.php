@@ -119,7 +119,7 @@ $linksData = [
       ],
       [
         'name' => 'Nhật Ký Kiểm Toán (Audit Activity Logs)',
-        'path' => '/admin/index.php#tab-logs',
+        'path' => '/admin/index.php#tab-audit',
         'desc' => 'Theo dõi vết thao tác: ai đã đổi trạng thái, thời gian, IP và lịch sử trạng thái dịch vụ.',
         'method' => 'GET',
         'target' => '_self'
@@ -203,22 +203,36 @@ $linksData = [
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <!-- Google Fonts Inter -->
-  <link rel="stylesheet" href="../assets/css/style.css?v=2.3" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=3.7" />
+  <script>
+    (function() {
+      var saved = 'light';
+      try { saved = localStorage.getItem('utc_theme') || 'light'; } catch (e) {}
+      document.documentElement.setAttribute('data-theme', saved);
+      document.documentElement.setAttribute('data-bs-theme', saved);
+      document.addEventListener('DOMContentLoaded', function() {
+        if (document.body) {
+          document.body.setAttribute('data-theme', saved);
+          document.body.setAttribute('data-bs-theme', saved);
+        }
+      });
+    })();
+  </script>
   <style>
     body {
       background-color: var(--bg-page);
-      color: #1e293b;
+      color: var(--text-primary);
       font-family: var(--font-family);
     }
 
     .urls-header {
-      background: #ffffff;
+      background: var(--bg-card);
       border-bottom: 1px solid var(--border-color);
     }
 
     .url-item-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       border-radius: 12px;
       padding: 1.1rem;
       transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -230,7 +244,7 @@ $linksData = [
 
     .url-item-card:hover {
       transform: translateY(-2px);
-      border-color: #cbd5e1;
+      border-color: var(--input-border);
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     }
 
@@ -255,13 +269,13 @@ $linksData = [
     }
 
     .url-path-code {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--table-stripe);
+      border: 1px solid var(--border-color);
       border-radius: 6px;
       padding: 6px 10px;
       font-size: 0.78rem;
       font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      color: #0f172a;
+      color: var(--text-primary);
       word-break: break-all;
       margin: 0.5rem 0;
     }

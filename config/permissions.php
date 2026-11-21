@@ -28,6 +28,7 @@ function canPerform(string $action, string $role): bool {
             'add_incident_update',
             'resolve_incident',
             'create_maintenance',
+            'update_maintenance',
             'update_maintenance_status',
             'run_health_check',
             'update_fifo_incident'

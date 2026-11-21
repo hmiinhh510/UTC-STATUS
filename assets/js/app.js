@@ -1404,7 +1404,7 @@ async function openServiceDetailModal(serviceId) {
             <span class="small text-muted d-none d-md-inline">Phân quyền Quản trị / Biên tập</span>
           </div>
           <div class="d-flex align-items-center gap-2">
-            <a href="admin/index.php#services" class="btn btn-sm btn-outline-teal d-inline-flex align-items-center gap-1" target="_blank">
+            <a href="admin/index.php#tab-services" class="btn btn-sm btn-outline-teal d-inline-flex align-items-center gap-1" target="_blank">
               <i class="fa-solid fa-pen-to-square"></i><span>Cấu hình dịch vụ</span>
             </a>
             <button type="button" class="btn btn-sm btn-teal d-inline-flex align-items-center gap-1" onclick="openSubscribeModal('${escHtml(svc.name)}')">

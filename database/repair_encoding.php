@@ -10,7 +10,7 @@ require_once __DIR__ . '/../config/database.php';
 
 $dryRun = in_array('--dry-run', $argv, true);
 $pdo = Database::getInstance();
-$markers = ['─', '╗', '┼', '├', '╔', '╩', '░'];
+$markers = ['─', '╗', '┼', '├', '╔', '╩', '░', '║', 'ß'];
 $columns = $pdo->query(
     "SELECT TABLE_NAME, COLUMN_NAME
      FROM information_schema.COLUMNS

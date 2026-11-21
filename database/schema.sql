@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS `password_reset_requests` (
 INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`) VALUES
   (1, 'admin',    'admin@utc.edu.vn',           '$2y$10$OntUUzXIfsOfmaIrPFKl/OWKbf4iGGVIwvbhCUXCrpaRyW3pfa0Za', 'admin'),
   (2, 'editor',   'editor@utc.edu.vn',          '$2y$10$YEtnDp7QLF0bY/pWsgGwq.93mhHCdEcJHRhjoGtA86NaBTs8Tqbsm', 'editor'),
-  (3, 'sinhvien', 'sinhvien@student.utc.edu.vn', '$2y$10$m7Cci3kTQC6r.TBFtkrXBeti.8WGAmqPk1A3TSjC8.gWGX1f2dtnu', 'student')
+  (3, 'sinhvien', 'sinhvien@student.utc.edu.vn', '$2y$10$3dwNwYhjxnlelwT.c7QyGeFqKPNk.rE7WglE.CiSMgyQya8tFdMLO', 'student')
   ON DUPLICATE KEY UPDATE `id` = `id`;
 
 -- 2. Nhóm Dịch Vụ

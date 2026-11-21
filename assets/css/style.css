@@ -7,6 +7,7 @@
 :root {
   --bg-page:           #f4f7f6; /* Nền xám trắng sáng chuẩn giao diện UTC */
   --bg-card:           #ffffff;
+  --card-bg:           var(--bg-card);
   --bg-card-hover:     #f8fafc;
   --border-color:      #e2e8f0;
   --border-subtle:     #f1f5f9;
@@ -73,6 +74,7 @@ html[data-theme="dark"],
 body[data-theme="dark"] {
   --bg-page:           #0f172a; /* Nền tối xanh than sâu */
   --bg-card:           #1e293b; /* Nền card đậm */
+  --card-bg:           var(--bg-card);
   --bg-card-hover:     #243248;
   --border-color:      #334155; /* Viền thẻ tối */
   --border-subtle:     #1e293b;
@@ -1547,7 +1549,18 @@ body[data-theme="dark"],
 [data-theme="dark"] .admin-nav-bar,
 [data-theme="dark"] .modal-content,
 [data-theme="dark"] .dropdown-menu,
-[data-theme="dark"] .card {
+[data-theme="dark"] .card,
+[data-theme="dark"] .admin-table,
+[data-theme="dark"] .fifo-table-container,
+[data-theme="dark"] .sla-metric-card,
+[data-theme="dark"] .stats-card-minimal,
+[data-theme="dark"] .realtime-card-item,
+[data-theme="dark"] .realtime-matrix-banner,
+[data-theme="dark"] .incident-item-card,
+[data-theme="dark"] .empty-incident-box,
+[data-theme="dark"] .offcanvas,
+[data-theme="dark"] .urls-header,
+[data-theme="dark"] .url-item-card {
   background-color: var(--bg-card) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
@@ -1564,26 +1577,142 @@ body[data-theme="dark"],
   color: #f8fafc !important;
 }
 
+[data-theme="dark"] .text-secondary {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .bg-warning.text-dark,
+[data-theme="dark"] .bg-info.text-dark,
+[data-theme="dark"] .btn-warning.text-dark {
+  color: #0f172a !important;
+}
+
 [data-theme="dark"] .text-muted {
   color: #94a3b8 !important;
 }
 
+[data-theme="dark"] .admin-table,
+[data-theme="dark"] .table {
+  --bs-table-bg: var(--bg-card);
+  --bs-table-color: var(--text-primary);
+  --bs-table-border-color: var(--border-color);
+  --bs-table-striped-bg: var(--table-stripe);
+  --bs-table-hover-bg: #243248;
+  --bs-table-hover-color: #f8fafc;
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
 [data-theme="dark"] .admin-table th,
-[data-theme="dark"] .table thead th {
+[data-theme="dark"] .table thead th,
+[data-theme="dark"] .table-light th,
+[data-theme="dark"] thead.table-light {
   background-color: #243248 !important;
   color: #cbd5e1 !important;
   border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .admin-table td,
-[data-theme="dark"] .table tbody td {
-  background-color: transparent !important;
+[data-theme="dark"] .table tbody td,
+[data-theme="dark"] .table tbody tr {
+  background-color: var(--bg-card) !important;
   color: #f8fafc !important;
   border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .table-hover tbody tr:hover td {
-  background-color: rgba(255, 255, 255, 0.04) !important;
+  background-color: #243248 !important;
+}
+
+[data-theme="dark"] .table tbody tr.table-warning,
+[data-theme="dark"] .table tbody tr.table-warning td {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .bg-white {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .bg-light,
+[data-theme="dark"] .bg-light-subtle,
+[data-theme="dark"] .uptime-bars-wrapper,
+[data-theme="dark"] .modal-uptime-bars,
+[data-theme="dark"] .url-path-code {
+  background-color: #132337 !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .badge.bg-light {
+  background-color: #243248 !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .btn-light {
+  background-color: #243248 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .sla-progress-bar {
+  background-color: #334155 !important;
+}
+
+[data-theme="dark"] .modal-uptime-history-pro .modal-header,
+[data-theme="dark"] .modal-maintenance-pro .modal-header,
+[data-theme="dark"] .modal-realtime-pro .modal-header {
+  background: linear-gradient(135deg, #132337 0%, #1e293b 100%) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .modal-uptime-history-pro .modal-title,
+[data-theme="dark"] .modal-maintenance-pro .modal-title,
+[data-theme="dark"] .modal-realtime-pro .modal-title {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .modal-uptime-history-pro .modal-body,
+[data-theme="dark"] .modal-maintenance-pro .modal-body,
+[data-theme="dark"] .modal-realtime-pro .modal-body {
+  background-color: #0f172a !important;
+  background-image: radial-gradient(#334155 0.75px, transparent 0.75px) !important;
+}
+
+[data-theme="dark"] .realtime-header-icon-box {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .realtime-group-badge {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-theme="dark"] .bg-teal-subtle-box { background: rgba(16, 185, 129, 0.15) !important; }
+[data-theme="dark"] .bg-success-subtle-box { background: rgba(34, 197, 94, 0.15) !important; }
+[data-theme="dark"] .bg-danger-subtle-box { background: rgba(239, 68, 68, 0.15) !important; }
+[data-theme="dark"] .bg-warning-subtle-box { background: rgba(245, 158, 11, 0.15) !important; }
+
+[data-theme="dark"] .service-badge-pill {
+  background-color: #243248 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .service-badge-pill.pill-alert {
+  background-color: rgba(239, 68, 68, 0.2) !important;
+  color: #fca5a5 !important;
+}
+[data-theme="dark"] .service-badge-pill.pill-warn {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  color: #fcd34d !important;
+}
+[data-theme="dark"] .service-badge-pill.pill-success {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #6ee7b7 !important;
 }
 
 [data-theme="dark"] .form-control,
@@ -1847,6 +1976,7 @@ html[data-theme="dark"] .utc-json-link {
 }
 
 [data-theme="dark"] .utc-footer {
+  background-color: var(--bg-card) !important;
   color: #94a3b8 !important;
   border-top-color: #334155 !important;
 }

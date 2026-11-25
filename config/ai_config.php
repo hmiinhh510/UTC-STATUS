@@ -9,7 +9,11 @@ declare(strict_types=1);
  * 1. Google Gemini API (khi cấu hình API key trong Admin hoặc qua file/môi trường)
  * 2. Supercharged Smart Live Context Engine (chạy trực tiếp nội bộ trên XAMPP, không phụ thuộc Internet)
  * 3. Hỗ trợ Multi-turn Conversation Context (ngữ cảnh hội thoại nhiều lượt)
+<<<<<<< HEAD
  * 4. Hỗ trợ Interactive Action Triggers (mở modal bãi xe, gửi báo cáo FIFO, tra cứu SLA)
+=======
+ * 4. Hỗ trợ Interactive Action Triggers (gửi báo cáo sự cố FIFO, lịch bảo trì, tra cứu SLA)
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
  */
 
 define('AI_SETTINGS_FILE', __DIR__ . '/ai_settings.json');
@@ -108,6 +112,7 @@ function getLiveSystemContext(PDO $pdo): array {
         }
     }
 
+<<<<<<< HEAD
     // 2. Trạng thái bãi xe sân trường
     $parkingStmt = $pdo->query('SELECT * FROM parking_zones ORDER BY sort_order ASC, id ASC');
     $parkingZones = $parkingStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -151,6 +156,9 @@ function getLiveSystemContext(PDO $pdo): array {
     $totalParkPct = $totalParkCap > 0 ? round(($totalParkOcc / $totalParkCap) * 100, 1) : 0;
 
     // 3. Sự cố đang hoạt động (unresolved incidents)
+=======
+    // 2. Sự cố đang hoạt động (unresolved incidents)
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     $incidentsStmt = $pdo->query(
         'SELECT id, title, severity, status, created_at, resolved_at 
          FROM incidents 
@@ -168,7 +176,11 @@ function getLiveSystemContext(PDO $pdo): array {
     );
     $resolvedIncidents = $resolvedStmt->fetchAll(PDO::FETCH_ASSOC);
 
+<<<<<<< HEAD
     // 4. Lịch bảo trì sắp tới (trong vòng 7 ngày)
+=======
+    // 3. Lịch bảo trì sắp tới (trong vòng 7 ngày)
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     $maintenanceStmt = $pdo->query(
         'SELECT m.id, m.title, m.status, m.scheduled_at, m.expected_end, m.description
          FROM maintenances m
@@ -177,7 +189,11 @@ function getLiveSystemContext(PDO $pdo): array {
     );
     $upcomingMaintenances = $maintenanceStmt->fetchAll(PDO::FETCH_ASSOC);
 
+<<<<<<< HEAD
     // 5. Thống kê Uptime SLA 90 ngày
+=======
+    // 4. Thống kê Uptime SLA 90 ngày
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     $slaMetrics = [
         'overall_sla_pct'      => 99.88,
         'avg_response_time_ms' => 45,
@@ -185,15 +201,23 @@ function getLiveSystemContext(PDO $pdo): array {
         'sla_target'           => 99.5
     ];
 
+<<<<<<< HEAD
     // 6. Thông tin liên hệ hỗ trợ UTH
+=======
+    // 5. Thông tin liên hệ hỗ trợ UTH
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     $campusContacts = [
         'it_hotline'  => '(028) 3899 2862',
         'it_email'    => 'it@uth.edu.vn',
         'it_office'   => 'Phòng 105 - Nhà A1 (Cổng chính)',
         'dao_tao'     => 'Phòng 201 - Nhà A1',
         'ctsv'        => 'Phòng 106 - Nhà A1',
+<<<<<<< HEAD
         'working_hrs' => 'Sáng: 07:30 - 11:30 | Chiều: 13:00 - 17:00 (Thứ 2 - Thứ 6)',
         'parking_hrs' => '06:00 - 22:00 hàng ngày (Cả Thứ Bảy, Chủ Nhật)'
+=======
+        'working_hrs' => 'Sáng: 07:30 - 11:30 | Chiều: 13:00 - 17:00 (Thứ 2 - Thứ 6)'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     ];
 
     return [
@@ -204,6 +228,7 @@ function getLiveSystemContext(PDO $pdo): array {
             'maintenances'      => $maintenanceServices,
             'list'              => $services
         ],
+<<<<<<< HEAD
         'parking' => [
             'total_capacity'    => $totalParkCap,
             'total_occupied'    => $totalParkOcc,
@@ -211,6 +236,8 @@ function getLiveSystemContext(PDO $pdo): array {
             'occupancy_pct'     => $totalParkPct,
             'zones'             => $parkingDetails
         ],
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         'active_incidents'      => $activeIncidents,
         'resolved_incidents'    => $resolvedIncidents,
         'upcoming_maintenances' => $upcomingMaintenances,
@@ -238,6 +265,7 @@ function buildAiContextSummary(array $ctx): string {
         $out .= "- Dịch vụ đang bảo trì: " . implode(', ', $ctx['services']['maintenances']) . "\n";
     }
 
+<<<<<<< HEAD
     $out .= "\n=== 2. TÌNH TRẠNG BÃI XE SÂN TRƯỜNG ===\n";
     $out .= "- Toàn trường: Đã đỗ {$ctx['parking']['total_occupied']}/{$ctx['parking']['total_capacity']} xe ({$ctx['parking']['occupancy_pct']}%), Còn trống {$ctx['parking']['total_available']} chỗ.\n";
     foreach ($ctx['parking']['zones'] as $z) {
@@ -245,6 +273,9 @@ function buildAiContextSummary(array $ctx): string {
     }
 
     $out .= "\n=== 3. SỰ CỐ ĐANG XỬ LÝ ===\n";
+=======
+    $out .= "\n=== 2. SỰ CỐ ĐANG XỬ LÝ ===\n";
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     if (empty($ctx['active_incidents'])) {
         $out .= "Hiện không có sự cố nào đang xử lý.\n";
     } else {
@@ -253,7 +284,11 @@ function buildAiContextSummary(array $ctx): string {
         }
     }
 
+<<<<<<< HEAD
     $out .= "\n=== 4. LỊCH TRÌNH BẢO TRÌ SẮP TỚI ===\n";
+=======
+    $out .= "\n=== 3. LỊCH TRÌNH BẢO TRÌ SẮP TỚI ===\n";
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     if (empty($ctx['upcoming_maintenances'])) {
         $out .= "Không có lịch bảo trì nào sắp tới trong tuần.\n";
     } else {
@@ -262,10 +297,16 @@ function buildAiContextSummary(array $ctx): string {
         }
     }
 
+<<<<<<< HEAD
     $out .= "\n=== 5. ĐỘ KHẢ DỤNG SLA & LIÊN HỆ HỖ TRỢ ===\n";
     $out .= "- SLA Uptime 90 ngày: {$ctx['sla_metrics']['overall_sla_pct']}% (Đạt tiêu chuẩn chất lượng cao)\n";
     $out .= "- Hotline IT UTH: {$ctx['campus_contacts']['it_hotline']} - Email: {$ctx['campus_contacts']['it_email']}\n";
     $out .= "- Giờ gửi xe: {$ctx['campus_contacts']['parking_hrs']}\n";
+=======
+    $out .= "\n=== 4. ĐỘ KHẢ DỤNG SLA & LIÊN HỆ HỖ TRỢ ===\n";
+    $out .= "- SLA Uptime 90 ngày: {$ctx['sla_metrics']['overall_sla_pct']}% (Đạt tiêu chuẩn chất lượng cao)\n";
+    $out .= "- Hotline IT UTH: {$ctx['campus_contacts']['it_hotline']} - Email: {$ctx['campus_contacts']['it_email']}\n";
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
     return $out;
 }
@@ -277,11 +318,19 @@ function callGeminiApi(string $userMessage, array $contextData, string $apiKey, 
     $contextText = buildAiContextSummary($contextData);
 
     $systemInstruction = <<<TEXT
+<<<<<<< HEAD
 Bạn là "UTH AI Assistant" – Trợ lý số thông minh của Hệ thống Giám sát Dịch vụ & Bãi xe Đại học Giao thông Vận tải (UTH STATUS).
 Nhiệm vụ của bạn:
 1. Trả lời các thắc mắc của sinh viên, cán bộ, giảng viên về trạng thái dịch vụ CNTT (LMS, Eduroam, Cổng tín chỉ, Học phí, Thư viện số...), sức chứa bãi xe sân trường (Khu A, Khu B, Khu C), sự cố và lịch bảo trì.
 2. Luôn sử dụng dữ liệu thực tế trong bản tóm tắt trạng thái hệ thống bên dưới để trả lời chính xác 100%, không bịa đặt số liệu.
 3. Phong cách giao tiếp: Thân thiện, chu đáo, chuẩn phong cách trường ĐH Giao thông Vận tải (UTH). Sử dụng emoji trực quan (🟢, ⚠️, 🅿️, 🛠️, 📶, 🎓).
+=======
+Bạn là "UTH AI Assistant" – Trợ lý số thông minh của Hệ thống Giám sát Dịch vụ CNTT Đại học Giao thông Vận tải (UTH STATUS).
+Nhiệm vụ của bạn:
+1. Trả lời các thắc mắc của sinh viên, cán bộ, giảng viên về trạng thái dịch vụ CNTT (LMS, Eduroam, Cổng tín chỉ, Học phí, Thư viện số...), sự cố và lịch bảo trì.
+2. Luôn sử dụng dữ liệu thực tế trong bản tóm tắt trạng thái hệ thống bên dưới để trả lời chính xác 100%, không bịa đặt số liệu.
+3. Phong cách giao tiếp: Thân thiện, chu đáo, chuẩn phong cách trường ĐH Giao thông Vận tải (UTH). Sử dụng emoji trực quan (🟢, ⚠️, 🛠️, 📶, 🎓).
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 4. Định dạng Markdown rõ ràng, dễ đọc (in đậm các từ khóa quan trọng, danh sách gạch đầu dòng ngắn gọn).
 5. Nếu người dùng muốn báo cáo sự cố hoặc lỗi dịch vụ, hướng dẫn họ dùng nút "Báo cáo sự cố FIFO" trên hệ thống để được tiếp nhận theo thứ tự ưu tiên.
 
@@ -377,9 +426,13 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
     if (!empty($history) && is_array($history)) {
         $lastTurn = end($history);
         $lastText = removeVietnameseAccents((string) ($lastTurn['text'] ?? ''));
+<<<<<<< HEAD
         if (str_contains($lastText, 'bai xe') || str_contains($lastText, 'khu a') || str_contains($lastText, 'khu b')) {
             $prevTopic = 'parking';
         } elseif (str_contains($lastText, 'wifi') || str_contains($lastText, 'eduroam') || str_contains($lastText, 'mang')) {
+=======
+        if (str_contains($lastText, 'wifi') || str_contains($lastText, 'eduroam') || str_contains($lastText, 'mang')) {
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             $prevTopic = 'wifi';
         } elseif (str_contains($lastText, 'su co') || str_contains($lastText, 'loi') || str_contains($lastText, 'bao cao')) {
             $prevTopic = 'incident';
@@ -387,13 +440,20 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
     }
 
     // ─────────────────────────────────────────────────────────────
+<<<<<<< HEAD
     // 1. NHẬN DIỆN CÂU HỎI VỀ BÃI XE / GỬI XE / ĐỖ XE / PARKING
     // ─────────────────────────────────────────────────────────────
     $isParkingQuery = (
+=======
+    // 1. THÔNG BÁO KHI HỎI VỀ BÃI XE (ĐÃ LƯỢC BỎ KHỎI HỆ THỐNG)
+    // ─────────────────────────────────────────────────────────────
+    if (
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         str_contains($msgNormalized, 'bai xe') || 
         str_contains($msgNormalized, 'bai do') || 
         str_contains($msgNormalized, 'gui xe') || 
         str_contains($msgNormalized, 'do xe') || 
+<<<<<<< HEAD
         str_contains($msgNormalized, 'parking') || 
         str_contains($msgNormalized, 'cho de xe') ||
         str_contains($msgNormalized, 'khu a') ||
@@ -530,10 +590,19 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
         }
 
         $reply .= "\n⏱️ *Dữ liệu cảm biến tự động cập nhật trực tiếp từ hệ thống cổng từ UTH.*";
+=======
+        str_contains($msgNormalized, 'parking')
+    ) {
+        $reply = "ℹ️ **THÔNG BÁO VỀ HỆ THỐNG DỊCH VỤ UTH STATUS**\n\n";
+        $reply .= "Cổng thông tin UTH STATUS hiện tại tập trung theo dõi và giám sát trạng thái hoạt động của các **Dịch vụ Công nghệ Thông tin** (LMS Moodle, Wifi eduroam, Cổng tín chỉ, Học phí trực tuyến, Thư viện số, Email sinh viên...).\n\n";
+        $reply .= "Chức năng bãi xe sân trường không nằm trong phạm vi giám sát dịch vụ CNTT của cổng. Nếu bạn cần thông tin gửi xe, vui lòng liên hệ trực tiếp Tổ Bảo vệ tại Cổng trường Nhà A1.";
+
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         return [
             'success'     => true,
             'message'     => $reply,
             'provider'    => 'smart_offline',
+<<<<<<< HEAD
             'actions'     => [
                 ['label' => '🅿️ Mở Bản Đồ Bãi Xe', 'action' => 'openParkingModal'],
                 ['label' => '📍 Kiểm Tra Khu B', 'question' => 'Khu B còn chỗ không bot?']
@@ -542,6 +611,12 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
                 'Bãi xe khu A hiện tại còn chỗ không bot?',
                 'Bãi xe khu B còn chỗ không?',
                 'Quy định giờ đóng cửa bãi xe?'
+=======
+            'suggestions' => [
+                'Cổng đăng ký tín chỉ có ổn định không?',
+                'Hướng dẫn kết nối Wi-Fi eduroam?',
+                'Hôm nay có dịch vụ nào gặp sự cố không?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -552,7 +627,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
     $isIncidentQuery = (
         str_contains($msgNormalized, 'su co') || 
         str_contains($msgNormalized, 'loi') || 
+<<<<<<< HEAD
         str_contains($msgNormalized, 'hong') || 
+=======
+        preg_match('/\bhong\b/', $msgNormalized) || 
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         str_contains($msgNormalized, 'khong vao duoc') ||
         str_contains($msgNormalized, 'cham') ||
         str_contains($msgNormalized, 'dang xu ly') ||
@@ -600,7 +679,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             ],
             'suggestions' => [
                 'Có dịch vụ nào đang bảo trì không?',
+<<<<<<< HEAD
                 'Tình trạng bãi xe sân trường lúc này?',
+=======
+                'Cổng đăng ký tín chỉ có ổn định không?',
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 'Hướng dẫn kết nối Wi-Fi eduroam?'
             ]
         ];
@@ -639,7 +722,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             ],
             'suggestions' => [
                 'Hôm nay có dịch vụ nào gặp sự cố không?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?',
+=======
+                'Cổng đăng ký tín chỉ có ổn định không?',
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 'Độ khả dụng SLA hệ thống là bao nhiêu?'
             ]
         ];
@@ -675,7 +762,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'suggestions' => [
                 'Hướng dẫn thanh toán học phí trực tuyến?',
                 'Hôm nay có dịch vụ nào gặp sự cố không?',
+<<<<<<< HEAD
                 'Bãi xe khu A còn chỗ không?'
+=======
+                'Hướng dẫn sử dụng LMS Moodle?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -724,7 +815,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'suggestions' => [
                 'Quên mật khẩu tài khoản sinh viên?',
                 'Cách nộp bài trên LMS Moodle?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?'
+=======
+                'Cổng đăng ký tín chỉ có ổn định không?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -756,7 +851,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'suggestions' => [
                 'Cổng đăng ký tín chỉ có ổn định không?',
                 'Cách đổi mật khẩu tài khoản sinh viên?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?'
+=======
+                'Hôm nay có dịch vụ nào gặp sự cố không?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -789,7 +888,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'suggestions' => [
                 'Hướng dẫn kết nối Wi-Fi eduroam?',
                 'Cổng đăng ký học phần tín chỉ?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?'
+=======
+                'Cách nộp bài tập trên LMS Moodle?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -820,7 +923,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'suggestions' => [
                 'Quên mật khẩu cổng thông tin?',
                 'Hướng dẫn kết nối Wi-Fi eduroam?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?'
+=======
+                'Hướng dẫn đăng ký tín chỉ trực tuyến?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -849,7 +956,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'suggestions' => [
                 'Cách kết nối Wi-Fi eduroam?',
                 'Quên mật khẩu tài khoản sinh viên?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?'
+=======
+                'Cách đổi mật khẩu tài khoản sinh viên?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -877,7 +988,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'provider'    => 'smart_offline',
             'suggestions' => [
                 'Hướng dẫn kết nối Wi-Fi eduroam?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?'
+=======
+                'Cổng thông tin sinh viên có ổn định không?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -905,7 +1020,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'suggestions' => [
                 'Hướng dẫn kết nối Wi-Fi eduroam?',
                 'Cổng đăng ký tín chỉ có ổn định không?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?'
+=======
+                'Độ khả dụng SLA hệ thống là bao nhiêu?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -933,7 +1052,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'suggestions' => [
                 'Hôm nay có dịch vụ nào đang lỗi không?',
                 'Lịch trình bảo trì trong tuần tới?',
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?'
+=======
+                'Hotline hỗ trợ kỹ thuật CNTT UTH?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             ]
         ];
     }
@@ -954,8 +1077,12 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
         $reply .= "• **Trung tâm CNTT**: {$c['it_office']} | Hotline: **{$c['it_hotline']}** | Email: `{$c['it_email']}`\n";
         $reply .= "• **Phòng Đào tạo**: {$c['dao_tao']} (Giải quyết học vụ, tín chỉ, thời khóa biểu)\n";
         $reply .= "• **Phòng Công tác Sinh viên**: {$c['ctsv']} (Giải quyết chế độ chính sách, giấy xác nhận)\n";
+<<<<<<< HEAD
         $reply .= "• **Thời gian làm việc**: {$c['working_hrs']}\n";
         $reply .= "• **Bãi giữ xe**: {$c['parking_hrs']}";
+=======
+        $reply .= "• **Thời gian làm việc**: {$c['working_hrs']}";
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
         return [
             'success'     => true,
@@ -965,7 +1092,11 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
                 ['label' => '⚠️ Gửi Yêu Cầu Hỗ Trợ Kỹ Thuật', 'action' => 'openIncidentModal']
             ],
             'suggestions' => [
+<<<<<<< HEAD
                 'Bãi xe sân trường lúc này thế nào?',
+=======
+                'Cổng đăng ký tín chỉ có ổn định không?',
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 'Hướng dẫn kết nối Wi-Fi eduroam?',
                 'Có lịch bảo trì nào sắp tới không?'
             ]
@@ -989,7 +1120,10 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
         } else {
             $reply .= "• Không có dịch vụ nào gặp sự cố gián đoạn.\n";
         }
+<<<<<<< HEAD
         $reply .= "• Bãi xe sân trường: Đang đỗ **{$ctx['parking']['total_occupied']}/{$ctx['parking']['total_capacity']} xe** ({$ctx['parking']['occupancy_pct']}%).\n";
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         $reply .= "• Sự cố đang xử lý: **" . count($ctx['active_incidents']) . "** sự cố.\n";
         $reply .= "• Bảo trì sắp tới: **" . count($ctx['upcoming_maintenances']) . "** kế hoạch.\n\n";
         $reply .= "💡 *Bạn có thể bấm vào các nút gợi ý bên dưới để tra cứu chi tiết hơn nhé!*";
@@ -999,11 +1133,19 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
             'message'     => $reply,
             'provider'    => 'smart_offline',
             'actions'     => [
+<<<<<<< HEAD
                 ['label' => '🅿️ Xem Bãi Xe Sân Trường', 'action' => 'openParkingModal'],
                 ['label' => '🛠️ Xem Lịch Bảo Trì', 'action' => 'openMaintenanceModal']
             ],
             'suggestions' => [
                 'Bãi xe sân trường lúc này thế nào?',
+=======
+                ['label' => '🛠️ Xem Lịch Bảo Trì', 'action' => 'openMaintenanceModal'],
+                ['label' => '⚠️ Báo Cáo Sự Cố', 'action' => 'openIncidentModal']
+            ],
+            'suggestions' => [
+                'Cổng đăng ký tín chỉ có hoạt động tốt không?',
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 'Có dịch vụ nào đang bảo trì không?',
                 'Hướng dẫn kết nối Wi-Fi eduroam?'
             ]
@@ -1015,7 +1157,10 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
     // ─────────────────────────────────────────────────────────────
     $reply = "👋 **Xin chào! Mình là Trợ lý Ảo UTH STATUS.**\n\n";
     $reply .= "Mình có thể hỗ trợ bạn tra cứu tức thì thông tin hệ thống tại ĐH Giao thông Vận tải:\n";
+<<<<<<< HEAD
     $reply .= "• 🅿️ **Tình trạng bãi xe sân trường**: Số lượng chỗ trống thời gian thực tại Khu A, Khu B, Khu C.\n";
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     $reply .= "• 🟢 **Trạng thái dịch vụ CNTT**: LMS Moodle, Wifi eduroam, Cổng tín chỉ, Đăng ký học phần...\n";
     $reply .= "• 🛠️ **Sự cố & Lịch bảo trì**: Cập nhật tiến độ xử lý và kế hoạch bảo dưỡng trong tuần.\n";
     $reply .= "• 📝 **Hướng dẫn báo cáo sự cố**: Tiếp nhận phản ánh lỗi vào hàng đợi ưu tiên FIFO.\n\n";
@@ -1026,11 +1171,19 @@ function querySmartOfflineEngine(string $message, array $ctx, array $history = [
         'message'     => $reply,
         'provider'    => 'smart_offline',
         'actions'     => [
+<<<<<<< HEAD
             ['label' => '🅿️ Bãi Xe Sân Trường', 'action' => 'openParkingModal'],
             ['label' => '⚠️ Báo Cáo Sự Cố', 'action' => 'openIncidentModal']
         ],
         'suggestions' => [
             '🅿️ Bãi xe sân trường lúc này thế nào?',
+=======
+            ['label' => '⚠️ Báo Cáo Sự Cố', 'action' => 'openIncidentModal'],
+            ['label' => '🛠️ Lịch Bảo Trì', 'action' => 'openMaintenanceModal']
+        ],
+        'suggestions' => [
+            '🎓 Cổng đăng ký tín chỉ có ổn định không?',
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             '⚠️ Có dịch vụ nào đang gặp sự cố không?',
             '🛠️ Lịch bảo trì trong tuần tới?',
             '📶 Hướng dẫn kết nối Wi-Fi eduroam?'

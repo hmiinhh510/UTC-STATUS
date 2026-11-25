@@ -254,6 +254,35 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 }
                 break;
 
+<<<<<<< HEAD
+=======
+            // ── CẬP NHẬT NHÓM DỊCH VỤ ───────────────────────
+            case 'update_group':
+                $groupId     = (int) ($_POST['group_id'] ?? 0);
+                $name        = trim($_POST['name'] ?? '');
+                $description = trim($_POST['description'] ?? '');
+                $sortOrder   = (int) ($_POST['sort_order'] ?? 0);
+
+                if ($groupId <= 0 || $name === '') {
+                    setFlash('danger', 'Thông tin nhóm dịch vụ không hợp lệ.');
+                } else {
+                    $stmt = $pdo->prepare(
+                        'UPDATE service_groups
+                         SET name = :name, description = :description, sort_order = :sort_order
+                         WHERE id = :id'
+                    );
+                    $stmt->execute([
+                        ':name'        => $name,
+                        ':description' => $description,
+                        ':sort_order'  => $sortOrder,
+                        ':id'          => $groupId,
+                    ]);
+                    logAction($pdo, $adminId, $adminName, 'update_group', 'group', $groupId, "Cập nhật nhóm dịch vụ #{$groupId}: {$name}");
+                    setFlash('success', "Đã cập nhật nhóm dịch vụ \"{$name}\" thành công!");
+                }
+                break;
+
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             // ── XÓA NHÓM DỊCH VỤ ────────────────────────────
             case 'delete_group':
                 $groupId = (int) ($_POST['group_id'] ?? 0);
@@ -416,6 +445,46 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 }
                 break;
 
+<<<<<<< HEAD
+=======
+            // ── XÓA SỰ CỐ HỆ THỐNG ───────────────────────────
+            case 'delete_incident':
+                $incidentId = (int) ($_POST['incident_id'] ?? 0);
+                if ($incidentId <= 0) {
+                    setFlash('danger', 'Sự cố cần xóa không hợp lệ.');
+                    break;
+                }
+
+                $pdo->beginTransaction();
+                $incStmt = $pdo->prepare('SELECT title FROM incidents WHERE id = :id FOR UPDATE');
+                $incStmt->execute([':id' => $incidentId]);
+                $incTitle = $incStmt->fetchColumn();
+                if ($incTitle === false) {
+                    throw new RuntimeException('Không tìm thấy sự cố cần xóa.');
+                }
+
+                $svcStmt = $pdo->prepare('SELECT service_id FROM incident_services WHERE incident_id = :inc_id');
+                $svcStmt->execute([':inc_id' => $incidentId]);
+                $affectedServiceIds = array_map('intval', $svcStmt->fetchAll(PDO::FETCH_COLUMN));
+
+                $delStmt = $pdo->prepare('DELETE FROM incidents WHERE id = :id');
+                $delStmt->execute([':id' => $incidentId]);
+
+                foreach ($affectedServiceIds as $affectedServiceId) {
+                    reconcileServiceStatus(
+                        $pdo,
+                        $affectedServiceId,
+                        $adminId,
+                        "Xóa sự cố #{$incidentId}"
+                    );
+                }
+
+                $pdo->commit();
+                logAction($pdo, $adminId, $adminName, 'delete_incident', 'incident', $incidentId, "Xóa sự cố #{$incidentId}: {$incTitle}");
+                setFlash('success', "Đã xóa sự cố #{$incidentId} và đồng bộ lại trạng thái dịch vụ liên quan!");
+                break;
+
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             // ── LÊN LỊCH BẢO TRÌ ─────────────────────────────
             case 'create_maintenance':
                 $title        = trim($_POST['title'] ?? '');
@@ -423,9 +492,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $scheduledAt  = trim($_POST['scheduled_at'] ?? '');
                 $expectedEnd  = trim($_POST['expected_end'] ?? '');
                 $serviceIds   = $_POST['service_ids'] ?? [];
+<<<<<<< HEAD
 
                 if ($title === '' || $scheduledAt === '' || $expectedEnd === '') {
                     setFlash('danger', 'Vui lòng nhập đầy đủ tiêu đề, thời gian bắt đầu và kết thúc.');
+=======
+                $schedTs      = $scheduledAt !== '' ? strtotime($scheduledAt) : false;
+                $expTs        = $expectedEnd !== '' ? strtotime($expectedEnd) : false;
+
+                if ($title === '' || $schedTs === false || $expTs === false) {
+                    setFlash('danger', 'Vui lòng nhập đầy đủ tiêu đề, thời gian bắt đầu và kết thúc.');
+                } elseif ($expTs <= $schedTs) {
+                    setFlash('danger', 'Thời gian dự kiến hoàn thành phải sau thời gian bắt đầu.');
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 } else {
                     $pdo->beginTransaction();
 
@@ -436,8 +515,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     $stmtMaint->execute([
                         ':title'       => $title,
                         ':description' => $description,
+<<<<<<< HEAD
                         ':sched_at'    => $scheduledAt,
                         ':exp_end'     => $expectedEnd,
+=======
+                        ':sched_at'    => date('Y-m-d H:i:s', $schedTs),
+                        ':exp_end'     => date('Y-m-d H:i:s', $expTs),
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                         ':created_by'  => $adminId,
                     ]);
                     $maintId = (int) $pdo->lastInsertId();
@@ -456,6 +540,81 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 }
                 break;
 
+<<<<<<< HEAD
+=======
+            // ── CẬP NHẬT CHI TIẾT LỊCH BẢO TRÌ ──────────────
+            case 'update_maintenance':
+                $maintId      = (int) ($_POST['maintenance_id'] ?? 0);
+                $title        = trim($_POST['title'] ?? '');
+                $description  = trim($_POST['description'] ?? '');
+                $scheduledAt  = trim($_POST['scheduled_at'] ?? '');
+                $expectedEnd  = trim($_POST['expected_end'] ?? '');
+                $status       = trim($_POST['status'] ?? 'scheduled');
+                $serviceIds   = $_POST['service_ids'] ?? [];
+                $newServiceIds = is_array($serviceIds)
+                    ? array_values(array_unique(array_filter(array_map('intval', $serviceIds), static fn(int $id): bool => $id > 0)))
+                    : [];
+                $validStatuses = ['scheduled', 'in_progress', 'completed', 'cancelled'];
+                $schedTs       = $scheduledAt !== '' ? strtotime($scheduledAt) : false;
+                $expTs         = $expectedEnd !== '' ? strtotime($expectedEnd) : false;
+
+                if ($maintId <= 0 || $title === '' || $schedTs === false || $expTs === false || !in_array($status, $validStatuses, true)) {
+                    setFlash('danger', 'Thông tin lịch bảo trì không hợp lệ.');
+                } elseif ($expTs <= $schedTs) {
+                    setFlash('danger', 'Thời gian dự kiến hoàn thành phải sau thời gian bắt đầu.');
+                } else {
+                    $pdo->beginTransaction();
+
+                    $chkStmt = $pdo->prepare('SELECT id FROM maintenances WHERE id = :id FOR UPDATE');
+                    $chkStmt->execute([':id' => $maintId]);
+                    if ($chkStmt->fetchColumn() === false) {
+                        throw new RuntimeException('Không tìm thấy lịch bảo trì cần cập nhật.');
+                    }
+
+                    $oldSvcStmt = $pdo->prepare('SELECT service_id FROM maintenance_services WHERE maintenance_id = :id');
+                    $oldSvcStmt->execute([':id' => $maintId]);
+                    $oldServiceIds = array_map('intval', $oldSvcStmt->fetchAll(PDO::FETCH_COLUMN));
+
+                    $upStmt = $pdo->prepare(
+                        'UPDATE maintenances
+                         SET title = :title, description = :description, status = :status,
+                             scheduled_at = :sched_at, expected_end = :exp_end, updated_at = NOW()
+                         WHERE id = :id'
+                    );
+                    $upStmt->execute([
+                        ':title'       => $title,
+                        ':description' => $description,
+                        ':status'      => $status,
+                        ':sched_at'    => date('Y-m-d H:i:s', $schedTs),
+                        ':exp_end'     => date('Y-m-d H:i:s', $expTs),
+                        ':id'          => $maintId,
+                    ]);
+
+                    $pdo->prepare('DELETE FROM maintenance_services WHERE maintenance_id = :id')->execute([':id' => $maintId]);
+                    if ($newServiceIds !== []) {
+                        $insRel = $pdo->prepare('INSERT INTO maintenance_services (maintenance_id, service_id) VALUES (:m_id, :s_id)');
+                        foreach ($newServiceIds as $sid) {
+                            $insRel->execute([':m_id' => $maintId, ':s_id' => $sid]);
+                        }
+                    }
+
+                    $affectedUnion = array_values(array_unique(array_merge($oldServiceIds, $newServiceIds)));
+                    foreach ($affectedUnion as $sid) {
+                        reconcileServiceStatus(
+                            $pdo,
+                            (int) $sid,
+                            $adminId,
+                            "Cập nhật lịch bảo trì #{$maintId}"
+                        );
+                    }
+
+                    $pdo->commit();
+                    logAction($pdo, $adminId, $adminName, 'update_maintenance', 'maintenance', $maintId, "Cập nhật lịch bảo trì #{$maintId}: {$title} [{$status}]");
+                    setFlash('success', "Đã cập nhật lịch bảo trì #{$maintId} thành công!");
+                }
+                break;
+
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             // ── CẬP NHẬT TRẠNG THÁI BẢO TRÌ ──────────────────
             case 'update_maintenance_status':
                 $maintId   = (int) ($_POST['maintenance_id'] ?? 0);
@@ -642,7 +801,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $upd->execute([':p' => $newHash, ':id' => $targetUserId]);
 
                 logAction($pdo, $adminId, $adminName, 'reset_password', 'user', $targetUserId, "Admin cấp/đổi mật khẩu cho người dùng: {$targetUser['username']}");
+<<<<<<< HEAD
                 setFlash('success', "Đã đổi mật khẩu thành công cho tài khoản <strong>{$targetUser['username']}</strong>! Mật khẩu mới là: <span class=\"badge bg-light text-dark border fs-6 px-2\">{$newPass}</span>. Hãy gửi mật khẩu này cho người dùng để đăng nhập.");
+=======
+                setFlash('success', "Đã đổi mật khẩu thành công cho tài khoản {$targetUser['username']}! Mật khẩu mới là: [{$newPass}]. Hãy gửi mật khẩu này cho người dùng để đăng nhập.");
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 break;
 
             // ── QUẢN LÝ TÀI KHOẢN: ĐỔI VAI TRÒ (ROLE) ────────
@@ -755,7 +918,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 ]);
 
                 logAction($pdo, $adminId, $adminName, 'approve_reset_request', 'password_reset_request', $reqId, "Admin cấp mật khẩu mới cho sinh viên: {$req['username']}");
+<<<<<<< HEAD
                 setFlash('success', "Đã cấp mật khẩu mới thành công cho sinh viên <strong>{$req['full_name']} ({$req['username']})</strong>! Mật khẩu mới là: <span class=\"badge bg-light text-dark border fs-6 px-2\">{$newPassword}</span>. Hãy gửi thông tin này cho sinh viên!");
+=======
+                setFlash('success', "Đã cấp mật khẩu mới thành công cho sinh viên {$req['full_name']} ({$req['username']})! Mật khẩu mới là: [{$newPassword}]. Hãy gửi thông tin này cho sinh viên!");
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 break;
 
             // ── HỦY YÊU CẦU QUÊN MẬT KHẨU ─────────────────────
@@ -797,6 +964,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 setFlash('success', "Đã cập nhật trạng thái sự cố FIFO #{$reportId} sang [{$newStatus}] thành công!");
                 break;
 
+<<<<<<< HEAD
             // ── CẬP NHẬT CHI TIẾT SỨC CHỨA BÃI XE ──────────────────────────────
             case 'update_parking_zone':
                 $zoneId   = (int) ($_POST['zone_id'] ?? 0);
@@ -860,6 +1028,69 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
                 logAction($pdo, $adminId, $adminName, 'quick_parking_status', 'parking_zone', $zoneId, $msg);
                 setFlash('success', $msg);
+=======
+            // ── XÓA BÁO CÁO SỰ CỐ TRONG HÀNG ĐỢI FIFO ────────────────────────
+            case 'delete_fifo_incident':
+                $reportId = (int) ($_POST['report_id'] ?? 0);
+                if ($reportId <= 0) {
+                    setFlash('danger', 'Mã báo cáo sự cố FIFO không hợp lệ.');
+                    break;
+                }
+
+                $stmt = $pdo->prepare('SELECT title FROM incident_reports WHERE id = :id');
+                $stmt->execute([':id' => $reportId]);
+                $repTitle = $stmt->fetchColumn();
+                if ($repTitle === false) {
+                    setFlash('danger', 'Không tìm thấy báo cáo sự cố trong hàng đợi FIFO.');
+                    break;
+                }
+
+                $pdo->prepare('DELETE FROM incident_reports WHERE id = :id')->execute([':id' => $reportId]);
+                logAction($pdo, $adminId, $adminName, 'delete_fifo_incident', 'incident_report', $reportId, "Xóa báo cáo FIFO #{$reportId}: {$repTitle}");
+                setFlash('success', "Đã xóa báo cáo sự cố FIFO #{$reportId} khỏi hàng đợi.");
+                break;
+
+            // ── XÁC THỰC ĐĂNG KÝ NHẬN THÔNG BÁO ──────────────────────────────
+            case 'verify_subscription':
+                $subId = (int) ($_POST['subscription_id'] ?? 0);
+                if ($subId <= 0) {
+                    setFlash('danger', 'Mã đăng ký nhận thông báo không hợp lệ.');
+                    break;
+                }
+
+                $stmt = $pdo->prepare('SELECT endpoint FROM subscriptions WHERE id = :id');
+                $stmt->execute([':id' => $subId]);
+                $endpoint = $stmt->fetchColumn();
+                if ($endpoint === false) {
+                    setFlash('danger', 'Không tìm thấy đăng ký nhận thông báo.');
+                    break;
+                }
+
+                $pdo->prepare('UPDATE subscriptions SET verified = 1, verified_at = NOW() WHERE id = :id')->execute([':id' => $subId]);
+                logAction($pdo, $adminId, $adminName, 'verify_subscription', 'subscription', $subId, "Xác thực thủ công kênh nhận thông báo: {$endpoint}");
+                setFlash('success', "Đã kích hoạt nhận thông báo cho {$endpoint}!");
+                break;
+
+            // ── XÓA ĐĂNG KÝ NHẬN THÔNG BÁO ───────────────────────────────────
+            case 'delete_subscription':
+                $subId = (int) ($_POST['subscription_id'] ?? 0);
+                if ($subId <= 0) {
+                    setFlash('danger', 'Mã đăng ký nhận thông báo không hợp lệ.');
+                    break;
+                }
+
+                $stmt = $pdo->prepare('SELECT endpoint FROM subscriptions WHERE id = :id');
+                $stmt->execute([':id' => $subId]);
+                $endpoint = $stmt->fetchColumn();
+                if ($endpoint === false) {
+                    setFlash('danger', 'Không tìm thấy đăng ký nhận thông báo.');
+                    break;
+                }
+
+                $pdo->prepare('DELETE FROM subscriptions WHERE id = :id')->execute([':id' => $subId]);
+                logAction($pdo, $adminId, $adminName, 'delete_subscription', 'subscription', $subId, "Xóa đăng ký nhận thông báo: {$endpoint}");
+                setFlash('success', "Đã xóa kênh nhận thông báo {$endpoint}.");
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 break;
 
             // ── CẤU HÌNH TRỢ LÝ ẢO AI (AI ASSISTANT SETTINGS) ─────────────────
@@ -890,6 +1121,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 
     $targetHash = '';
+<<<<<<< HEAD
     if (in_array($action, ['create_user', 'reset_user_password', 'update_user_role', 'toggle_user_status', 'delete_user', 'approve_reset_request', 'cancel_reset_request'], true)) {
         $targetHash = '#tab-subscribers';
     } elseif (in_array($action, ['create_incident', 'add_incident_update', 'resolve_incident'], true)) {
@@ -902,6 +1134,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $targetHash = '#tab-fifo-incidents';
     } elseif (in_array($action, ['update_parking_zone', 'quick_parking_status'], true)) {
         $targetHash = '#tab-parking';
+=======
+    if (in_array($action, ['create_user', 'reset_user_password', 'update_user_role', 'toggle_user_status', 'delete_user', 'approve_reset_request', 'cancel_reset_request', 'verify_subscription', 'delete_subscription'], true)) {
+        $targetHash = '#tab-subscribers';
+    } elseif (in_array($action, ['create_incident', 'add_incident_update', 'resolve_incident', 'delete_incident'], true)) {
+        $targetHash = '#tab-incidents';
+    } elseif (in_array($action, ['create_maintenance', 'update_maintenance', 'update_maintenance_status', 'delete_maintenance'], true)) {
+        $targetHash = '#tab-maintenances';
+    } elseif (in_array($action, ['create_group', 'update_group', 'delete_group'], true)) {
+        $targetHash = '#tab-groups';
+    } elseif (in_array($action, ['update_fifo_incident', 'delete_fifo_incident'], true)) {
+        $targetHash = '#tab-fifo-incidents';
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     } elseif ($action === 'save_ai_settings') {
         $targetHash = '#tab-ai-assistant';
     }
@@ -964,7 +1208,12 @@ foreach ($allUpdates as $upd) {
 // Fetch Maintenances
 $maintenancesStmt = $pdo->query(
     'SELECT m.*, u.username AS creator_name,
+<<<<<<< HEAD
             GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ", ") AS affected_services
+=======
+            GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ", ") AS affected_services,
+            GROUP_CONCAT(DISTINCT s.id) AS affected_service_ids
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
      FROM maintenances m
      LEFT JOIN users u ON u.id = m.created_by
      LEFT JOIN maintenance_services ms ON ms.maintenance_id = m.id
@@ -1110,6 +1359,7 @@ $fifoIncidentsStmt = $pdo->query('
 $fifoIncidents = $fifoIncidentsStmt->fetchAll();
 $pendingFifoCount = count(array_filter($fifoIncidents, fn($r) => in_array($r['status'], ['pending', 'in_progress', 'triaged', 'confirmed'], true)));
 
+<<<<<<< HEAD
 // ── 7. Fetch Campus Parking Status (Sức chứa bãi xe sân trường UTC) ───────────
 $parkingZonesStmt = $pdo->query('SELECT * FROM parking_zones ORDER BY sort_order ASC, id ASC');
 $parkingZones = $parkingZonesStmt->fetchAll();
@@ -1121,6 +1371,8 @@ foreach ($parkingZones as $pz) {
 }
 $parkingOverallPct = $totalParkingCap > 0 ? round(($totalParkingOcc / $totalParkingCap) * 100, 1) : 0;
 
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 // ── 8. Fetch AI Assistant Settings ───────────────────────────────────────────
 require_once __DIR__ . '/../config/ai_config.php';
 $aiSettings = loadAiSettings();
@@ -1139,7 +1391,11 @@ $aiSettings = loadAiSettings();
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Custom Admin Stylesheet -->
+<<<<<<< HEAD
   <link rel="stylesheet" href="../assets/css/style.css?v=3.6" />
+=======
+  <link rel="stylesheet" href="../assets/css/style.css?v=3.7" />
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   <!-- AI Chatbot Stylesheet -->
   <link rel="stylesheet" href="../assets/css/ai_chat.css?v=1.0" />
   <script>
@@ -1169,6 +1425,14 @@ $aiSettings = loadAiSettings();
           if (icon.parentElement) icon.parentElement.setAttribute('title', 'Chuyển sang Giao diện Tối (Dark Mode)');
         }
       });
+<<<<<<< HEAD
+=======
+
+      if (window.__utcStatusPieChart && window.__utcStatusPieChart.data && window.__utcStatusPieChart.data.datasets[0]) {
+        window.__utcStatusPieChart.data.datasets[0].borderColor = isDark ? '#1e293b' : '#ffffff';
+        window.__utcStatusPieChart.update('none');
+      }
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     }
 
     function toggleUtcTheme(forcedTheme) {
@@ -1239,12 +1503,20 @@ $aiSettings = loadAiSettings();
       color: #ffffff;
     }
     .admin-table {
+<<<<<<< HEAD
       background: #ffffff;
+=======
+      background: var(--bg-card);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       border-radius: var(--radius-md);
       overflow: hidden;
     }
     .admin-table th {
+<<<<<<< HEAD
       background: #f8fafc;
+=======
+      background: var(--table-stripe);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       color: var(--text-secondary);
       font-size: 0.8rem;
       text-transform: uppercase;
@@ -1258,7 +1530,11 @@ $aiSettings = loadAiSettings();
       border-bottom: 1px solid var(--border-color);
     }
     .sla-metric-card {
+<<<<<<< HEAD
       background: #ffffff;
+=======
+      background: var(--bg-card);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 1.25rem;
@@ -1273,7 +1549,11 @@ $aiSettings = loadAiSettings();
     .sla-progress-bar {
       height: 6px;
       border-radius: 999px;
+<<<<<<< HEAD
       background: #e2e8f0;
+=======
+      background: var(--border-color);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       overflow: hidden;
     }
     .sla-progress-fill {
@@ -1367,7 +1647,11 @@ $aiSettings = loadAiSettings();
   <!-- ══════════════════════════════════════════════════════════
      MAIN CONTAINER
   ══════════════════════════════════════════════════════════════ -->
+<<<<<<< HEAD
   <main class="container-fluid px-3 px-lg-4 py-4">
+=======
+  <main class="container-fluid px-3 px-lg-4 pt-4" style="padding-bottom: 5.5rem;">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
     <!-- Flash message -->
     <?php if ($flash): ?>
@@ -1393,10 +1677,17 @@ $aiSettings = loadAiSettings();
       </div>
     <?php endif; ?>
 
+<<<<<<< HEAD
     <!-- KPI Overview Cards -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-stat-box">
+=======
+    <!-- KPI Overview Cards (8 thẻ cân đối 2 hàng x 4 cột) -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3 col-xl-3">
+        <div class="kpi-stat-box" role="button" onclick="switchAdminTab('#tab-services')" title="Xem danh sách dịch vụ">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           <div class="kpi-icon-box bg-primary-subtle text-primary"><i class="fa-solid fa-server"></i></div>
           <div>
             <div class="fs-4 fw-800"><?= $totalServices ?></div>
@@ -1404,8 +1695,13 @@ $aiSettings = loadAiSettings();
           </div>
         </div>
       </div>
+<<<<<<< HEAD
       <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-stat-box">
+=======
+      <div class="col-6 col-md-3 col-xl-3">
+        <div class="kpi-stat-box" role="button" onclick="switchAdminTab('#tab-services')" title="Xem các dịch vụ hoạt động tốt">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           <div class="kpi-icon-box bg-success-subtle text-success"><i class="fa-solid fa-circle-check"></i></div>
           <div>
             <div class="fs-4 fw-800 text-success"><?= $operationalCount ?></div>
@@ -1413,8 +1709,13 @@ $aiSettings = loadAiSettings();
           </div>
         </div>
       </div>
+<<<<<<< HEAD
       <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-stat-box">
+=======
+      <div class="col-6 col-md-3 col-xl-3">
+        <div class="kpi-stat-box" role="button" onclick="switchAdminTab('#tab-services')" title="Xem các dịch vụ sự cố / giảm sút">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           <div class="kpi-icon-box bg-danger-subtle text-danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
           <div>
             <div class="fs-4 fw-800 text-danger"><?= $outageCount ?></div>
@@ -1422,8 +1723,13 @@ $aiSettings = loadAiSettings();
           </div>
         </div>
       </div>
+<<<<<<< HEAD
       <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-stat-box">
+=======
+      <div class="col-6 col-md-3 col-xl-3">
+        <div class="kpi-stat-box" role="button" onclick="switchAdminTab('#tab-maintenances')" title="Xem lịch bảo trì">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           <div class="kpi-icon-box bg-warning-subtle text-warning"><i class="fa-solid fa-screwdriver-wrench"></i></div>
           <div>
             <div class="fs-4 fw-800 text-warning"><?= $maintenanceCount ?></div>
@@ -1431,8 +1737,13 @@ $aiSettings = loadAiSettings();
           </div>
         </div>
       </div>
+<<<<<<< HEAD
       <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-stat-box">
+=======
+      <div class="col-6 col-md-3 col-xl-3">
+        <div class="kpi-stat-box" role="button" onclick="switchAdminTab('#tab-incidents')" title="Xem sự cố hệ thống">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           <div class="kpi-icon-box bg-info-subtle text-info"><i class="fa-solid fa-fire"></i></div>
           <div>
             <div class="fs-4 fw-800 text-primary"><?= $activeIncidentsCount ?></div>
@@ -1440,6 +1751,7 @@ $aiSettings = loadAiSettings();
           </div>
         </div>
       </div>
+<<<<<<< HEAD
       <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-stat-box">
           <div class="kpi-icon-box bg-secondary-subtle text-secondary"><i class="fa-solid fa-users"></i></div>
@@ -1451,6 +1763,10 @@ $aiSettings = loadAiSettings();
       </div>
       <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-stat-box" role="button" onclick="document.querySelector('button[data-bs-target=\'#tab-fifo-incidents\']').click()" title="Xem hàng đợi sự cố FIFO">
+=======
+      <div class="col-6 col-md-3 col-xl-3">
+        <div class="kpi-stat-box" role="button" onclick="switchAdminTab('#tab-fifo-incidents')" title="Xem hàng đợi sự cố FIFO">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           <div class="kpi-icon-box bg-danger-subtle text-danger"><i class="fa-solid fa-list-ol"></i></div>
           <div>
             <div class="fs-4 fw-800 text-danger"><?= $pendingFifoCount ?></div>
@@ -1458,12 +1774,30 @@ $aiSettings = loadAiSettings();
           </div>
         </div>
       </div>
+<<<<<<< HEAD
       <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-stat-box" role="button" onclick="document.querySelector('button[data-bs-target=\'#tab-parking\']').click()" title="Xem quản lý bãi xe sân trường">
           <div class="kpi-icon-box bg-success-subtle text-success"><i class="fa-solid fa-square-parking"></i></div>
           <div>
             <div class="fs-4 fw-800 text-success"><?= $totalParkingOcc ?>/<?= $totalParkingCap ?></div>
             <div class="small text-muted text-uppercase">Bãi Xe (<?= $parkingOverallPct ?>%)</div>
+=======
+      <div class="col-6 col-md-3 col-xl-3">
+        <div class="kpi-stat-box" role="button" onclick="switchAdminTab('#tab-reports')" title="Xem báo cáo Uptime & SLA 90 ngày">
+          <div class="kpi-icon-box bg-success-subtle text-success"><i class="fa-solid fa-shield-halved"></i></div>
+          <div>
+            <div class="fs-4 fw-800" style="color:var(--teal-primary)"><?= $systemAvgUptime ?>%</div>
+            <div class="small text-muted text-uppercase">Uptime SLA 90D</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 col-xl-3">
+        <div class="kpi-stat-box" <?= $adminRole === 'admin' ? 'role="button" onclick="switchAdminTab(\'#tab-subscribers\')" title="Quản lý tài khoản & sinh viên"' : '' ?>>
+          <div class="kpi-icon-box bg-secondary-subtle text-secondary"><i class="fa-solid fa-users"></i></div>
+          <div>
+            <div class="fs-4 fw-800"><?= $totalUsersCount ?></div>
+            <div class="small text-muted text-uppercase">Tài Khoản &amp; SV</div>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           </div>
         </div>
       </div>
@@ -1501,11 +1835,14 @@ $aiSettings = loadAiSettings();
         </button>
       </li>
       <li class="nav-item">
+<<<<<<< HEAD
         <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-parking">
           <i class="fa-solid fa-square-parking me-1"></i>Quản Lý Bãi Xe
         </button>
       </li>
       <li class="nav-item">
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-ai-assistant">
           <i class="fa-solid fa-robot me-1 text-warning"></i>Trợ Lý Ảo AI
         </button>
@@ -1557,8 +1894,46 @@ $aiSettings = loadAiSettings();
             <?php endif; ?>
           </div>
 
+<<<<<<< HEAD
           <div class="table-responsive admin-table border">
             <table class="table align-middle mb-0">
+=======
+          <!-- Bộ lọc nhanh dịch vụ -->
+          <div class="row g-2 align-items-center mb-3">
+            <div class="col-md-5">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="svcSearchInput" class="form-control" placeholder="Tìm theo tên hoặc mô tả dịch vụ..." oninput="filterServicesTable()" />
+              </div>
+            </div>
+            <div class="col-md-3">
+              <select id="svcGroupFilter" class="form-select form-select-sm" onchange="filterServicesTable()">
+                <option value="all">-- Tất cả phân nhóm --</option>
+                <?php foreach ($groups as $g): ?>
+                  <option value="<?= (int)$g['id'] ?>"><?= htmlspecialchars($g['name']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select id="svcStatusFilter" class="form-select form-select-sm" onchange="filterServicesTable()">
+                <option value="all">-- Tất cả trạng thái --</option>
+                <option value="operational">🟢 Hoạt động tốt</option>
+                <option value="degraded">🟡 Hiệu năng giảm</option>
+                <option value="partial_outage">🟠 Gián đoạn một phần</option>
+                <option value="major_outage">🔴 Sự cố nghiêm trọng</option>
+                <option value="maintenance">🔵 Đang bảo trì</option>
+              </select>
+            </div>
+            <div class="col-md-1">
+              <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="resetServiceFilters()" title="Đặt lại bộ lọc">
+                <i class="fa-solid fa-rotate-left"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive admin-table border">
+            <table class="table align-middle mb-0" id="servicesTable">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
               <thead>
                 <tr>
                   <th style="width: 50px;">ID</th>
@@ -1573,7 +1948,14 @@ $aiSettings = loadAiSettings();
               </thead>
               <tbody>
                 <?php foreach ($services as $s): ?>
+<<<<<<< HEAD
                   <tr>
+=======
+                  <tr class="service-row"
+                      data-group="<?= (int)$s['group_id'] ?>"
+                      data-status="<?= htmlspecialchars($s['status']) ?>"
+                      data-search="<?= htmlspecialchars(mb_strtolower(($s['name'] ?? '') . ' ' . ($s['description'] ?? '') . ' ' . ($s['group_name'] ?? ''))) ?>">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                     <td><code>#<?= $s['id'] ?></code></td>
                     <td>
                       <div class="fw-700 text-dark"><?= htmlspecialchars($s['name']) ?></div>
@@ -1640,6 +2022,7 @@ $aiSettings = loadAiSettings();
                       <?php endif; ?>
                     </td>
                   </tr>
+<<<<<<< HEAD
 
                   <!-- Modal Sửa Dịch Vụ -->
                   <?php if ($adminRole === 'admin'): ?>
@@ -1709,10 +2092,83 @@ $aiSettings = loadAiSettings();
                     </div>
                   <?php endif; ?>
 
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 <?php endforeach; ?>
               </tbody>
             </table>
           </div>
+<<<<<<< HEAD
+=======
+
+          <!-- Modals Sửa Dịch Vụ (đặt ngoài bảng để HTML hợp lệ) -->
+          <?php if ($adminRole === 'admin'): foreach ($services as $s): ?>
+            <div class="modal fade" id="modalEditService<?= $s['id'] ?>" tabindex="-1">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content utc-modal">
+                  <div class="modal-header">
+                    <h5 class="modal-title fw-700">Chỉnh Sửa Dịch Vụ #<?= $s['id'] ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <form method="POST" action="index.php">
+                    <div class="modal-body">
+                      <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                      <input type="hidden" name="action" value="update_service" />
+                      <input type="hidden" name="service_id" value="<?= $s['id'] ?>" />
+
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Tên Dịch Vụ <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($s['name']) ?>" required />
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Nhóm Dịch Vụ <span class="text-danger">*</span></label>
+                        <select name="group_id" class="form-select" required>
+                          <?php foreach ($groups as $g): ?>
+                            <option value="<?= $g['id'] ?>" <?= (int)$s['group_id'] === (int)$g['id'] ? 'selected' : '' ?>>
+                              <?= htmlspecialchars($g['name']) ?>
+                            </option>
+                          <?php endforeach; ?>
+                        </select>
+                      </div>
+                      <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                          <label class="form-label small fw-600">Icon FontAwesome</label>
+                          <input type="text" name="icon" class="form-control" value="<?= htmlspecialchars($s['icon'] ?? 'fa-server') ?>" placeholder="fa-server" />
+                        </div>
+                        <div class="col-sm-6">
+                          <label class="form-label small fw-600">Thứ Tự Sắp Xếp</label>
+                          <input type="number" name="sort_order" class="form-control" value="<?= (int) $s['sort_order'] ?>" />
+                        </div>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">URL Kiểm Tra Tự Động (Health Check)</label>
+                        <input type="url" name="check_url" class="form-control" value="<?= htmlspecialchars($s['check_url'] ?? '') ?>" placeholder="https://sv.uth.edu.vn" />
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Mô Tả</label>
+                        <textarea name="description" class="form-control" rows="2"><?= htmlspecialchars($s['description'] ?? '') ?></textarea>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Trạng Thái</label>
+                        <select name="status" class="form-select">
+                          <option value="operational" <?= $s['status']==='operational'?'selected':''?>>Hoạt động tốt</option>
+                          <option value="degraded" <?= $s['status']==='degraded'?'selected':''?>>Hiệu năng giảm</option>
+                          <option value="partial_outage" <?= $s['status']==='partial_outage'?'selected':''?>>Gián đoạn một phần</option>
+                          <option value="major_outage" <?= $s['status']==='major_outage'?'selected':''?>>Sự cố nghiêm trọng</option>
+                          <option value="maintenance" <?= $s['status']==='maintenance'?'selected':''?>>Đang bảo trì</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                      <button type="submit" class="btn btn-primary" style="background-color:var(--teal-primary);border-color:var(--teal-primary)">Lưu Thay Đổi</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; endif; ?>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         </div>
       </div>
 
@@ -1743,12 +2199,23 @@ $aiSettings = loadAiSettings();
               <tbody>
                 <?php if (empty($incidents)): ?>
                   <tr><td colspan="7" class="text-center py-4 text-muted">Không có sự cố nào.</td></tr>
+<<<<<<< HEAD
                 <?php else: foreach ($incidents as $inc): ?>
+=======
+                <?php else: foreach ($incidents as $inc): $updCount = count($incidentUpdates[$inc['id']] ?? []); ?>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                   <tr>
                     <td><code>#<?= $inc['id'] ?></code></td>
                     <td>
                       <div class="fw-700 text-dark"><?= htmlspecialchars($inc['title']) ?></div>
+<<<<<<< HEAD
                       <div class="text-muted small">Người tạo: <?= htmlspecialchars($inc['creator_name'] ?? 'Admin') ?></div>
+=======
+                      <div class="text-muted small">
+                        Người tạo: <?= htmlspecialchars($inc['creator_name'] ?? 'Admin') ?> &bull;
+                        <span class="badge bg-light text-secondary border"><?= $updCount ?> bản tin</span>
+                      </div>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                     </td>
                     <td><span class="text-danger small fw-600"><?= htmlspecialchars($inc['affected_services'] ?? 'N/A') ?></span></td>
                     <td>
@@ -1765,12 +2232,20 @@ $aiSettings = loadAiSettings();
                       <span class="badge bg-<?= $inc['status']==='resolved'?'success':'warning text-dark'?>"><?= $inc['status'] ?></span>
                     </td>
                     <td><?= date('d/m/Y H:i', strtotime($inc['started_at'])) ?></td>
+<<<<<<< HEAD
                     <td class="text-end">
+=======
+                    <td class="text-end text-nowrap">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                       <button class="btn btn-sm btn-primary me-1" data-bs-toggle="modal" data-bs-target="#modalAddUpdate<?= $inc['id'] ?>">
                         <i class="fa-solid fa-comment-dots me-1"></i>Cập nhật
                       </button>
                       <?php if ($inc['status'] !== 'resolved'): ?>
+<<<<<<< HEAD
                         <form method="POST" action="index.php" class="d-inline" onsubmit="return confirm('Đóng sự cố và khôi phục dịch vụ về bình thường?');">
+=======
+                        <form method="POST" action="index.php" class="d-inline me-1" onsubmit="return confirm('Đóng sự cố và khôi phục dịch vụ về bình thường?');">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                           <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
                           <input type="hidden" name="action" value="resolve_incident" />
                           <input type="hidden" name="incident_id" value="<?= $inc['id'] ?>" />
@@ -1779,6 +2254,7 @@ $aiSettings = loadAiSettings();
                           </button>
                         </form>
                       <?php endif; ?>
+<<<<<<< HEAD
                     </td>
                   </tr>
 
@@ -1819,10 +2295,87 @@ $aiSettings = loadAiSettings();
                       </div>
                     </div>
                   </div>
+=======
+                      <?php if ($adminRole === 'admin'): ?>
+                        <form method="POST" action="index.php" class="d-inline" onsubmit="return confirm('Xác nhận xóa vĩnh viễn sự cố #<?= $inc['id'] ?> và các bản tin liên quan?');">
+                          <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                          <input type="hidden" name="action" value="delete_incident" />
+                          <input type="hidden" name="incident_id" value="<?= $inc['id'] ?>" />
+                          <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa sự cố">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </form>
+                      <?php endif; ?>
+                    </td>
+                  </tr>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 <?php endforeach; endif; ?>
               </tbody>
             </table>
           </div>
+<<<<<<< HEAD
+=======
+
+          <!-- Modals Cập Nhật Tiến Trình Sự Cố (đặt ngoài bảng) -->
+          <?php if (!empty($incidents)): foreach ($incidents as $inc): $timeline = $incidentUpdates[$inc['id']] ?? []; ?>
+            <div class="modal fade" id="modalAddUpdate<?= $inc['id'] ?>" tabindex="-1">
+              <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content utc-modal">
+                  <form method="POST" action="index.php">
+                    <div class="modal-header">
+                      <h5 class="modal-title fw-700">Cập Nhật Sự Cố #<?= $inc['id'] ?></h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                      <input type="hidden" name="action" value="add_incident_update" />
+                      <input type="hidden" name="incident_id" value="<?= $inc['id'] ?>" />
+
+                      <div class="mb-3">
+                        <strong class="fs-6 text-dark"><?= htmlspecialchars($inc['title']) ?></strong>
+                        <div class="small text-muted mt-1">Ảnh hưởng: <span class="text-danger fw-600"><?= htmlspecialchars($inc['affected_services'] ?? 'N/A') ?></span></div>
+                      </div>
+
+                      <?php if (!empty($timeline)): ?>
+                        <div class="mb-3 p-3 rounded border bg-light" style="max-height: 220px; overflow-y: auto;">
+                          <div class="small fw-700 text-secondary mb-2"><i class="fa-solid fa-clock-rotate-left me-1"></i>Tiến trình đã ghi nhận (<?= count($timeline) ?>)</div>
+                          <?php foreach ($timeline as $u): ?>
+                            <div class="timeline-item pb-2">
+                              <span class="timeline-dot <?= $u['status'] === 'resolved' ? 'resolved' : 'active' ?>"></span>
+                              <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 small">
+                                <span class="badge bg-secondary-subtle text-secondary text-uppercase"><?= htmlspecialchars($u['status']) ?></span>
+                                <span class="text-muted"><?= date('d/m/Y H:i', strtotime($u['created_at'])) ?> &bull; <?= htmlspecialchars($u['author'] ?? 'System') ?></span>
+                              </div>
+                              <div class="small text-dark mt-1"><?= nl2br(htmlspecialchars($u['message'])) ?></div>
+                            </div>
+                          <?php endforeach; ?>
+                        </div>
+                      <?php endif; ?>
+
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Chuyển sang trạng thái</label>
+                        <select name="status" class="form-select">
+                          <option value="investigating" <?= $inc['status']==='investigating'?'selected':''?>>🔍 Investigating (Đang điều tra)</option>
+                          <option value="identified" <?= $inc['status']==='identified'?'selected':''?>>🎯 Identified (Đã xác định nguyên nhân)</option>
+                          <option value="monitoring" <?= $inc['status']==='monitoring'?'selected':''?>>👀 Monitoring (Đang theo dõi)</option>
+                          <option value="resolved" <?= $inc['status']==='resolved'?'selected':''?>>✅ Resolved (Đã giải quyết - Tự động đưa dịch vụ về Operational)</option>
+                        </select>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Nội dung thông báo mới <span class="text-danger">*</span></label>
+                        <textarea name="message" class="form-control" rows="3" required placeholder="Mô tả tiến độ khắc phục..."></textarea>
+                      </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                      <button type="submit" class="btn btn-primary" style="background-color:var(--teal-primary);border-color:var(--teal-primary)">Đăng Cập Nhật</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; endif; ?>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         </div>
       </div>
 
@@ -1876,7 +2429,16 @@ $aiSettings = loadAiSettings();
                     </td>
                     <td><?= date('d/m/Y H:i', strtotime($m['scheduled_at'])) ?></td>
                     <td><?= date('d/m/Y H:i', strtotime($m['expected_end'])) ?></td>
+<<<<<<< HEAD
                     <td class="text-end">
+=======
+                    <td class="text-end text-nowrap">
+                      <?php if ($adminRole !== 'student'): ?>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditMaintenance<?= $m['id'] ?>" title="Chỉnh sửa lịch bảo trì">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                      <?php endif; ?>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                       <?php if ($adminRole === 'admin'): ?>
                         <form method="POST" action="index.php" class="d-inline" onsubmit="return confirm('Xác nhận xóa lịch bảo trì này?');">
                           <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
@@ -1893,6 +2455,75 @@ $aiSettings = loadAiSettings();
               </tbody>
             </table>
           </div>
+<<<<<<< HEAD
+=======
+
+          <!-- Modals Chỉnh Sửa Lịch Bảo Trì (đặt ngoài bảng) -->
+          <?php if ($adminRole !== 'student' && !empty($maintenances)): foreach ($maintenances as $m):
+            $selectedSvcIds = array_filter(array_map('intval', explode(',', (string)($m['affected_service_ids'] ?? ''))));
+          ?>
+            <div class="modal fade" id="modalEditMaintenance<?= $m['id'] ?>" tabindex="-1">
+              <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content utc-modal">
+                  <form method="POST" action="index.php">
+                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                    <input type="hidden" name="action" value="update_maintenance" />
+                    <input type="hidden" name="maintenance_id" value="<?= $m['id'] ?>" />
+                    <div class="modal-header">
+                      <h5 class="modal-title fw-700" style="color:var(--teal-primary)">
+                        <i class="fa-solid fa-screwdriver-wrench me-2"></i>Chỉnh Sửa Lịch Bảo Trì #<?= $m['id'] ?>
+                      </h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Tiêu đề kế hoạch <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" value="<?= htmlspecialchars($m['title']) ?>" required />
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Mô tả công việc</label>
+                        <textarea name="description" class="form-control" rows="2"><?= htmlspecialchars($m['description'] ?? '') ?></textarea>
+                      </div>
+                      <div class="row g-2 mb-3">
+                        <div class="col-sm-4">
+                          <label class="form-label small fw-600">Thời gian bắt đầu <span class="text-danger">*</span></label>
+                          <input type="datetime-local" name="scheduled_at" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($m['scheduled_at'])) ?>" required />
+                        </div>
+                        <div class="col-sm-4">
+                          <label class="form-label small fw-600">Dự kiến hoàn thành <span class="text-danger">*</span></label>
+                          <input type="datetime-local" name="expected_end" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($m['expected_end'])) ?>" required />
+                        </div>
+                        <div class="col-sm-4">
+                          <label class="form-label small fw-600">Trạng thái</label>
+                          <select name="status" class="form-select">
+                            <option value="scheduled" <?= $m['status']==='scheduled'?'selected':''?>>📅 Đã lên lịch</option>
+                            <option value="in_progress" <?= $m['status']==='in_progress'?'selected':''?>>⚙️ Đang bảo trì</option>
+                            <option value="completed" <?= $m['status']==='completed'?'selected':''?>>✅ Hoàn thành</option>
+                            <option value="cancelled" <?= $m['status']==='cancelled'?'selected':''?>>❌ Hủy bỏ</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Dịch vụ bị ảnh hưởng (Giữ Ctrl để chọn nhiều)</label>
+                        <select name="service_ids[]" class="form-select" multiple size="4">
+                          <?php foreach ($services as $s): ?>
+                            <option value="<?= $s['id'] ?>" <?= in_array((int)$s['id'], $selectedSvcIds, true) ? 'selected' : '' ?>>
+                              <?= htmlspecialchars($s['name']) ?>
+                            </option>
+                          <?php endforeach; ?>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                      <button type="submit" class="btn btn-primary" style="background-color:var(--teal-primary);border-color:var(--teal-primary)">Lưu Thay Đổi</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; endif; ?>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         </div>
       </div>
 
@@ -1917,18 +2548,36 @@ $aiSettings = loadAiSettings();
             <table class="table align-middle mb-0">
               <thead>
                 <tr>
+<<<<<<< HEAD
                   <th style="width: 50px;">ID</th><th>Tên Phân Nhóm</th><th>Mô Tả</th><th>Thứ Tự</th><th class="text-end">Thao Tác</th>
                 </tr>
               </thead>
               <tbody>
                 <?php foreach ($groups as $g): ?>
+=======
+                  <th style="width: 50px;">ID</th><th>Tên Phân Nhóm</th><th>Mô Tả</th><th>Số Dịch Vụ</th><th>Thứ Tự</th><th class="text-end">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($groups as $g): $grpSvcCount = count(array_filter($services, static fn($s) => (int)$s['group_id'] === (int)$g['id'])); ?>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                   <tr>
                     <td><code>#<?= $g['id'] ?></code></td>
                     <td class="fw-700"><?= htmlspecialchars($g['name']) ?></td>
                     <td class="text-muted small"><?= htmlspecialchars($g['description'] ?? '') ?></td>
+<<<<<<< HEAD
                     <td><?= (int)$g['sort_order'] ?></td>
                     <td class="text-end">
                       <?php if ($adminRole === 'admin'): ?>
+=======
+                    <td><span class="badge bg-light text-secondary border"><?= $grpSvcCount ?> dịch vụ</span></td>
+                    <td><?= (int)$g['sort_order'] ?></td>
+                    <td class="text-end text-nowrap">
+                      <?php if ($adminRole === 'admin'): ?>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditGroup<?= $g['id'] ?>" title="Chỉnh sửa nhóm">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                         <form method="POST" action="index.php" class="d-inline" onsubmit="return confirm('CẢNH BÁO: Xóa nhóm sẽ xóa toàn bộ dịch vụ thuộc nhóm này! Bạn có chắc không?');">
                           <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
                           <input type="hidden" name="action" value="delete_group" />
@@ -1942,6 +2591,46 @@ $aiSettings = loadAiSettings();
               </tbody>
             </table>
           </div>
+<<<<<<< HEAD
+=======
+
+          <!-- Modals Chỉnh Sửa Nhóm Dịch Vụ (đặt ngoài bảng) -->
+          <?php if ($adminRole === 'admin'): foreach ($groups as $g): ?>
+            <div class="modal fade" id="modalEditGroup<?= $g['id'] ?>" tabindex="-1">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content utc-modal">
+                  <form method="POST" action="index.php">
+                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                    <input type="hidden" name="action" value="update_group" />
+                    <input type="hidden" name="group_id" value="<?= $g['id'] ?>" />
+                    <div class="modal-header">
+                      <h5 class="modal-title fw-700" style="color:var(--teal-primary)">Chỉnh Sửa Nhóm #<?= $g['id'] ?></h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Tên nhóm <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($g['name']) ?>" required />
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Mô tả</label>
+                        <textarea name="description" class="form-control" rows="2"><?= htmlspecialchars($g['description'] ?? '') ?></textarea>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-600">Thứ tự sắp xếp</label>
+                        <input type="number" name="sort_order" class="form-control" value="<?= (int)$g['sort_order'] ?>" />
+                      </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                      <button type="submit" class="btn btn-primary" style="background-color:var(--teal-primary);border-color:var(--teal-primary)">Lưu Thay Đổi</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; endif; ?>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         </div>
       </div>
 
@@ -2301,9 +2990,23 @@ $aiSettings = loadAiSettings();
           <!-- Bảng 1: Nhật ký thao tác quản trị -->
           <div class="col-lg-7">
             <div class="utc-card p-4 h-100">
+<<<<<<< HEAD
               <h6 class="fw-800 mb-3" style="color:var(--teal-primary)"><i class="fa-solid fa-clock-rotate-left me-2"></i>Nhật Ký Thao Tác (Activity Logs)</h6>
               <div class="table-responsive admin-table border" style="max-height: 480px; overflow-y: auto;">
                 <table class="table align-middle mb-0 small">
+=======
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <h6 class="fw-800 mb-0" style="color:var(--teal-primary)"><i class="fa-solid fa-clock-rotate-left me-2"></i>Nhật Ký Thao Tác (Activity Logs)</h6>
+                <div class="d-flex align-items-center gap-2">
+                  <input type="text" id="auditSearchInput" class="form-control form-control-sm" style="width: 190px;" placeholder="Lọc nhật ký..." oninput="filterAuditTable()" />
+                  <button type="button" class="btn btn-sm btn-outline-teal text-nowrap" onclick="exportAuditLogsCsv()" title="Xuất file CSV nhật ký hoạt động">
+                    <i class="fa-solid fa-file-csv me-1"></i>Xuất CSV
+                  </button>
+                </div>
+              </div>
+              <div class="table-responsive admin-table border" style="max-height: 480px; overflow-y: auto;">
+                <table class="table align-middle mb-0 small" id="auditLogsTable">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                   <thead>
                     <tr><th>Thời Gian</th><th>Người Thực Hiện</th><th>Hành Động</th><th>Chi Tiết</th><th>IP</th></tr>
                   </thead>
@@ -2311,7 +3014,11 @@ $aiSettings = loadAiSettings();
                     <?php if (empty($activityLogs)): ?>
                       <tr><td colspan="5" class="text-center py-4 text-muted">Chưa có nhật ký nào.</td></tr>
                     <?php else: foreach ($activityLogs as $log): ?>
+<<<<<<< HEAD
                       <tr>
+=======
+                      <tr class="audit-row" data-search="<?= htmlspecialchars(mb_strtolower(($log['username'] ?? '') . ' ' . ($log['action'] ?? '') . ' ' . ($log['details'] ?? '') . ' ' . ($log['ip_address'] ?? ''))) ?>">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                         <td class="text-muted"><?= date('d/m H:i:s', strtotime($log['created_at'])) ?></td>
                         <td><strong><?= htmlspecialchars($log['username']) ?></strong></td>
                         <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($log['action']) ?></span></td>
@@ -2399,13 +3106,48 @@ $aiSettings = loadAiSettings();
                 <?php endif; ?>
               </button>
             </li>
+<<<<<<< HEAD
+=======
+            <li class="nav-item">
+              <button class="nav-link btn-sm" data-bs-toggle="pill" data-bs-target="#subtab-subscriptions">
+                <i class="fa-solid fa-bell me-1"></i>Đăng Ký Nhận Thông Báo
+                <span class="badge bg-light text-dark border ms-1"><?= count($subscribers) ?></span>
+              </button>
+            </li>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           </ul>
 
           <div class="tab-content pt-1">
             <!-- 1. SUBTAB: DANH SÁCH TÀI KHOẢN (USERS) -->
             <div class="tab-pane fade show active" id="subtab-users">
+<<<<<<< HEAD
               <div class="table-responsive admin-table border">
                 <table class="table align-middle mb-0">
+=======
+              <div class="row g-2 align-items-center mb-3">
+                <div class="col-md-6">
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="userSearchInput" class="form-control" placeholder="Tìm theo username, họ tên hoặc email..." oninput="filterUsersTable()" />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <select id="userRoleFilter" class="form-select form-select-sm" onchange="filterUsersTable()">
+                    <option value="all">-- Tất cả vai trò --</option>
+                    <option value="admin">Admin</option>
+                    <option value="editor">Editor</option>
+                    <option value="student">Sinh viên (Student)</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="resetUserFilters()">
+                    <i class="fa-solid fa-rotate-left me-1"></i>Đặt lại
+                  </button>
+                </div>
+              </div>
+              <div class="table-responsive admin-table border">
+                <table class="table align-middle mb-0" id="usersTable">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -2422,7 +3164,13 @@ $aiSettings = loadAiSettings();
                     <?php if (empty($allUsers)): ?>
                       <tr><td colspan="8" class="text-center py-4 text-muted">Chưa có tài khoản nào trong hệ thống.</td></tr>
                     <?php else: foreach ($allUsers as $u): ?>
+<<<<<<< HEAD
                       <tr>
+=======
+                      <tr class="user-row"
+                          data-role="<?= htmlspecialchars($u['role']) ?>"
+                          data-search="<?= htmlspecialchars(mb_strtolower(($u['username'] ?? '') . ' ' . ($u['full_name'] ?? '') . ' ' . ($u['email'] ?? ''))) ?>">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                         <td><code>#<?= $u['id'] ?></code></td>
                         <td>
                           <strong><?= htmlspecialchars($u['username']) ?></strong>
@@ -2575,6 +3323,76 @@ $aiSettings = loadAiSettings();
                 </table>
               </div>
             </div>
+<<<<<<< HEAD
+=======
+
+            <!-- 3. SUBTAB: ĐĂNG KÝ NHẬN THÔNG BÁO (SUBSCRIPTIONS) -->
+            <div class="tab-pane fade" id="subtab-subscriptions">
+              <div class="table-responsive admin-table border">
+                <table class="table align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Kênh</th>
+                      <th>Địa chỉ nhận (Email / Webhook)</th>
+                      <th>Trạng thái</th>
+                      <th>Ngày đăng ký</th>
+                      <th class="text-end">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php if (empty($subscribers)): ?>
+                      <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                          Chưa có người dùng nào đăng ký nhận thông báo.
+                        </td>
+                      </tr>
+                    <?php else: foreach ($subscribers as $sub): ?>
+                      <tr>
+                        <td><code>#<?= $sub['id'] ?></code></td>
+                        <td>
+                          <?php if ($sub['type'] === 'slack'): ?>
+                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle"><i class="fa-brands fa-slack me-1"></i>Slack</span>
+                          <?php else: ?>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="fa-regular fa-envelope me-1"></i>Email</span>
+                          <?php endif; ?>
+                        </td>
+                        <td class="text-break small fw-600"><?= htmlspecialchars($sub['endpoint']) ?></td>
+                        <td>
+                          <?php if (!empty($sub['verified'])): ?>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa-solid fa-circle-check me-1"></i>Đã xác thực</span>
+                          <?php else: ?>
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="fa-regular fa-clock me-1"></i>Chờ xác thực</span>
+                          <?php endif; ?>
+                        </td>
+                        <td class="small text-muted"><?= date('d/m/Y H:i', strtotime($sub['created_at'])) ?></td>
+                        <td class="text-end text-nowrap">
+                          <?php if (empty($sub['verified'])): ?>
+                            <form method="POST" action="index.php" class="d-inline me-1">
+                              <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                              <input type="hidden" name="action" value="verify_subscription" />
+                              <input type="hidden" name="subscription_id" value="<?= $sub['id'] ?>" />
+                              <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size:0.75rem" title="Kích hoạt xác thực thủ công">
+                                <i class="fa-solid fa-check me-1"></i>Kích hoạt
+                              </button>
+                            </form>
+                          <?php endif; ?>
+                          <form method="POST" action="index.php" class="d-inline" onsubmit="return confirm('Xóa kênh đăng ký thông báo này?');">
+                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                            <input type="hidden" name="action" value="delete_subscription" />
+                            <input type="hidden" name="subscription_id" value="<?= $sub['id'] ?>" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:0.75rem" title="Xóa đăng ký">
+                              <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    <?php endforeach; endif; ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           </div>
         </div>
       </div>
@@ -2759,11 +3577,35 @@ $aiSettings = loadAiSettings();
                       </td>
 
                       <!-- Cột 8: Thao Tác -->
+<<<<<<< HEAD
                       <td class="text-end">
+=======
+                      <td class="text-end text-nowrap">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                         <button type="button" class="btn btn-sm btn-outline-teal px-2 py-1" style="font-size: 0.78rem;"
                                 onclick="openUpdateFifoModal(<?= $rep['id'] ?>, '<?= htmlspecialchars($rep['title'], ENT_QUOTES) ?>', '<?= htmlspecialchars($rep['status'], ENT_QUOTES) ?>', '<?= htmlspecialchars($rep['admin_note'] ?? '', ENT_QUOTES) ?>')">
                           <i class="fa-solid fa-pen-to-square me-1"></i>Xử lý
                         </button>
+<<<<<<< HEAD
+=======
+                        <?php if ($isUnresolved): ?>
+                          <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 ms-1" style="font-size: 0.78rem;"
+                                  onclick="promoteFifoToIncident('<?= htmlspecialchars($rep['title'], ENT_QUOTES) ?>', '<?= htmlspecialchars($rep['severity'], ENT_QUOTES) ?>', <?= (int)($rep['service_id'] ?? 0) ?>, '<?= htmlspecialchars($rep['description'], ENT_QUOTES) ?>', '<?= htmlspecialchars($rep['reporter_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($rep['location'] ?? '', ENT_QUOTES) ?>')"
+                                  title="Chuyển báo cáo này thành sự cố hệ thống chính thức">
+                            <i class="fa-solid fa-fire me-1"></i>Tạo Sự Cố
+                          </button>
+                        <?php endif; ?>
+                        <?php if ($adminRole === 'admin'): ?>
+                          <form method="POST" action="index.php" class="d-inline ms-1" onsubmit="return confirm('Xóa báo cáo sự cố FIFO #<?= $rep['id'] ?> này?');">
+                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>" />
+                            <input type="hidden" name="action" value="delete_fifo_incident" />
+                            <input type="hidden" name="report_id" value="<?= $rep['id'] ?>" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary px-2 py-1" style="font-size: 0.78rem;" title="Xóa báo cáo không hợp lệ">
+                              <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                          </form>
+                        <?php endif; ?>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                       </td>
                     </tr>
                   <?php endforeach; endif; ?>
@@ -2775,6 +3617,7 @@ $aiSettings = loadAiSettings();
       </div>
 
       <!-- ========================================================
+<<<<<<< HEAD
            TAB 5: QUẢN LÝ BÃI XE SÂN TRƯỜNG UTC (CAMPUS PARKING)
       ======================================================== -->
       <div class="tab-pane fade" id="tab-parking">
@@ -2878,6 +3721,8 @@ $aiSettings = loadAiSettings();
       </div>
 
       <!-- ========================================================
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
            TAB 10: QUẢN LÝ TRỢ LÝ ẢO AI (AI ASSISTANT SETTINGS & CONSOLE)
       ======================================================== -->
       <div class="tab-pane fade" id="tab-ai-assistant">
@@ -2946,7 +3791,11 @@ $aiSettings = loadAiSettings();
                   <div class="fw-800 fs-6 text-dark mt-0.5">
                     <span class="badge bg-success-subtle text-success">&lt; 40 ms</span>
                   </div>
+<<<<<<< HEAD
                   <div class="text-muted small" style="font-size:11.5px">Xử lý tức thì dữ liệu bãi xe &amp; trạng thái MySQL</div>
+=======
+                  <div class="text-muted small" style="font-size:11.5px">Xử lý tức thì trạng thái hệ thống &amp; dữ liệu MySQL</div>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 </div>
               </div>
             </div>
@@ -3035,7 +3884,11 @@ $aiSettings = loadAiSettings();
               <div class="mb-3">
                 <label class="form-label small fw-600">Chọn câu hỏi mẫu hoặc nhập prompt:</label>
                 <div class="d-flex flex-wrap gap-1 mb-2">
+<<<<<<< HEAD
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Bãi xe sân trường lúc này thế nào?')">🅿️ Bãi xe</button>
+=======
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Hướng dẫn sử dụng LMS Moodle?')">📚 LMS Moodle</button>
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Cách kết nối wifi eduroam?')">📶 Wi-Fi Eduroam</button>
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Cổng đăng ký tín chỉ có bị lỗi không?')">🎓 ĐK Tín chỉ</button>
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Hôm nay có dịch vụ nào gặp sự cố không?')">⚠️ Sự cố</button>
@@ -3043,7 +3896,11 @@ $aiSettings = loadAiSettings();
                   <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px" onclick="setAdminAiTest('Số điện thoại hotline hỗ trợ kỹ thuật UTH?')">📞 Hotline IT</button>
                 </div>
                 <div class="input-group">
+<<<<<<< HEAD
                   <input type="text" id="adminAiTestInput" class="form-control" placeholder="Nhập câu hỏi để kiểm tra..." value="Bãi xe sân trường lúc này thế nào?" />
+=======
+                  <input type="text" id="adminAiTestInput" class="form-control" placeholder="Nhập câu hỏi để kiểm tra..." value="Hôm nay có dịch vụ nào gặp sự cố không?" />
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                   <button class="btn btn-success" type="button" id="adminAiTestBtn" onclick="runAdminAiTest()">
                     <i class="fa-solid fa-paper-plane me-1"></i>Kiểm Tra
                   </button>
@@ -3497,6 +4354,7 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
     </div>
   </div>
 
+<<<<<<< HEAD
   <!-- Modal Chỉnh Sửa Sức Chứa Bãi Xe Sân Trường -->
   <div class="modal fade" id="modalEditParkingZone" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -3551,6 +4409,8 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
     </div>
   </div>
 
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   <!-- Bootstrap 5 Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Chart.js Config & Modal Helpers -->
@@ -3589,6 +4449,12 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
   document.addEventListener('DOMContentLoaded', () => {
     const labels = <?= json_encode(array_column($analyticsData, 'name')) ?>;
     const uptimes = <?= json_encode(array_column($analyticsData, 'uptime_pct')) ?>;
+<<<<<<< HEAD
+=======
+    const isDarkTheme = () => document.documentElement.getAttribute('data-theme') === 'dark';
+    const chartGridColor = 'rgba(148, 163, 184, 0.18)';
+    const chartTickColor = '#94a3b8';
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
     const ctxUptime = document.getElementById('uptimeChart');
     if (ctxUptime) {
@@ -3625,16 +4491,28 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
               min: 98.0,
               max: 100.2,
               ticks: {
+<<<<<<< HEAD
+=======
+                color: chartTickColor,
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 callback: function(val) { return val + '%'; },
                 font: { size: 11 }
               },
               grid: {
+<<<<<<< HEAD
                 color: '#f1f5f9'
+=======
+                color: chartGridColor
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
               }
             },
             x: {
               grid: { display: false },
               ticks: {
+<<<<<<< HEAD
+=======
+                color: chartTickColor,
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
                 font: { size: 11, weight: '600' }
               }
             }
@@ -3645,7 +4523,11 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
 
     const ctxPie = document.getElementById('statusPieChart');
     if (ctxPie) {
+<<<<<<< HEAD
       new Chart(ctxPie, {
+=======
+      window.__utcStatusPieChart = new Chart(ctxPie, {
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         type: 'doughnut',
         data: {
           labels: ['Uptime 100%', 'Sự Cố Minor', 'Sự Cố Major', 'Sự Cố Critical'],
@@ -3658,7 +4540,11 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
             ],
             backgroundColor: ['#007a78', '#38bdf8', '#f59e0b', '#ef4444'],
             borderWidth: 2,
+<<<<<<< HEAD
             borderColor: '#ffffff'
+=======
+            borderColor: isDarkTheme() ? '#1e293b' : '#ffffff'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
           }]
         },
         options: {
@@ -3706,10 +4592,18 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
           scales: {
             y: {
               beginAtZero: true,
+<<<<<<< HEAD
               ticks: { stepSize: 1, precision: 0 },
               grid: { color: '#f1f5f9' }
             },
             x: {
+=======
+              ticks: { color: chartTickColor, stepSize: 1, precision: 0 },
+              grid: { color: chartGridColor }
+            },
+            x: {
+              ticks: { color: chartTickColor },
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
               grid: { display: false }
             }
           },
@@ -3760,7 +4654,11 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
     document.body.removeChild(link);
   }
 
+<<<<<<< HEAD
   // ── Modal Helpers for FIFO Incidents & Parking ────────────────
+=======
+  // ── Modal Helpers for FIFO Incidents ────────────────
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   function openUpdateFifoModal(reportId, title, status, adminNote) {
     document.getElementById('fifoModalReportId').value = reportId;
     document.getElementById('fifoModalTitle').textContent = '#' + reportId + ' - ' + title;
@@ -3769,6 +4667,7 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
     new bootstrap.Modal(document.getElementById('modalUpdateFifoIncident')).show();
   }
 
+<<<<<<< HEAD
   function openEditParkingModal(zoneId, name, occupied, capacity, status, note) {
     document.getElementById('editPzId').value = zoneId;
     document.getElementById('editPzName').textContent = name;
@@ -3779,6 +4678,8 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
     new bootstrap.Modal(document.getElementById('modalEditParkingZone')).show();
   }
 
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   function filterFifoTable() {
     const dateVal = document.getElementById('fifoDateFilter')?.value;
     const statusVal = document.getElementById('fifoStatusFilter')?.value;
@@ -3867,10 +4768,169 @@ Nhấn "Kiểm Tra" để xem kết quả phản hồi của Trợ lý AI và đ
       });
   }
 
+<<<<<<< HEAD
+=======
+  // ── Navigation & Deep-Link Hash Tabs ─────────────────────────
+  function switchAdminTab(targetSelector) {
+    const aliasMap = {
+      '#services': '#tab-services',
+      '#tab-logs': '#tab-audit'
+    };
+    const resolved = aliasMap[targetSelector] || targetSelector;
+    const triggerBtn = document.querySelector(`#adminTabs button[data-bs-target="${resolved}"]`);
+    if (triggerBtn && window.bootstrap && bootstrap.Tab) {
+      bootstrap.Tab.getOrCreateInstance(triggerBtn).show();
+      if (history.replaceState) {
+        history.replaceState(null, '', resolved);
+      }
+      triggerBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function initAdminTabHashNavigation() {
+    document.querySelectorAll('#adminTabs button[data-bs-toggle="pill"]').forEach(btn => {
+      btn.addEventListener('shown.bs.tab', (e) => {
+        const target = e.target.getAttribute('data-bs-target');
+        if (target && history.replaceState) {
+          history.replaceState(null, '', target);
+        }
+      });
+    });
+
+    if (window.location.hash) {
+      switchAdminTab(window.location.hash);
+    }
+  }
+
+  // ── Filter Helpers (Services, Users, Audit Logs) ─────────────
+  function filterServicesTable() {
+    const searchVal = (document.getElementById('svcSearchInput')?.value || '').trim().toLowerCase();
+    const groupVal = document.getElementById('svcGroupFilter')?.value || 'all';
+    const statusVal = document.getElementById('svcStatusFilter')?.value || 'all';
+
+    document.querySelectorAll('#servicesTable tbody tr.service-row').forEach(r => {
+      const rGroup = r.getAttribute('data-group') || '';
+      const rStatus = r.getAttribute('data-status') || '';
+      const rSearch = r.getAttribute('data-search') || '';
+
+      let show = true;
+      if (groupVal !== 'all' && rGroup !== groupVal) show = false;
+      if (statusVal !== 'all' && rStatus !== statusVal) show = false;
+      if (searchVal && !rSearch.includes(searchVal)) show = false;
+
+      r.style.display = show ? '' : 'none';
+    });
+  }
+
+  function resetServiceFilters() {
+    const q = document.getElementById('svcSearchInput');
+    const g = document.getElementById('svcGroupFilter');
+    const s = document.getElementById('svcStatusFilter');
+    if (q) q.value = '';
+    if (g) g.value = 'all';
+    if (s) s.value = 'all';
+    filterServicesTable();
+  }
+
+  function filterUsersTable() {
+    const searchVal = (document.getElementById('userSearchInput')?.value || '').trim().toLowerCase();
+    const roleVal = document.getElementById('userRoleFilter')?.value || 'all';
+
+    document.querySelectorAll('#usersTable tbody tr.user-row').forEach(r => {
+      const rRole = r.getAttribute('data-role') || '';
+      const rSearch = r.getAttribute('data-search') || '';
+
+      let show = true;
+      if (roleVal !== 'all' && rRole !== roleVal) show = false;
+      if (searchVal && !rSearch.includes(searchVal)) show = false;
+
+      r.style.display = show ? '' : 'none';
+    });
+  }
+
+  function resetUserFilters() {
+    const q = document.getElementById('userSearchInput');
+    const r = document.getElementById('userRoleFilter');
+    if (q) q.value = '';
+    if (r) r.value = 'all';
+    filterUsersTable();
+  }
+
+  function filterAuditTable() {
+    const searchVal = (document.getElementById('auditSearchInput')?.value || '').trim().toLowerCase();
+    document.querySelectorAll('#auditLogsTable tbody tr.audit-row').forEach(r => {
+      const rSearch = r.getAttribute('data-search') || '';
+      r.style.display = (!searchVal || rSearch.includes(searchVal)) ? '' : 'none';
+    });
+  }
+
+  function exportAuditLogsCsv() {
+    const logsData = <?= json_encode($activityLogs) ?>;
+    let csvContent = '\uFEFF';
+    csvContent += "ID,Thời Gian,Người Thực Hiện,Hành Động,Đối Tượng,Mã Đối Tượng,Chi Tiết,IP\n";
+    logsData.forEach(item => {
+      const row = [
+        item.id || '',
+        '"' + (item.created_at || '').replace(/"/g, '""') + '"',
+        '"' + (item.username || '').replace(/"/g, '""') + '"',
+        '"' + (item.action || '').replace(/"/g, '""') + '"',
+        '"' + (item.target_type || '').replace(/"/g, '""') + '"',
+        item.target_id ?? '',
+        '"' + (item.details || '').replace(/"/g, '""') + '"',
+        '"' + (item.ip_address || '').replace(/"/g, '""') + '"'
+      ];
+      csvContent += row.join(",") + "\n";
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Nhat_Ky_Hoat_Dong_UTH_STATUS_" + new Date().toISOString().slice(0, 10) + ".csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function promoteFifoToIncident(title, fifoSeverity, serviceId, description, reporterName, location) {
+    const modalEl = document.getElementById('modalAddIncident');
+    if (!modalEl) return;
+
+    const titleInp = modalEl.querySelector('input[name="title"]');
+    const sevSel = modalEl.querySelector('select[name="severity"]');
+    const svcSel = modalEl.querySelector('select[name="service_ids[]"]');
+    const msgTxt = modalEl.querySelector('textarea[name="message"]');
+
+    if (titleInp) titleInp.value = title || '';
+    if (sevSel) {
+      const sevMap = { low: 'minor', medium: 'minor', high: 'major', critical: 'critical' };
+      sevSel.value = sevMap[fifoSeverity] || 'major';
+    }
+    if (svcSel) {
+      Array.from(svcSel.options).forEach(opt => {
+        opt.selected = (serviceId > 0 && parseInt(opt.value, 10) === serviceId);
+      });
+    }
+    if (msgTxt) {
+      const meta = [reporterName ? `Người báo: ${reporterName}` : '', location ? `Vị trí: ${location}` : ''].filter(Boolean).join(' | ');
+      msgTxt.value = (description || '') + (meta ? `\n(${meta})` : '');
+    }
+
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
+
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   // ── Theme Switcher in Admin Panel ─────────────────────────────
   (function initAdminTheme() {
     const curTheme = localStorage.getItem('utc_theme') || 'light';
     applyUtcTheme(curTheme);
+<<<<<<< HEAD
+=======
+    document.addEventListener('DOMContentLoaded', initAdminTabHashNavigation);
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash) switchAdminTab(window.location.hash);
+    });
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   })();
   </script>
   <!-- AI Assistant Chatbot JS -->

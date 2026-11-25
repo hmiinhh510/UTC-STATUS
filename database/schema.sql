@@ -257,6 +257,7 @@ CREATE TABLE IF NOT EXISTS `incident_reports` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+<<<<<<< HEAD
 -- 14. PARKING_ZONES (Hệ thống thông báo trạng thái bãi xe sân trường UTC)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `parking_zones` (
@@ -275,6 +276,8 @@ CREATE TABLE IF NOT EXISTS `parking_zones` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 -- 10. PASSWORD RESET REQUESTS (Yêu cầu cấp lại mật khẩu cho sinh viên)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `password_reset_requests` (
@@ -305,7 +308,11 @@ CREATE TABLE IF NOT EXISTS `password_reset_requests` (
 INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`) VALUES
   (1, 'admin',    'admin@utc.edu.vn',           '$2y$10$OntUUzXIfsOfmaIrPFKl/OWKbf4iGGVIwvbhCUXCrpaRyW3pfa0Za', 'admin'),
   (2, 'editor',   'editor@utc.edu.vn',          '$2y$10$YEtnDp7QLF0bY/pWsgGwq.93mhHCdEcJHRhjoGtA86NaBTs8Tqbsm', 'editor'),
+<<<<<<< HEAD
   (3, 'sinhvien', 'sinhvien@student.utc.edu.vn', '$2y$10$m7Cci3kTQC6r.TBFtkrXBeti.8WGAmqPk1A3TSjC8.gWGX1f2dtnu', 'student')
+=======
+  (3, 'sinhvien', 'sinhvien@student.utc.edu.vn', '$2y$10$3dwNwYhjxnlelwT.c7QyGeFqKPNk.rE7WglE.CiSMgyQya8tFdMLO', 'student')
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   ON DUPLICATE KEY UPDATE `id` = `id`;
 
 -- 2. Nhóm Dịch Vụ

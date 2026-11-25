@@ -9,11 +9,19 @@
 
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
+<<<<<<< HEAD
 define('DB_HOST', getenv('UTC_STATUS_DB_HOST') ?: '127.0.0.1');
 define('DB_PORT', getenv('UTC_STATUS_DB_PORT') ?: '3306');
 define('DB_NAME', getenv('UTC_STATUS_DB_NAME') ?: 'status_page_db');
 define('DB_USER', getenv('UTC_STATUS_DB_USER') ?: 'root');
 define('DB_PASS', getenv('UTC_STATUS_DB_PASS') ?: '');
+=======
+define('DB_HOST', getenv('UTH_STATUS_DB_HOST') ?: getenv('UTC_STATUS_DB_HOST') ?: '127.0.0.1');
+define('DB_PORT', getenv('UTH_STATUS_DB_PORT') ?: getenv('UTC_STATUS_DB_PORT') ?: '3306');
+define('DB_NAME', getenv('UTH_STATUS_DB_NAME') ?: getenv('UTC_STATUS_DB_NAME') ?: 'status_page_db');
+define('DB_USER', getenv('UTH_STATUS_DB_USER') ?: getenv('UTC_STATUS_DB_USER') ?: 'root');
+define('DB_PASS', getenv('UTH_STATUS_DB_PASS') ?: getenv('UTC_STATUS_DB_PASS') ?: '');
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 define('DB_CHARSET', 'utf8mb4');
 
 class Database

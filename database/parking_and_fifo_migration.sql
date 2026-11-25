@@ -1,4 +1,5 @@
 -- ============================================================
+<<<<<<< HEAD
 -- UTC STATUS - Migration: Parking Zones & Incident FIFO Queue
 -- Trường Đại học Giao thông Vận tải (UTC)
 -- ============================================================
@@ -36,6 +37,13 @@ ON DUPLICATE KEY UPDATE
     `updated_at` = NOW();
 
 -- 2. CẬP NHẬT BẢNG BÁO CÁO SỰ CỐ (INCIDENT REPORTS) CHO HÀNG ĐỢI FIFO
+=======
+-- UTH STATUS - Migration: Incident FIFO Queue
+-- Trường Đại học Giao thông Vận tải (UTH)
+-- ============================================================
+
+-- 1. CẬP NHẬT BẢNG BÁO CÁO SỰ CỐ (INCIDENT REPORTS) CHO HÀNG ĐỢI FIFO
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 ALTER TABLE `incident_reports` 
     ADD COLUMN IF NOT EXISTS `student_code` VARCHAR(50) DEFAULT NULL AFTER `reporter_name`,
     ADD COLUMN IF NOT EXISTS `location` VARCHAR(150) DEFAULT NULL AFTER `service_id`,

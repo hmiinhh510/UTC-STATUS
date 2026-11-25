@@ -22,6 +22,7 @@ unset($_SESSION['flash']);
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/service_status.php';
 
+<<<<<<< HEAD
 // Khởi tạo & nạp trước dữ liệu bãi xe phía máy chủ (Server-side Pre-rendering)
 $parkingZones = [];
 $totalParkingCap = 0;
@@ -31,6 +32,8 @@ $parkingOverallStatus = 'available';
 $parkingOverallLabel = 'Còn trống';
 $parkingBadgeClass = 'bg-success';
 
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 // Khởi tạo các chỉ số dịch vụ, sự cố & bảo trì
 $totalServices = 0;
 $operationalCount = 0;
@@ -49,6 +52,7 @@ $totalAlerts = 0;
 
 try {
     $pdo = Database::getInstance();
+<<<<<<< HEAD
     $pStmt = $pdo->query('SELECT * FROM parking_zones ORDER BY sort_order ASC');
     $parkingZones = $pStmt->fetchAll(PDO::FETCH_ASSOC);
     foreach ($parkingZones as $pz) {
@@ -67,6 +71,8 @@ try {
         $parkingOverallLabel = 'Sắp đầy';
         $parkingBadgeClass = 'bg-warning text-dark';
     }
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
     // Nạp toàn bộ chỉ số sự cố, bảo trì và trạng thái hệ thống chuẩn xác từ máy chủ
     $metrics = getSystemMetrics($pdo);
@@ -102,7 +108,11 @@ try {
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <!-- Page Stylesheet -->
+<<<<<<< HEAD
   <link rel="stylesheet" href="assets/css/style.css?v=3.6" />
+=======
+  <link rel="stylesheet" href="assets/css/style.css?v=3.7" />
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   <!-- AI Chatbot Stylesheet -->
   <link rel="stylesheet" href="assets/css/ai_chat.css?v=1.0" />
   <script>
@@ -140,6 +150,7 @@ try {
       applyUtcTheme(next);
     }
 
+<<<<<<< HEAD
     function openParkingModal() {
       var modalEl = document.getElementById('modalParkingStatus');
       if (!modalEl) return;
@@ -155,6 +166,8 @@ try {
       }
     }
 
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     function openIncidentsModal() {
       var modalEl = document.getElementById('modalIncidentsDetail');
       if (modalEl && window.bootstrap && bootstrap.Modal) {
@@ -410,10 +423,17 @@ try {
           </div>
         </div>
 
+<<<<<<< HEAD
         <!-- 3 Thẻ Trạng thái: Sự cố đang xử lý, Bảo trì trong tuần & Bãi xe sân trường -->
         <div class="row g-3">
           <!-- Thẻ 1: Sự cố đang xử lý (Nền xanh Teal, Chữ trắng, Icon trắng) -->
           <div class="col-12 col-md-4">
+=======
+        <!-- 2 Thẻ Trạng thái: Sự cố đang xử lý & Bảo trì trong tuần -->
+        <div class="row g-3">
+          <!-- Thẻ 1: Sự cố đang xử lý (Nền xanh Teal, Chữ trắng, Icon trắng) -->
+          <div class="col-12 col-md-6">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             <div id="cardIncidentAction" class="utc-stat-card stat-card-green-incident h-100" role="button" tabindex="0">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <span class="utc-stat-card-title text-white">Sự cố đang xử lý</span>
@@ -427,7 +447,11 @@ try {
           </div>
 
           <!-- Thẻ 2: Bảo trì trong tuần (Nền xanh rêu đậm, Chữ trắng, Icon trắng) -->
+<<<<<<< HEAD
           <div class="col-12 col-md-4">
+=======
+          <div class="col-12 col-md-6">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
             <div id="cardMaintenanceAction" class="utc-stat-card stat-card-green-maint h-100" role="button" tabindex="0">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <span class="utc-stat-card-title text-white">Bảo trì trong tuần</span>
@@ -439,6 +463,7 @@ try {
               </div>
             </div>
           </div>
+<<<<<<< HEAD
 
           <!-- Thẻ 3: Bãi xe sân trường (Campus Parking - Thời gian thực) -->
           <div class="col-12 col-md-4">
@@ -460,6 +485,8 @@ try {
               </div>
             </div>
           </div>
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         </div>
 
       </div>
@@ -1099,10 +1126,13 @@ try {
           <a class="nav-link text-dark" href="#" onclick="openJsonModal(); return false;"><i
               class="fa-solid fa-code me-2 text-info"></i>Dữ liệu JSON API</a>
         </li>
+<<<<<<< HEAD
         <li class="nav-item">
           <a class="nav-link text-dark" href="#" onclick="openParkingModal(); return false;"><i
               class="fa-solid fa-square-parking me-2 text-success"></i>Bãi xe sân trường UTH</a>
         </li>
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         <?php if ($adminRole === 'admin' || $adminRole === 'editor'): ?>
         <li class="nav-item">
           <a class="nav-link text-dark" href="admin/index.php"><i class="fa-solid fa-gauge-high me-2 text-primary"></i>Trang Quản trị Hệ thống</a>
@@ -1122,6 +1152,7 @@ try {
     </div>
   </div>
 
+<<<<<<< HEAD
   <!-- 12. Modal: Campus Parking Status (Bãi xe sân trường UTH) -->
   <div class="modal fade" id="modalParkingStatus" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -1232,6 +1263,8 @@ try {
     </div>
   </div>
 
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   <!-- Global App Config -->
   <script>
     window.CURRENT_USER_ROLE = '<?= htmlspecialchars($adminRole, ENT_QUOTES, 'UTF-8') ?>';

@@ -119,7 +119,11 @@ $linksData = [
       ],
       [
         'name' => 'Nhật Ký Kiểm Toán (Audit Activity Logs)',
+<<<<<<< HEAD
         'path' => '/admin/index.php#tab-logs',
+=======
+        'path' => '/admin/index.php#tab-audit',
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         'desc' => 'Theo dõi vết thao tác: ai đã đổi trạng thái, thời gian, IP và lịch sử trạng thái dịch vụ.',
         'method' => 'GET',
         'target' => '_self'
@@ -203,22 +207,53 @@ $linksData = [
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <!-- Google Fonts Inter -->
+<<<<<<< HEAD
   <link rel="stylesheet" href="../assets/css/style.css?v=2.3" />
   <style>
     body {
       background-color: var(--bg-page);
       color: #1e293b;
+=======
+  <link rel="stylesheet" href="../assets/css/style.css?v=3.7" />
+  <script>
+    (function() {
+      var saved = 'light';
+      try { saved = localStorage.getItem('utc_theme') || 'light'; } catch (e) {}
+      document.documentElement.setAttribute('data-theme', saved);
+      document.documentElement.setAttribute('data-bs-theme', saved);
+      document.addEventListener('DOMContentLoaded', function() {
+        if (document.body) {
+          document.body.setAttribute('data-theme', saved);
+          document.body.setAttribute('data-bs-theme', saved);
+        }
+      });
+    })();
+  </script>
+  <style>
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       font-family: var(--font-family);
     }
 
     .urls-header {
+<<<<<<< HEAD
       background: #ffffff;
+=======
+      background: var(--bg-card);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       border-bottom: 1px solid var(--border-color);
     }
 
     .url-item-card {
+<<<<<<< HEAD
       background: #ffffff;
       border: 1px solid #e2e8f0;
+=======
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       border-radius: 12px;
       padding: 1.1rem;
       transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -230,7 +265,11 @@ $linksData = [
 
     .url-item-card:hover {
       transform: translateY(-2px);
+<<<<<<< HEAD
       border-color: #cbd5e1;
+=======
+      border-color: var(--input-border);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     }
 
@@ -255,13 +294,22 @@ $linksData = [
     }
 
     .url-path-code {
+<<<<<<< HEAD
       background: #f8fafc;
       border: 1px solid #e2e8f0;
+=======
+      background: var(--table-stripe);
+      border: 1px solid var(--border-color);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       border-radius: 6px;
       padding: 6px 10px;
       font-size: 0.78rem;
       font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+<<<<<<< HEAD
       color: #0f172a;
+=======
+      color: var(--text-primary);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
       word-break: break-all;
       margin: 0.5rem 0;
     }

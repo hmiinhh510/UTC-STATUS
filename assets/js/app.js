@@ -99,10 +99,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // User Incident Report Form Handler
   document.getElementById('formUserReport')?.addEventListener('submit', handleUserReportSubmit);
 
+<<<<<<< HEAD
   // Theme Switcher & Campus Parking Real-time
   initThemeSwitcher();
   fetchParkingData();
   startParkingPolling();
+=======
+  // Theme Switcher
+  initThemeSwitcher();
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -384,6 +389,7 @@ const STATUS_PAGE_FEATURES = [
     tooltip: 'Health Checks: Đo đạc độ trễ HTTP và kiểm tra endpoint live',
     actionRoute: '#health-checks',
     handler: 'openHealthChecksModal'
+<<<<<<< HEAD
   },
   {
     id: 'campus-parking',
@@ -399,6 +405,8 @@ const STATUS_PAGE_FEATURES = [
     tooltip: 'Bãi xe sân trường: Trạng thái & sức chứa chỗ đỗ xe thời gian thực',
     actionRoute: '#campus-parking',
     handler: 'openParkingModal'
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   }
 ];
 
@@ -1421,7 +1429,11 @@ async function openServiceDetailModal(serviceId) {
             <span class="small text-muted d-none d-md-inline">Phân quyền Quản trị / Biên tập</span>
           </div>
           <div class="d-flex align-items-center gap-2">
+<<<<<<< HEAD
             <a href="admin/index.php#services" class="btn btn-sm btn-outline-teal d-inline-flex align-items-center gap-1" target="_blank">
+=======
+            <a href="admin/index.php#tab-services" class="btn btn-sm btn-outline-teal d-inline-flex align-items-center gap-1" target="_blank">
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
               <i class="fa-solid fa-pen-to-square"></i><span>Cấu hình dịch vụ</span>
             </a>
             <button type="button" class="btn btn-sm btn-teal d-inline-flex align-items-center gap-1" onclick="openSubscribeModal('${escHtml(svc.name)}')">
@@ -1892,6 +1904,7 @@ function applyTheme(theme) {
   });
 }
 
+<<<<<<< HEAD
 // ══════════════════════════════════════════════════════════════
 //  CAMPUS PARKING STATUS (REAL-TIME 10S POLLING)
 // ══════════════════════════════════════════════════════════════
@@ -2069,6 +2082,9 @@ function startParkingPolling() {
 // Expose functions globally for inline HTML onclick attributes
 window.openParkingModal = openParkingModal;
 window.fetchParkingData = fetchParkingData;
+=======
+// Expose functions globally for inline HTML onclick attributes
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 window.applyUtcTheme = applyTheme;
 if (typeof window.toggleUtcTheme !== 'function') {
   window.toggleUtcTheme = function() {

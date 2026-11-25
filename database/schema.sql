@@ -257,6 +257,27 @@ CREATE TABLE IF NOT EXISTS `incident_reports` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+<<<<<<< HEAD
+-- 14. PARKING_ZONES (Hệ thống thông báo trạng thái bãi xe sân trường UTC)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `parking_zones` (
+    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `zone_code`      VARCHAR(20) NOT NULL UNIQUE,
+    `name`           VARCHAR(100) NOT NULL,
+    `vehicle_type`   VARCHAR(50) NOT NULL DEFAULT 'Xe máy',
+    `total_capacity` INT UNSIGNED NOT NULL DEFAULT 500,
+    `occupied_count` INT UNSIGNED NOT NULL DEFAULT 0,
+    `status`         ENUM('available', 'crowded', 'full') NOT NULL DEFAULT 'available',
+    `location_note`  VARCHAR(255) DEFAULT NULL,
+    `sort_order`     TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    `updated_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_pz_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 -- 10. PASSWORD RESET REQUESTS (Yêu cầu cấp lại mật khẩu cho sinh viên)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `password_reset_requests` (
@@ -287,7 +308,11 @@ CREATE TABLE IF NOT EXISTS `password_reset_requests` (
 INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`) VALUES
   (1, 'admin',    'admin@utc.edu.vn',           '$2y$10$OntUUzXIfsOfmaIrPFKl/OWKbf4iGGVIwvbhCUXCrpaRyW3pfa0Za', 'admin'),
   (2, 'editor',   'editor@utc.edu.vn',          '$2y$10$YEtnDp7QLF0bY/pWsgGwq.93mhHCdEcJHRhjoGtA86NaBTs8Tqbsm', 'editor'),
+<<<<<<< HEAD
+  (3, 'sinhvien', 'sinhvien@student.utc.edu.vn', '$2y$10$m7Cci3kTQC6r.TBFtkrXBeti.8WGAmqPk1A3TSjC8.gWGX1f2dtnu', 'student')
+=======
   (3, 'sinhvien', 'sinhvien@student.utc.edu.vn', '$2y$10$3dwNwYhjxnlelwT.c7QyGeFqKPNk.rE7WglE.CiSMgyQya8tFdMLO', 'student')
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   ON DUPLICATE KEY UPDATE `id` = `id`;
 
 -- 2. Nhóm Dịch Vụ

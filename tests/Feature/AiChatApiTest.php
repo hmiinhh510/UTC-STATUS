@@ -29,9 +29,15 @@ class AiChatApiTest extends TestCase {
         $this->assertStringContainsString('nhập nội dung', $res['json']['error'] ?? '');
     }
 
+<<<<<<< HEAD
+    public function testAiChatAnswersParkingQuestionsWithLiveZones(): void {
+        $res = $this->callEndpoint('api/ai_chat.php', [], [
+            'message' => 'Tình trạng bãi xe sân trường lúc này thế nào?'
+=======
     public function testAiChatAnswersCourseRegistrationGuide(): void {
         $res = $this->callEndpoint('api/ai_chat.php', [], [
             'message' => 'Cổng đăng ký tín chỉ học phần UTH thế nào?'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         ], [], 'POST');
 
         $this->assertTrue($res['is_json']);
@@ -42,6 +48,19 @@ class AiChatApiTest extends TestCase {
         $this->assertArrayHasKey('suggestions', $json);
 
         $reply = $json['message'];
+<<<<<<< HEAD
+        $this->assertStringContainsString('BÃI XE SÂN TRƯỜNG', $reply);
+        $this->assertStringContainsString('Khu A', $reply);
+        $this->assertStringContainsString('Khu B', $reply);
+        $this->assertStringContainsString('Sân Nhà A1', $reply);
+        $this->assertStringContainsString('Sau Giảng Đường', $reply);
+        $this->assertStringContainsString('Cán Bộ & Giảng Viên', $reply);
+    }
+
+    public function testAiChatAnswersSpecificZoneQuestion(): void {
+        $res = $this->callEndpoint('api/ai_chat.php', [], [
+            'message' => 'Bãi xe khu A hiện tại còn chỗ không bot?'
+=======
         $this->assertStringContainsString('CỔNG ĐĂNG KÝ HỌC PHẦN', $reply);
         $this->assertStringContainsString('tinchi.uth.edu.vn', $reply);
     }
@@ -49,14 +68,20 @@ class AiChatApiTest extends TestCase {
     public function testAiChatAnswersLmsMoodleGuide(): void {
         $res = $this->callEndpoint('api/ai_chat.php', [], [
             'message' => 'Cách nộp bài tập trên hệ thống LMS Moodle'
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         ], [], 'POST');
 
         $this->assertTrue($res['is_json']);
         $json = $res['json'];
 
         $this->assertTrue($json['success'] ?? false);
+<<<<<<< HEAD
+        $this->assertStringContainsString('Khu A', $json['message']);
+        $this->assertStringContainsString('chỗ', $json['message']);
+=======
         $this->assertStringContainsString('LMS (MOODLE)', $json['message']);
         $this->assertStringContainsString('nộp bài', $json['message']);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
     }
 
     public function testAiChatAnswersWifiEduroamGuide(): void {
@@ -86,7 +111,22 @@ class AiChatApiTest extends TestCase {
         $this->assertStringContainsString('SỰ CỐ', $json['message']);
     }
 
+<<<<<<< HEAD
+    public function testAiChatReturnsActionTriggersForParkingAndIncidents(): void {
+        // Test bãi xe có action openParkingModal
+        $resPark = $this->callEndpoint('api/ai_chat.php', [], [
+            'message' => 'Kiểm tra bãi đỗ xe'
+        ], [], 'POST');
+        $this->assertTrue($resPark['is_json']);
+        $jsonPark = $resPark['json'];
+        $this->assertTrue($jsonPark['success'] ?? false);
+        $this->assertArrayHasKey('actions', $jsonPark);
+        $actionsPark = array_column($jsonPark['actions'], 'action');
+        $this->assertTrue(in_array('openParkingModal', $actionsPark, true), 'Phải có action openParkingModal');
+
+=======
     public function testAiChatReturnsActionTriggersForIncidents(): void {
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
         // Test sự cố có action openIncidentModal
         $resInc = $this->callEndpoint('api/ai_chat.php', [], [
             'message' => 'Hệ thống đang gặp lỗi sự cố gì?'

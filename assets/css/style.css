@@ -7,7 +7,10 @@
 :root {
   --bg-page:           #f4f7f6; /* Nền xám trắng sáng chuẩn giao diện UTC */
   --bg-card:           #ffffff;
+<<<<<<< HEAD
+=======
   --card-bg:           var(--bg-card);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   --bg-card-hover:     #f8fafc;
   --border-color:      #e2e8f0;
   --border-subtle:     #f1f5f9;
@@ -74,7 +77,10 @@ html[data-theme="dark"],
 body[data-theme="dark"] {
   --bg-page:           #0f172a; /* Nền tối xanh than sâu */
   --bg-card:           #1e293b; /* Nền card đậm */
+<<<<<<< HEAD
+=======
   --card-bg:           var(--bg-card);
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   --bg-card-hover:     #243248;
   --border-color:      #334155; /* Viền thẻ tối */
   --border-subtle:     #1e293b;
@@ -1358,7 +1364,59 @@ body.modal-open {
   box-shadow: 0 8px 20px rgba(0, 122, 120, 0.12);
 }
 
+<<<<<<< HEAD
+/* ══════════════════════════════════════════════════════════════
+   1. PARKING STATUS STYLES (BÃI XE SÂN TRƯỜNG UTC)
+   ══════════════════════════════════════════════════════════════ */
+.stat-card-green-parking {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(6, 95, 70, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.stat-card-green-parking:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(6, 95, 70, 0.35);
+}
+
+.parking-progress-bar-container {
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.6rem 0;
+}
+
+.parking-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+}
+
+.parking-zone-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.parking-zone-card:hover {
+  border-color: var(--green-brand);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Hiệu ứng nhấp nháy cảnh báo bãi xe đã đầy (Pulse danger) */
+=======
 /* Hiệu ứng nhấp nháy cảnh báo (Pulse danger) */
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 @keyframes pulseDangerBadge {
   0% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -1549,6 +1607,9 @@ body[data-theme="dark"],
 [data-theme="dark"] .admin-nav-bar,
 [data-theme="dark"] .modal-content,
 [data-theme="dark"] .dropdown-menu,
+<<<<<<< HEAD
+[data-theme="dark"] .card {
+=======
 [data-theme="dark"] .card,
 [data-theme="dark"] .admin-table,
 [data-theme="dark"] .fifo-table-container,
@@ -1561,6 +1622,7 @@ body[data-theme="dark"],
 [data-theme="dark"] .offcanvas,
 [data-theme="dark"] .urls-header,
 [data-theme="dark"] .url-item-card {
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   background-color: var(--bg-card) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
@@ -1577,6 +1639,8 @@ body[data-theme="dark"],
   color: #f8fafc !important;
 }
 
+<<<<<<< HEAD
+=======
 [data-theme="dark"] .text-secondary {
   color: #cbd5e1 !important;
 }
@@ -1587,10 +1651,15 @@ body[data-theme="dark"],
   color: #0f172a !important;
 }
 
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 [data-theme="dark"] .text-muted {
   color: #94a3b8 !important;
 }
 
+<<<<<<< HEAD
+[data-theme="dark"] .admin-table th,
+[data-theme="dark"] .table thead th {
+=======
 [data-theme="dark"] .admin-table,
 [data-theme="dark"] .table {
   --bs-table-bg: var(--bg-card);
@@ -1608,20 +1677,29 @@ body[data-theme="dark"],
 [data-theme="dark"] .table thead th,
 [data-theme="dark"] .table-light th,
 [data-theme="dark"] thead.table-light {
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   background-color: #243248 !important;
   color: #cbd5e1 !important;
   border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .admin-table td,
+<<<<<<< HEAD
+[data-theme="dark"] .table tbody td {
+  background-color: transparent !important;
+=======
 [data-theme="dark"] .table tbody td,
 [data-theme="dark"] .table tbody tr {
   background-color: var(--bg-card) !important;
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   color: #f8fafc !important;
   border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .table-hover tbody tr:hover td {
+<<<<<<< HEAD
+  background-color: rgba(255, 255, 255, 0.04) !important;
+=======
   background-color: #243248 !important;
 }
 
@@ -1713,6 +1791,7 @@ body[data-theme="dark"],
 [data-theme="dark"] .service-badge-pill.pill-success {
   background-color: rgba(16, 185, 129, 0.2) !important;
   color: #6ee7b7 !important;
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 }
 
 [data-theme="dark"] .form-control,
@@ -1734,6 +1813,10 @@ body[data-theme="dark"],
 [data-theme="dark"] .service-box,
 [data-theme="dark"] .service-icon-card,
 [data-theme="dark"] .calendar-card,
+<<<<<<< HEAD
+[data-theme="dark"] .parking-zone-card,
+=======
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 [data-theme="dark"] .fifo-calendar-filter {
   background: var(--bg-card) !important;
   border-color: var(--border-color) !important;
@@ -1976,7 +2059,10 @@ html[data-theme="dark"] .utc-json-link {
 }
 
 [data-theme="dark"] .utc-footer {
+<<<<<<< HEAD
+=======
   background-color: var(--bg-card) !important;
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   color: #94a3b8 !important;
   border-top-color: #334155 !important;
 }

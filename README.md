@@ -9,7 +9,11 @@ Hệ thống theo dõi trạng thái hoạt động theo thời gian thực (Sta
 - **Frontend:** HTML5, CSS3 Glassmorphism, Bootstrap 5.3 CDN, FontAwesome 6, Chart.js.
 - **Backend:** PHP thuần (Kiến trúc hướng dịch vụ, chuẩn bị sẵn Prepared Statements chống SQL Injection, CSRF Token, Session Security, Anti-brute force, RBAC).
 - **Cơ sở dữ liệu:** MySQL / MariaDB (Bộ mã `utf8mb4_unicode_ci`, quan hệ khóa ngoại RDBMS chuẩn).
+<<<<<<< HEAD
+- **Giao diện:** Thiết kế theo chuẩn giao diện mẫu UTC STATUS (Donut Chart SVG tỷ lệ hoạt động, 2 thẻ KPI sự cố & bảo trì, Lịch theo tháng tương tác mốc sự cố/bảo trì, Lưới 9 dịch vụ với biểu tượng trực quan).
+=======
 - **Giao diện:** Thiết kế theo chuẩn giao diện mẫu UTH STATUS (Donut Chart SVG tỷ lệ hoạt động, 2 thẻ KPI sự cố & bảo trì, Lịch theo tháng tương tác mốc sự cố/bảo trì, Lưới 9 dịch vụ với biểu tượng trực quan).
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
 ---
 
@@ -25,7 +29,11 @@ Hệ thống theo dõi trạng thái hoạt động theo thời gian thực (Sta
 
 ## 3. CẤU TRÚC THƯ MỤC
 ```text
+<<<<<<< HEAD
+UTC-STATUS/
+=======
 UTH-STATUS/
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 ├── admin/                      # Module Quản trị viên
 │   ├── index.php               # Bảng điều khiển Quản trị (Dashboard CRUD, Charts, Logs)
 │   ├── login.php               # Đăng nhập bảo mật (CSRF, Anti-brute force, Audit log)
@@ -38,14 +46,22 @@ UTH-STATUS/
 │   ├── health_check.php        # Bộ quét tự động kiểm tra HTTP/Latency cho các dịch vụ
 │   └── subscribe.php           # Đăng ký nhận thông báo có xác thực email an toàn
 ├── assets/
+<<<<<<< HEAD
+│   ├── css/style.css           # Bảng phong cách CSS giao diện chuẩn UTC STATUS
+=======
 │   ├── css/style.css           # Bảng phong cách CSS giao diện chuẩn UTH STATUS
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 │   └── js/app.js               # Logic Client: Polling 30s, SVG Donut, Lịch tháng, Modals
 ├── config/
 │   └── database.php            # Kết nối PDO Singleton (UTF-8, Prepared Statements)
 ├── database/
 │   ├── schema.sql              # Cấu trúc CSDL hoàn chỉnh (Version 2.0)
 │   ├── update_v2.sql           # Script nâng cấp CSDL (Chạy nếu đã có CSDL cũ)
+<<<<<<< HEAD
+│   └── seed_utc.php            # Chỉ bổ sung dữ liệu mẫu còn thiếu, không ghi đè trạng thái hiện có
+=======
 │   └── seed_uth.php            # Chỉ bổ sung dữ liệu mẫu còn thiếu, không ghi đè trạng thái hiện có
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 ├── index.php                   # Giao diện người dùng theo dõi trạng thái hệ thống
 ├── verify.php                  # Trang kích hoạt xác minh Email đăng ký nhận thông báo
 ├── unsubscribe.php             # Trang hủy đăng ký nhận thông báo
@@ -57,7 +73,11 @@ UTH-STATUS/
 ## 4. HƯỚNG DẪN CÀI ĐẶT TRÊN XAMPP
 
 ### Bước 1: Đặt mã nguồn vào thư mục XAMPP
+<<<<<<< HEAD
+- Đặt project tại `C:\xampp\htdocs\UTC-STATUS` (hoặc dùng VirtualHost riêng).
+=======
 - Đặt project tại `C:\xampp\htdocs\UTH-STATUS` (hoặc dùng VirtualHost riêng).
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
 ### Bước 2: Khởi động dịch vụ XAMPP
 - Mở **XAMPP Control Panel** và nhấn **Start** cho cả hai dịch vụ:
@@ -71,11 +91,25 @@ UTH-STATUS/
 - Cách 2: Sử dụng dòng lệnh Terminal:
   ```powershell
   & "C:\xampp\mysql\bin\mysql.exe" -u root -e "CREATE DATABASE IF NOT EXISTS status_page_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+<<<<<<< HEAD
+  & "C:\xampp\mysql\bin\mysql.exe" --default-character-set=utf8mb4 -u root status_page_db < "C:\xampp\htdocs\UTC-STATUS\database\schema.sql"
+=======
   & "C:\xampp\mysql\bin\mysql.exe" --default-character-set=utf8mb4 -u root status_page_db < "C:\xampp\htdocs\UTH-STATUS\database\schema.sql"
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   ```
 
   Khi đã nhập SQL bằng client chưa cấu hình UTF-8 và nội dung tiếng Việt bị lỗi, có thể khôi phục các chuỗi CP850 bị ảnh hưởng mà không thay đổi trạng thái dịch vụ hoặc lịch sự cố:
   ```powershell
+<<<<<<< HEAD
+  & "C:\xampp\php\php.exe" "C:\xampp\htdocs\UTC-STATUS\database\repair_encoding.php" --dry-run
+  & "C:\xampp\php\php.exe" "C:\xampp\htdocs\UTC-STATUS\database\repair_encoding.php"
+  ```
+
+### Bước 4: Khởi tạo dữ liệu mẫu UTC
+- Chỉ chạy seeder từ PowerShell/CLI (không chạy qua trình duyệt):
+  ```powershell
+  & "C:\xampp\php\php.exe" "C:\xampp\htdocs\UTC-STATUS\database\seed_utc.php"
+=======
   & "C:\xampp\php\php.exe" "C:\xampp\htdocs\UTH-STATUS\database\repair_encoding.php" --dry-run
   & "C:\xampp\php\php.exe" "C:\xampp\htdocs\UTH-STATUS\database\repair_encoding.php"
   ```
@@ -84,19 +118,37 @@ UTH-STATUS/
 - Chỉ chạy seeder từ PowerShell/CLI (không chạy qua trình duyệt):
   ```powershell
   & "C:\xampp\php\php.exe" "C:\xampp\htdocs\UTH-STATUS\database\seed_uth.php"
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   ```
 - Seeder thường chỉ bổ sung bản ghi mẫu còn thiếu, không ghi đè trạng thái dịch vụ, sự cố, bảo trì hay số liệu uptime đã có. Tùy chọn `--force` sẽ xóa dữ liệu dịch vụ, sự cố, bảo trì, báo cáo, lịch sử trạng thái và uptime trước khi tạo lại dữ liệu mẫu; chỉ dùng trên database có thể khôi phục.
 
 ### Cấu hình database và URL
 - Mặc định XAMPP dùng `127.0.0.1:3306`, database `status_page_db`, user `root` không mật khẩu. Nên dùng tài khoản database riêng có quyền tối thiểu khi triển khai thật.
+<<<<<<< HEAD
+- Có thể cấu hình qua biến môi trường `UTC_STATUS_DB_HOST`, `UTC_STATUS_DB_PORT`, `UTC_STATUS_DB_NAME`, `UTC_STATUS_DB_USER`, `UTC_STATUS_DB_PASS`.
+- Múi giờ ứng dụng/database mặc định là `Asia/Ho_Chi_Minh` (UTC+7). Nếu chạy sau reverse proxy hoặc domain khác, đặt `UTC_STATUS_BASE_URL` thành URL gốc công khai, ví dụ `https://status.example.edu.vn`.
+- Khôi phục mật khẩu gửi OTP bằng PHP `mail()`; cần cấu hình mail transport trong PHP/XAMPP và đặt `UTC_STATUS_MAIL_FROM` thành địa chỉ gửi hợp lệ. OTP chỉ được lưu dạng băm, không hiển thị trên trang.
+=======
 - Có thể cấu hình qua biến môi trường `UTH_STATUS_DB_HOST`, `UTH_STATUS_DB_PORT`, `UTH_STATUS_DB_NAME`, `UTH_STATUS_DB_USER`, `UTH_STATUS_DB_PASS`.
 - Múi giờ ứng dụng/database mặc định là `Asia/Ho_Chi_Minh` (GMT+7). Nếu chạy sau reverse proxy hoặc domain khác, đặt `UTH_STATUS_BASE_URL` thành URL gốc công khai, ví dụ `https://status.example.edu.vn`.
 - Khôi phục mật khẩu gửi OTP bằng PHP `mail()`; cần cấu hình mail transport trong PHP/XAMPP và đặt `UTH_STATUS_MAIL_FROM` thành địa chỉ gửi hợp lệ. OTP chỉ được lưu dạng băm, không hiển thị trên trang.
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
 ---
 
 ## 5. ĐƯỜNG DẪN TRUY CẬP HỆ THỐNG
 1. **Trang trạng thái (yêu cầu đăng nhập):**
+<<<<<<< HEAD
+   - URL: [http://localhost/UTC-STATUS/index.php](http://localhost/UTC-STATUS/index.php)
+2. **Trang đăng nhập Quản trị (Admin Panel):**
+   - URL: [http://localhost/UTC-STATUS/admin/login.php](http://localhost/UTC-STATUS/admin/login.php)
+3. **API JSON Endpoints:**
+   - Tổng quan & Dịch vụ: `http://localhost/UTC-STATUS/api/status.php`
+   - Sự cố: `http://localhost/UTC-STATUS/api/incidents.php`
+   - Bảo trì: `http://localhost/UTC-STATUS/api/maintenances.php`
+   - Chi tiết Uptime 90 ngày: `http://localhost/UTC-STATUS/api/uptime.php?service_id=2`
+   - Health Check (đọc): `GET http://localhost/UTC-STATUS/api/health_check.php`
+=======
    - URL: [http://localhost/UTH-STATUS/index.php](http://localhost/UTH-STATUS/index.php)
 2. **Trang đăng nhập Quản trị (Admin Panel):**
    - URL: [http://localhost/UTH-STATUS/admin/login.php](http://localhost/UTH-STATUS/admin/login.php)
@@ -106,13 +158,20 @@ UTH-STATUS/
    - Bảo trì: `http://localhost/UTH-STATUS/api/maintenances.php`
    - Chi tiết Uptime 90 ngày: `http://localhost/UTH-STATUS/api/uptime.php?service_id=2`
    - Health Check (đọc): `GET http://localhost/UTH-STATUS/api/health_check.php`
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
    - Health Check (cập nhật trạng thái): `POST` kèm session, CSRF header `X-CSRF-Token` và vai trò admin/editor.
 
 
 4. **Cổng Xác Thực Quản Trị & Vận Hành (Auth System):**
+<<<<<<< HEAD
+   - Đăng nhập (Login): [http://localhost/UTC-STATUS/admin/login.php](http://localhost/UTC-STATUS/admin/login.php)
+   - Đăng ký (Register): [http://localhost/UTC-STATUS/admin/register.php](http://localhost/UTC-STATUS/admin/register.php)
+   - Quên mật khẩu OTP (Forgot Password): [http://localhost/UTC-STATUS/admin/forgot_password.php](http://localhost/UTC-STATUS/admin/forgot_password.php)
+=======
    - Đăng nhập (Login): [http://localhost/UTH-STATUS/admin/login.php](http://localhost/UTH-STATUS/admin/login.php)
    - Đăng ký (Register): [http://localhost/UTH-STATUS/admin/register.php](http://localhost/UTH-STATUS/admin/register.php)
    - Quên mật khẩu OTP (Forgot Password): [http://localhost/UTH-STATUS/admin/forgot_password.php](http://localhost/UTH-STATUS/admin/forgot_password.php)
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
 
 ---
 
@@ -123,10 +182,18 @@ Hệ thống tích hợp Trợ lý số thông minh (Floating Widget) với kh�
   - **Google Gemini Cloud AI:** Kết nối `gemini-1.5-flash`, `gemini-2.0-flash-exp` qua API Key khi có mạng.
   - **Supercharged Smart Offline Engine v2.0:** Chạy 100% nội bộ trên XAMPP không cần Internet hay API key bên ngoài, phản hồi siêu tốc (< 40ms) dựa trên Live Context MySQL.
 - **Tính năng nổi bật:**
+<<<<<<< HEAD
+  - 🅿️ **Tra cứu bãi đỗ xe thời gian thực:** Sức chứa, chỗ trống tại Khu A (xe máy), Khu B (sau A6-A7), Khu C (ô tô cán bộ), quy định giờ mở cửa, giá vé, mất thẻ xe.
+  - 🟢 **Trạng thái dịch vụ CNTT:** LMS Moodle, Cổng đăng ký tín chỉ (`tinchi.uth.edu.vn`), Cổng học phí trực tuyến (`hocphi.uth.edu.vn`), Thư viện số (`thuvien.uth.edu.vn`), Cổng thông tin sinh viên (`sv.uth.edu.vn`).
+  - 📶 **Hướng dẫn kết nối Wi-Fi eduroam:** Chuẩn PEAP + MSCHAPV2, cách xử lý khi báo lỗi xác thực trên Android, iOS, Windows, macOS.
+  - 🛠️ **Sự cố & Bảo trì:** Danh sách sự cố đang mở, sự cố vừa khắc phục, kế hoạch bảo trì trong tuần.
+  - 🎯 **Nút hành động trực tiếp (Action Triggers):** Bấm trực tiếp từ chat để mở modal bãi xe, gửi báo cáo sự cố hàng đợi FIFO, xem lịch bảo trì.
+=======
   - 🟢 **Trạng thái dịch vụ CNTT:** LMS Moodle, Cổng đăng ký tín chỉ (`tinchi.uth.edu.vn`), Cổng học phí trực tuyến (`hocphi.uth.edu.vn`), Thư viện số (`thuvien.uth.edu.vn`), Cổng thông tin sinh viên (`sv.uth.edu.vn`).
   - 📶 **Hướng dẫn kết nối Wi-Fi eduroam:** Chuẩn PEAP + MSCHAPV2, cách xử lý khi báo lỗi xác thực trên Android, iOS, Windows, macOS.
   - 🛠️ **Sự cố & Bảo trì:** Danh sách sự cố đang mở, sự cố vừa khắc phục, kế hoạch bảo trì trong tuần.
   - 🎯 **Nút hành động trực tiếp (Action Triggers):** Bấm trực tiếp từ chat để gửi báo cáo sự cố hàng đợi FIFO, xem lịch bảo trì, hướng dẫn hệ thống.
+>>>>>>> e734b4f0b95a5be6774689e3251f42a4365e1d69
   - 🔔 **Hiệu ứng âm thanh chuông báo (Web Audio Chime):** Chuông thông báo du dương 0-byte không cần file tải ngoài, hỗ trợ bật/tắt âm thanh.
   - ⛶ **Chế độ phóng to / thu nhỏ:** Chuyển đổi linh hoạt giữa giao diện gọn (400x580px) và giao diện mở rộng (580x720px).
   - 📋 **Sao chép tin nhắn:** Nút copy nhanh tin nhắn kèm phản hồi trực quan.

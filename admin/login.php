@@ -44,8 +44,11 @@ function logAuthAction(PDO $pdo, ?int $userId, string $username, string $action,
         error_log('[Auth Audit Log Error] ' . $e->getMessage());
     }
 }
-
-// ── Helper: Flash Message ─────────────────────────────────────
+/**
+ * QUẢN LÝ THÔNG BÁO FLASH MESSAGE
+ * Lưu thông báo tạm thời vào Session để hiển thị kết quả
+ * xử lý như thành công, thất bại hoặc cảnh báo cho người dùng.
+ */
 function setFlash(string $type, string $message): void {
     $_SESSION['flash'] = ['type' => $type, 'message' => $message];
 }
@@ -181,8 +184,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]
                     );
                 }
-
-                // Ghi nhật ký đăng nhập thành công
                 logAuthAction(
                     $pdo,
                     (int) $user['id'],
@@ -224,9 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // ==========================================================
     // ACTION: REGISTER (Mặc định Role: 'student')
-    // ==========================================================
     if ($action === 'register') {
         $fullName        = trim($_POST['full_name'] ?? '');
         $username        = trim($_POST['username'] ?? '');
@@ -272,7 +271,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
-            // Kiểm tra trùng lặp username hoặc email
+           
             $checkStmt = $pdo->prepare('SELECT id, username, email FROM users WHERE username = :u OR email = :e LIMIT 1');
             $checkStmt->execute([':u' => $username, ':e' => $email]);
             $existing = $checkStmt->fetch();
@@ -372,13 +371,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if ($latestReq && $latestReq['status'] === 'pending') {
-                // Yêu cầu đang chờ duyệt
+                
                 setFlash('warning', "Thông tin sinh viên chính xác! Yêu cầu cấp lại mật khẩu của bạn (gửi lúc " . date('d/m/Y H:i', strtotime($latestReq['created_at'])) . ") đang chờ Quản trị viên (Admin) phê duyệt. Vui lòng liên hệ Admin để nhận mật khẩu mới.");
                 header('Location: login.php?tab=forgot');
                 exit;
             }
-
-            // Tạo yêu cầu mới gửi đến Admin
             $insReq = $pdo->prepare(
                 'INSERT INTO password_reset_requests (user_id, username, full_name, email, status, created_at)
                  VALUES (:uid, :u, :fn, :e, "pending", NOW())'
@@ -411,8 +408,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ==========================================================
-    // ACTION: FORGOT STEP 2 - VERIFY OTP & RESET PASSWORD
-    // ==========================================================
+    // -  ACTION: FORGOT STEP 2 - VERIFY OTP & RESET PASSWORD -
+    
     if ($action === 'forgot_reset') {
         $username        = trim($_POST['username'] ?? '');
         $email           = trim($_POST['email'] ?? '');
@@ -488,7 +485,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ── Read and Clear Flash Message ──────────────────────────────
 $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 

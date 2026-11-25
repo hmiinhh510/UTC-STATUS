@@ -16,7 +16,6 @@ if (($_SESSION['admin_role'] ?? '') === 'student') {
     header('Location: ../index.php');
     exit;
 }
-
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/permissions.php';
 require_once __DIR__ . '/../config/service_status.php';
@@ -29,13 +28,13 @@ $adminId   = (int) $_SESSION['admin_id'];
 $adminName = $_SESSION['admin_name'] ?? 'Administrator';
 $adminRole = $_SESSION['admin_role'] ?? 'editor'; // 'admin' or 'editor'
 
-// ── 2. CSRF Token Setup ──────────────────────────────────────
+// ──  CSRF Token Setup ──────────────────────────────────────
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 $csrfToken = $_SESSION['csrf_token'];
 
-// ── 3. Helper Functions & Permissions ────────────────────────
+// ──  Helper Functions & Permissions ────────────────────────
 function setFlash(string $type, string $message): void {
     $_SESSION['flash'] = ['type' => $type, 'message' => $message];
 }
@@ -48,11 +47,7 @@ function verifyCsrf(): void {
     }
 }
 
-// canPerform() được định nghĩa trong config/permissions.php
 
-/**
- * Ghi nhật ký hoạt động (Audit Log)
- */
 function logAction(PDO $pdo, int $userId, string $username, string $action, string $targetType, ?int $targetId, string $details): void {
     try {
         $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
@@ -96,7 +91,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $serviceId = (int) ($_POST['service_id'] ?? 0);
                 $newStatus = trim($_POST['status'] ?? '');
                 $validStatuses = ['operational', 'degraded', 'partial_outage', 'major_outage', 'maintenance'];
-
                 if ($serviceId > 0 && in_array($newStatus, $validStatuses, true)) {
                     $curStmt = $pdo->prepare('SELECT name, status FROM services WHERE id = :id');
                     $curStmt->execute([':id' => $serviceId]);
@@ -124,7 +118,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 }
                 break;
 
-            // ── THÊM DỊCH VỤ MỚI ─────────────────────────────
+
             case 'create_service':
                 $groupId     = (int) ($_POST['group_id'] ?? 0);
                 $name        = trim($_POST['name'] ?? '');

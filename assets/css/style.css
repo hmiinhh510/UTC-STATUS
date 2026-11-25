@@ -1,0 +1,1910 @@
+/* ============================================================
+   UTC STATUS – Design System & Stylesheet
+   Trường Đại học Giao thông Vận tải (UTC)
+   Matching Exact Dashboard Reference UI
+   ============================================================ */
+
+:root {
+  --bg-page:           #f4f7f6; /* Nền xám trắng sáng chuẩn giao diện UTC */
+  --bg-card:           #ffffff;
+  --bg-card-hover:     #f8fafc;
+  --border-color:      #e2e8f0;
+  --border-subtle:     #f1f5f9;
+
+  --text-primary:      #1e293b;
+  --text-secondary:    #475569;
+  --text-muted:        #64748b;
+
+  /* ═══ BẢNG MÀU CHỦ ĐẠO: XANH NGỌC ĐẬM (#0c6b58) CHUẨN THIẾT KẾ UTC ═══ */
+  --green-brand:       #0c6b58; /* Xanh ngọc đậm nhận diện UTC STATUS */
+  --green-dark:        #006764; /* Xanh rêu đậm đặc trưng của thẻ 'Bảo trì trong tuần' */
+  --green-darker:      #005250;
+  --green-light:       #0d9488;
+  --green-emerald:     #10b981; /* Xanh ngọc lục bảo: Donut ring & Hoạt động bình thường */
+  --green-mint-soft:   #e6f4f1; /* Nền mint pastel nhạt cho nút & highlight lịch */
+  --green-mint-border: #ccfbf1;
+  --green-box-bg:      #f0fdf9; /* Khung nền nhạt bo góc quanh vòng Donut Chart */
+
+  --nav-bg:            #ffffff;
+  --input-bg:          #ffffff;
+  --input-border:      #cbd5e1;
+  --modal-bg:          #ffffff;
+  --dropdown-bg:       #ffffff;
+  --table-stripe:      #f8fafc;
+
+  /* Tương thích ngược */
+  --teal-primary:      var(--green-brand);
+  --teal-dark:         var(--green-dark);
+  --teal-light:        var(--green-light);
+  --teal-soft-bg:      var(--green-mint-soft);
+  --teal-card-bg:      var(--green-dark);
+
+  /* ═══ MÀU ĐỎ ĐIỂM NHẤN (CHỌN LỌC - ACCENT RED) ═══ */
+  --red-accent:        #ef4444; /* Chữ UTC, chấm nhịp tim, badge số lượng, cảnh báo sự cố */
+  --red-accent-dark:   #dc2626; /* Link 'Xem chi tiết', text sự cố */
+  --red-accent-soft:   #fef2f2;
+  --red-accent-border: #fecaca;
+
+  /* Trạng thái vận hành */
+  --c-operational:     #22c55e;
+  --c-degraded:        #eab308;
+  --c-partial:         #f97316;
+  --c-major:           #ef4444;
+  --c-maintenance:     #f59e0b;
+
+  --radius-sm:         8px;
+  --radius-md:         12px;
+  --radius-lg:         16px;
+  --radius-xl:         20px;
+
+  --shadow-sm:         0 1px 3px rgba(0,0,0,0.04);
+  --shadow-card:       0 2px 10px rgba(0,0,0,0.04);
+  --shadow-hover:      0 8px 24px rgba(0,0,0,0.08);
+
+  --font-family:       "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE CONFIGURATION ([data-theme="dark"], [data-bs-theme="dark"])
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="dark"],
+[data-bs-theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  --bg-page:           #0f172a; /* Nền tối xanh than sâu */
+  --bg-card:           #1e293b; /* Nền card đậm */
+  --bg-card-hover:     #243248;
+  --border-color:      #334155; /* Viền thẻ tối */
+  --border-subtle:     #1e293b;
+
+  --text-primary:      #f8fafc; /* Chữ chính trắng sáng */
+  --text-secondary:    #cbd5e1;
+  --text-muted:        #94a3b8; /* Chữ phụ xám xanh dịu mắt */
+
+  --green-brand:       #10b981; /* Xanh ngọc sáng hơn để tạo tương phản nổi bật trên nền tối */
+  --green-dark:        #065f46;
+  --green-darker:      #064e3b;
+  --green-light:       #34d399;
+  --green-emerald:     #10b981;
+  --green-mint-soft:   rgba(16, 185, 129, 0.15);
+  --green-mint-border: rgba(16, 185, 129, 0.3);
+  --green-box-bg:      #132337;
+
+  --nav-bg:            #1e293b;
+  --input-bg:          #0f172a;
+  --input-border:      #475569;
+  --modal-bg:          #1e293b;
+  --dropdown-bg:       #1e293b;
+  --table-stripe:      #172338;
+
+  --teal-primary:      var(--green-brand);
+  --teal-dark:         var(--green-dark);
+  --teal-light:        var(--green-light);
+  --teal-soft-bg:      var(--green-mint-soft);
+  --teal-card-bg:      var(--green-dark);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-family);
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+/* ── Top Navbar ─────────────────────────────────────────────── */
+.utc-navbar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.65rem 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.utc-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.utc-logo-icon {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 1.6rem;
+  color: var(--teal-primary);
+}
+
+.utc-logo-dot {
+  width: 7px;
+  height: 7px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  margin-top: -12px;
+}
+
+.utc-brand-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ef4444; /* UTC in Red */
+  line-height: 1.1;
+}
+
+.utc-brand-title span {
+  color: var(--teal-primary); /* STATUS in Teal */
+}
+
+.utc-brand-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.nav-action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-action-btn:hover {
+  background: var(--teal-soft-bg);
+  color: var(--teal-primary);
+  border-color: #ccfbf1;
+}
+
+.nav-action-btn.teal-box {
+  background: var(--teal-soft-bg);
+  border-color: #99f6e4;
+  color: var(--teal-primary);
+}
+
+.nav-badge-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+
+.admin-dropdown-btn:hover {
+  background: #f1f5f9;
+}
+
+/* ── Common Card Style ──────────────────────────────────────── */
+.utc-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.utc-card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.utc-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--teal-primary);
+  margin-bottom: 0;
+}
+
+.utc-json-link {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--teal-light);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.utc-json-link:hover {
+  color: var(--teal-dark);
+  text-decoration: underline;
+}
+
+/* ── Service Info Card Content ──────────────────────────────── */
+.service-info-card {
+  background: linear-gradient(145deg, #f0fdf9 0%, #e6f7f2 100%);
+  border: 1px solid #bbf7d0;
+  box-shadow: 0 4px 18px rgba(13, 148, 136, 0.08);
+}
+
+.service-info-card .utc-card-title {
+  color: #065f46;
+  font-size: 1.22rem;
+  font-weight: 800;
+}
+
+.donut-chart-box {
+  background-color: #ffffff;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.07);
+}
+
+.service-donut-container {
+  width: 105px;
+  height: 105px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.donut-inner-text {
+  position: absolute;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.donut-ratio {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.donut-label {
+  font-size: 0.68rem;
+  color: var(--green-brand);
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.donut-svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.donut-meter, .donut-value {
+  fill: none;
+  stroke-width: 9;
+}
+
+.donut-meter {
+  stroke: #e2e8f0;
+}
+
+.donut-value {
+  stroke: var(--green-emerald);
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.6s ease;
+}
+
+.status-stat-label {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.status-stat-label.header-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.status-stat-val-bold {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.status-stat-val-bold.red-alert {
+  color: var(--red-accent-dark);
+}
+
+.status-stat-val-bold.green-ok {
+  color: var(--c-operational);
+}
+
+/* ── 2 Thẻ Sự cố đang xử lý & Bảo trì trong tuần (NỀN XANH - CHỮ TRẮNG) ── */
+.utc-stat-card {
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.4rem;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 124px;
+}
+
+.utc-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Thẻ 1: Sự cố đang xử lý (Nền xanh Teal đậm, Chữ trắng, Icon trắng) */
+.stat-card-green-incident,
+.stat-card-white {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 15px rgba(13, 148, 136, 0.28) !important;
+  color: #ffffff !important;
+}
+
+.stat-card-green-incident:hover,
+.stat-card-white:hover {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+  box-shadow: 0 6px 22px rgba(13, 148, 136, 0.38) !important;
+}
+
+/* Thẻ 2: Bảo trì trong tuần (Nền xanh rêu đậm, Chữ trắng, Icon trắng) */
+.stat-card-green-maint,
+.stat-card-darkgreen {
+  background: linear-gradient(135deg, #006764 0%, #065f46 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 15px rgba(0, 103, 100, 0.28) !important;
+  color: #ffffff !important;
+}
+
+.stat-card-green-maint:hover,
+.stat-card-darkgreen:hover {
+  background: linear-gradient(135deg, #005653 0%, #054e39 100%) !important;
+  box-shadow: 0 6px 22px rgba(0, 103, 100, 0.38) !important;
+}
+
+/* Toàn bộ chữ, số, icon của cả 2 thẻ đồng bộ MÀU TRẮNG */
+.stat-card-green-incident *,
+.stat-card-green-maint *,
+.stat-card-white *,
+.stat-card-darkgreen * {
+  color: #ffffff !important;
+}
+
+.utc-stat-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff !important;
+}
+
+.utc-stat-card-icon {
+  font-size: 1.35rem;
+  color: #ffffff !important;
+  opacity: 0.95;
+}
+
+.utc-stat-card-number {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #ffffff !important;
+  line-height: 1.1;
+  margin: 3px 0;
+}
+
+.utc-stat-card-link {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #ffffff !important;
+  opacity: 0.95;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.utc-stat-card:hover .utc-stat-card-link {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* Tương thích fallback: Flat alert strip */
+.summary-alerts-strip-row {
+  margin-bottom: 4px;
+}
+.flat-alert-strip {
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+}
+.alert-strip-incident {
+  background-color: var(--red-accent-soft);
+  border: 1px solid var(--red-accent-border);
+}
+.alert-strip-maint {
+  background-color: var(--green-box-bg);
+  border: 1px solid var(--green-mint-border);
+}
+
+/* ── Monthly Calendar Component ────────────────────────────── */
+.calendar-card {
+  background: linear-gradient(145deg, #f7fbf9 0%, #eef8f5 100%) !important;
+  border: 1px solid #c2ece0 !important;
+  box-shadow: 0 4px 18px rgba(13, 148, 136, 0.08) !important;
+}
+
+.calendar-card .utc-card-title {
+  color: #065f46 !important;
+  font-size: 1.22rem !important;
+  font-weight: 800 !important;
+}
+
+.calendar-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-nav-btn {
+  background: #ffffff;
+  border: 1px solid #c2ece0;
+  color: #065f46;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 1rem;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.calendar-nav-btn:hover {
+  color: #ffffff;
+  background: #007a78;
+  border-color: #007a78;
+}
+
+.calendar-month-text {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  padding: 0 4px;
+}
+
+.calendar-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px 6px;
+  margin-top: 0.8rem;
+  table-layout: fixed;
+}
+
+.calendar-table th {
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 800; /* Chữ đậm rõ ràng */
+  color: var(--text-muted);
+  padding-bottom: 8px;
+}
+
+.calendar-day-cell {
+  height: 38px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 0.9rem;
+  font-weight: 700; /* Chữ số ngày đậm rõ ràng */
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.calendar-day-cell:hover:not(.other-month) {
+  background: var(--green-mint-soft) !important;
+  color: var(--green-brand) !important;
+}
+
+.calendar-day-cell.other-month {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  cursor: default;
+}
+
+.calendar-day-cell.has-events {
+  background: var(--green-mint-soft);
+  font-weight: 800;
+  color: var(--green-darker);
+  border-radius: 8px;
+}
+
+.calendar-day-cell.is-today {
+  border: 2px solid var(--green-brand);
+  font-weight: 800;
+  background: var(--bg-card);
+  color: var(--green-brand);
+}
+
+.calendar-dots {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+}
+
+.cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.cal-dot-incident { background-color: var(--c-major); }
+.cal-dot-maint    { background-color: #d97706; }
+
+.calendar-legend {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important; /* Chú thích đậm rõ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 0.8rem;
+  color: #1e293b !important;
+}
+
+/* ── Section: 3-Tier Normal Document Flow Features Hub ──────── */
+.dashboard-features-hub,
+.system-features-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: 10px;
+  clear: both;
+  position: relative;
+}
+
+.features-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+  padding: 0 2px;
+}
+
+.header-accent-bar {
+  display: inline-block;
+  width: 3px;
+  height: 15px;
+  background-color: var(--teal-primary);
+  border-radius: 2px;
+}
+
+.section-title-text {
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+}
+
+.section-note-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 576px) {
+  .section-note-text {
+    display: none;
+  }
+}
+
+/* ── Grid: 7 Thẻ Chức Năng Cân Đối & Responsive ─────────────── */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 1200px) {
+  .services-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+/* ── Thẻ Chức Năng: Trắng phẳng, viền mỏng, không màu mè ──────── */
+.service-icon-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.15rem 0.85rem 1rem 0.85rem;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 132px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  user-select: none;
+}
+
+.service-icon-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--green-brand);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.service-card-dot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.service-icon-card:hover .service-card-dot {
+  transform: scale(1.2);
+}
+
+.service-card-dot.pulse {
+  animation: pulse-dot-clean 1.8s infinite;
+}
+
+@keyframes pulse-dot-clean {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  70% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.service-big-icon {
+  font-size: 28px;
+  margin-bottom: 0.55rem;
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.service-icon-card:hover .service-big-icon {
+  transform: scale(1.12);
+}
+
+.service-card-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+
+.service-card-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+.service-badge-pill {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: inline-block;
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.service-badge-pill.pill-alert {
+  background-color: #fef2f2;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.service-badge-pill.pill-warn {
+  background-color: #fffbeb;
+  color: #b45309;
+  font-weight: 600;
+}
+
+.service-badge-pill.pill-success {
+  background-color: #ecfdf5;
+  color: #059669;
+  font-weight: 600;
+}
+
+/* ── Modal & Dialogs ────────────────────────────────────────── */
+.modal-content.utc-modal {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.utc-modal .modal-header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.25rem 1.5rem;
+}
+
+.utc-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.utc-badge-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge-operational    { background: #dcfce7; color: #15803d; }
+.badge-degraded       { background: #fef9c3; color: #a16207; }
+.badge-partial_outage { background: #ffedd5; color: #c2410c; }
+.badge-major_outage   { background: #fee2e2; color: #b91c1c; }
+.badge-maintenance    { background: #fef3c7; color: #b45309; }
+
+/* 90-day bars inside modal */
+.modal-uptime-bars {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 48px;
+  padding: 4px 0;
+  background: #f8fafc;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e2e8f0;
+}
+
+.modal-bar-day {
+  flex: 1;
+  background-color: var(--c-operational);
+  border-radius: 1px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.modal-bar-day:hover {
+  opacity: 0.75;
+}
+
+.modal-bar-day.down { background-color: var(--c-major); }
+.modal-bar-day.mid  { background-color: var(--c-degraded); }
+
+/* Timeline UI */
+.timeline-item {
+  position: relative;
+  padding-left: 28px;
+  padding-bottom: 1.25rem;
+  border-left: 2px solid #e2e8f0;
+}
+
+.timeline-item:last-child {
+  border-left-color: transparent;
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -7px;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--teal-primary);
+  border: 2px solid #ffffff;
+}
+
+.timeline-dot.resolved { background: var(--c-operational); }
+.timeline-dot.active   { background: var(--c-major); }
+
+/* JSON Code Box */
+.json-code-box {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.82rem;
+  max-height: 420px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.utc-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STACKED MODAL & Z-INDEX MANAGEMENT (Bootstrap 5)
+   ══════════════════════════════════════════════════════════════ */
+.modal-backdrop.modal-backdrop-stacked {
+  opacity: 0.35 !important;
+}
+
+body.modal-open {
+  overflow: hidden !important;
+  padding-right: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DATADOG / STATUSPAGE STYLE UPTIME MODAL (modal-uptime-pro)
+   ══════════════════════════════════════════════════════════════ */
+.modal-uptime-pro {
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.svc-icon-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background-color: var(--green-mint-soft);
+  border: 1px solid var(--green-mint-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Status Pill with Pulsing Dot (Datadog Style) */
+.status-pill-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.status-pill-pulse.operational {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.status-pill-pulse.operational .pulse-dot {
+  background-color: #10b981;
+}
+.status-pill-pulse.operational .pulse-dot::before {
+  background-color: rgba(16, 185, 129, 0.45);
+}
+
+.status-pill-pulse.degraded {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.status-pill-pulse.degraded .pulse-dot {
+  background-color: #f59e0b;
+}
+.status-pill-pulse.degraded .pulse-dot::before {
+  background-color: rgba(245, 158, 11, 0.45);
+}
+
+.status-pill-pulse.partial_outage {
+  background-color: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+}
+.status-pill-pulse.partial_outage .pulse-dot {
+  background-color: #f97316;
+}
+.status-pill-pulse.partial_outage .pulse-dot::before {
+  background-color: rgba(249, 115, 22, 0.45);
+}
+
+.status-pill-pulse.major_outage {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.status-pill-pulse.major_outage .pulse-dot {
+  background-color: #ef4444;
+}
+.status-pill-pulse.major_outage .pulse-dot::before {
+  background-color: rgba(239, 68, 68, 0.45);
+}
+
+.status-pill-pulse.maintenance {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+.status-pill-pulse.maintenance .pulse-dot {
+  background-color: #3b82f6;
+}
+.status-pill-pulse.maintenance .pulse-dot::before {
+  background-color: rgba(59, 130, 246, 0.45);
+}
+
+.pulse-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pulse-dot::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  animation: pulseRing 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Flat Minimalist Stats Cards */
+.stats-card-minimal {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.stats-card-minimal:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+.stats-card-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.stats-card-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+.bg-teal-subtle-box { background: #e6f4f1; }
+.bg-success-subtle-box { background: #ecfdf5; }
+.bg-danger-subtle-box { background: #fef2f2; }
+.bg-warning-subtle-box { background: #fffbeb; }
+
+.stats-card-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
+}
+.stats-card-meta {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+/* 90-Day Uptime Bars */
+.uptime-bars-wrapper {
+  background: #f8fafc;
+}
+.uptime-bars-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 44px;
+  width: 100%;
+}
+.uptime-bar-col {
+  flex: 1;
+  height: 100%;
+  border-radius: 2.5px;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
+  min-width: 2px;
+}
+.uptime-bar-col:hover {
+  transform: scaleY(1.12);
+  filter: brightness(1.1);
+  z-index: 5;
+  position: relative;
+}
+.uptime-bar-col.bar-emerald {
+  background-color: #10b981;
+}
+.uptime-bar-col.bar-amber {
+  background-color: #f59e0b;
+}
+.uptime-bar-col.bar-rose {
+  background-color: #ef4444;
+}
+
+/* Tooltip Styling */
+.utc-bar-tooltip .tooltip-inner {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Incident History */
+.incident-item-card {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.incident-item-card:hover {
+  border-color: #cbd5e1;
+  background-color: #fbfcfe;
+}
+.empty-incident-box {
+  background-color: #f8fafc;
+}
+.shadow-2xs {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TEAL BUTTONS & UTILITIES (UTC Brand Green)
+   ══════════════════════════════════════════════════════════════ */
+.btn-teal {
+  background-color: var(--green-brand);
+  border-color: var(--green-brand);
+  color: #ffffff;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-teal:hover, .btn-teal:focus, .btn-teal:active {
+  background-color: var(--green-dark);
+  border-color: var(--green-dark);
+  color: #ffffff;
+}
+
+.btn-outline-teal {
+  color: var(--green-brand);
+  border-color: var(--green-brand);
+  background-color: transparent;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-outline-teal:hover, .btn-outline-teal:focus, .btn-outline-teal:active, .btn-outline-teal.active {
+  background-color: var(--green-brand) !important;
+  border-color: var(--green-brand) !important;
+  color: #ffffff !important;
+}
+
+.btn-xs {
+  padding: 0.22rem 0.65rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.bg-teal-soft {
+  background-color: #f0fdf9 !important;
+}
+.border-teal-subtle {
+  border-color: #ccfbf1 !important;
+}
+.text-teal {
+  color: var(--green-brand) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UPTIME HISTORY & MAINTENANCE MODAL PRO
+   ══════════════════════════════════════════════════════════════ */
+.modal-uptime-history-pro, .modal-maintenance-pro {
+  border-radius: 18px;
+  border: 1px solid var(--green-mint-border);
+  overflow: hidden;
+}
+
+.modal-uptime-history-pro .modal-header, .modal-maintenance-pro .modal-header {
+  background: linear-gradient(135deg, #f0fdf9 0%, #e6f4f1 100%);
+  border-bottom: 1px solid var(--green-mint-border);
+  padding: 1.2rem 1.75rem;
+}
+
+.modal-uptime-history-pro .modal-body, .modal-maintenance-pro .modal-body {
+  background-color: #f0f5f4;
+  background-image: radial-gradient(#d5e7e4 0.75px, transparent 0.75px);
+  background-size: 16px 16px;
+  padding: 1.5rem 1.75rem;
+}
+.modal-realtime-pro {
+  border-radius: 18px;
+  border: 1px solid var(--green-mint-border);
+  overflow: hidden;
+}
+
+.modal-realtime-pro .modal-header {
+  background: linear-gradient(135deg, #f0fdf9 0%, #e6f4f1 100%);
+  border-bottom: 1px solid var(--green-mint-border);
+  padding: 1.2rem 1.75rem;
+}
+
+.modal-realtime-pro .modal-title {
+  color: var(--green-dark) !important;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+.realtime-header-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  border: 1.5px solid var(--green-mint-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e11d48; /* Heartbeat pulse red */
+  box-shadow: 0 2px 8px rgba(0, 122, 120, 0.08);
+  flex-shrink: 0;
+}
+
+/* Nền Modal Body: Phủ tông xanh rêu/teal nhạt dịu mát đồng bộ với web */
+.modal-realtime-pro .modal-body {
+  background-color: #f0f5f4;
+  background-image: radial-gradient(#d5e7e4 0.75px, transparent 0.75px);
+  background-size: 16px 16px;
+  padding: 1.5rem 1.75rem;
+}
+
+/* Thanh Thống Kê / Ma Trận Datadog */
+.realtime-matrix-banner {
+  background: #ffffff;
+  border: 1px solid var(--green-mint-border);
+  border-left: 4px solid var(--green-brand);
+  border-radius: 12px;
+  padding: 0.95rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 122, 120, 0.05);
+}
+
+/* Thẻ Dịch Vụ trong Ma Trận Real-time (Component Card) */
+.realtime-card-item {
+  background: #ffffff;
+  border: 1px solid #d8e8e5;
+  border-radius: 14px;
+  padding: 1.2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.realtime-card-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, var(--green-brand), #10b981);
+  opacity: 0.85;
+}
+
+.realtime-card-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--green-light);
+  box-shadow: 0 8px 24px rgba(0, 122, 120, 0.12);
+}
+
+.realtime-svc-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background-color: var(--green-mint-soft);
+  border: 1px solid var(--green-mint-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green-brand);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.realtime-group-badge {
+  background-color: #f0fdf9;
+  color: var(--green-dark);
+  border: 1px solid var(--green-mint-border);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Nút Xem Biểu Đồ Uptime: Chuẩn Màu Xanh Teal Nhận Diện UTC */
+.btn-realtime-uptime {
+  background-color: #f0fdf9;
+  color: var(--green-brand);
+  border: 1px solid var(--green-mint-border);
+  font-weight: 600;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.btn-realtime-uptime:hover {
+  background-color: var(--green-brand);
+  color: #ffffff;
+  border-color: var(--green-brand);
+  box-shadow: 0 4px 12px rgba(0, 122, 120, 0.25);
+}
+.btn-realtime-uptime:hover i {
+  color: #ffffff !important;
+}
+
+/* Card Real-time Status nổi bật trên trang chủ */
+#card-feat-realtime-monitoring {
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdf9 100%);
+  border-color: #ccfbf1;
+  position: relative;
+}
+#card-feat-realtime-monitoring::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--green-brand);
+  border-radius: 2px;
+}
+#card-feat-realtime-monitoring:hover {
+  border-color: var(--green-brand);
+  box-shadow: 0 8px 20px rgba(0, 122, 120, 0.12);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   1. PARKING STATUS STYLES (BÃI XE SÂN TRƯỜNG UTC)
+   ══════════════════════════════════════════════════════════════ */
+.stat-card-green-parking {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(6, 95, 70, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.stat-card-green-parking:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(6, 95, 70, 0.35);
+}
+
+.parking-progress-bar-container {
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.6rem 0;
+}
+
+.parking-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+}
+
+.parking-zone-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.parking-zone-card:hover {
+  border-color: var(--green-brand);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Hiệu ứng nhấp nháy cảnh báo bãi xe đã đầy (Pulse danger) */
+@keyframes pulseDangerBadge {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.pulse-danger {
+  animation: pulseDangerBadge 1.8s infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   2. FIFO INCIDENT QUEUE & SCHEDULE STYLES
+   ══════════════════════════════════════════════════════════════ */
+.badge-fifo-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 26px;
+  padding: 0 8px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #0c6b58 0%, #10b981 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(12, 107, 88, 0.25);
+  letter-spacing: -0.02em;
+}
+
+.badge-fifo-rank-top {
+  background: linear-gradient(135deg, #dc2626 0%, #f97316 100%);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+  animation: pulseDangerBadge 2s infinite;
+}
+
+.fifo-table-container {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.fifo-calendar-filter {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+/* ══════════════════════════════════════════════════════════
+   NÚT GẠT CHUYỂN ĐỔI GIAO DIỆN SÁNG / TỐI (SLIDER SWITCH)
+   ══════════════════════════════════════════════════════════ */
+.utc-theme-slider-container {
+  position: relative;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.utc-theme-switch-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.utc-theme-switch-track {
+  width: 58px;
+  height: 30px;
+  background-color: #e2e8f0;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7px;
+  margin: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.utc-theme-switch-track .switch-side {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: opacity 0.25s ease, color 0.25s ease;
+}
+
+.utc-theme-switch-track .switch-side-light {
+  color: #f59e0b;
+}
+
+.utc-theme-switch-track .switch-side-dark {
+  color: #94a3b8;
+}
+
+.utc-theme-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 23px;
+  height: 23px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s ease, box-shadow 0.3s ease;
+  z-index: 2;
+}
+
+.utc-theme-switch-knob .knob-icon-sun {
+  font-size: 11px;
+  color: #f59e0b;
+  display: block;
+}
+
+.utc-theme-switch-knob .knob-icon-moon {
+  font-size: 10px;
+  color: #38bdf8;
+  display: none;
+}
+
+/* HIỆU ỨNG GẠT SANG TỐI (CHECKED hoặc [data-theme="dark"]) */
+.utc-theme-switch-checkbox:checked + .utc-theme-switch-track,
+html[data-theme="dark"] .utc-theme-switch-track,
+body[data-theme="dark"] .utc-theme-switch-track {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.utc-theme-switch-checkbox:checked + .utc-theme-switch-track .utc-theme-switch-knob,
+html[data-theme="dark"] .utc-theme-switch-knob,
+body[data-theme="dark"] .utc-theme-switch-knob {
+  transform: translateX(26px);
+  background-color: #1e293b !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.utc-theme-switch-checkbox:checked + .utc-theme-switch-track .knob-icon-sun,
+html[data-theme="dark"] .knob-icon-sun,
+body[data-theme="dark"] .knob-icon-sun {
+  display: none !important;
+}
+
+.utc-theme-switch-checkbox:checked + .utc-theme-switch-track .knob-icon-moon,
+html[data-theme="dark"] .knob-icon-moon,
+body[data-theme="dark"] .knob-icon-moon {
+  display: block !important;
+}
+
+.utc-theme-switch-checkbox:checked + .utc-theme-switch-track .switch-side-light,
+html[data-theme="dark"] .switch-side-light,
+body[data-theme="dark"] .switch-side-light {
+  color: #475569 !important;
+}
+
+.utc-theme-switch-checkbox:checked + .utc-theme-switch-track .switch-side-dark,
+html[data-theme="dark"] .switch-side-dark,
+body[data-theme="dark"] .switch-side-dark {
+  color: #38bdf8 !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   3. DARK MODE COMPONENT OVERRIDES ([data-theme="dark"])
+   ══════════════════════════════════════════════════════════ */
+html[data-theme="dark"],
+body[data-theme="dark"],
+[data-theme="dark"] body {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .utc-card,
+[data-theme="dark"] .kpi-stat-box,
+[data-theme="dark"] .utc-navbar,
+[data-theme="dark"] .admin-nav-bar,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .dropdown-menu,
+[data-theme="dark"] .card {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .utc-card-title,
+[data-theme="dark"] .section-title-text,
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3,
+[data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-dark {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .text-muted {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .admin-table th,
+[data-theme="dark"] .table thead th {
+  background-color: #243248 !important;
+  color: #cbd5e1 !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .admin-table td,
+[data-theme="dark"] .table tbody td {
+  background-color: transparent !important;
+  color: #f8fafc !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .table-hover tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--green-brand) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+}
+
+[data-theme="dark"] .service-feature-card,
+[data-theme="dark"] .service-box,
+[data-theme="dark"] .service-icon-card,
+[data-theme="dark"] .calendar-card,
+[data-theme="dark"] .parking-zone-card,
+[data-theme="dark"] .fifo-calendar-filter {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .service-icon-card:hover {
+  background: var(--bg-card-hover) !important;
+  border-color: var(--green-brand) !important;
+}
+
+[data-theme="dark"] .service-card-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .service-card-subtitle {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .service-info-card {
+  background: #1e293b !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .service-info-card .utc-card-title,
+html[data-theme="dark"] .service-info-card .utc-card-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .status-stat-label,
+html[data-theme="dark"] .status-stat-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .status-stat-label.header-label,
+html[data-theme="dark"] .status-stat-label.header-label {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .service-info-card strong,
+html[data-theme="dark"] .service-info-card strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .status-stat-val-bold.green-ok,
+html[data-theme="dark"] .status-stat-val-bold.green-ok {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .status-stat-val-bold.red-alert,
+html[data-theme="dark"] .status-stat-val-bold.red-alert {
+  color: #f87171 !important;
+}
+
+[data-theme="dark"] .utc-json-link,
+html[data-theme="dark"] .utc-json-link {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .donut-chart-box {
+  background: #132337 !important;
+  border-color: #1e3a5f !important;
+}
+
+[data-theme="dark"] .donut-meter {
+  stroke: #334155 !important;
+}
+
+[data-theme="dark"] .donut-ratio {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .donut-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .calendar-month-text {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .calendar-nav-btn {
+  background: #243248 !important;
+  border-color: #334155 !important;
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .calendar-nav-btn:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border-color: #10b981 !important;
+}
+
+[data-theme="dark"] .calendar-table th {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .calendar-table td,
+[data-theme="dark"] .calendar-day-cell {
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .calendar-day-cell.other-month {
+  color: #475569 !important;
+  opacity: 0.35 !important;
+}
+
+[data-theme="dark"] .calendar-day-cell.has-incident {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  color: #fca5a5 !important;
+}
+
+[data-theme="dark"] .calendar-day-cell.has-maint,
+[data-theme="dark"] .calendar-day-cell.has-events {
+  background-color: rgba(16, 185, 129, 0.25) !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme="dark"] .calendar-day-cell.today,
+[data-theme="dark"] .calendar-day-cell.is-today {
+  border: 2px solid #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="dark"] .calendar-day-cell:hover:not(.other-month) {
+  background: #334155 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .calendar-legend {
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .section-title-text {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .section-note-text {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .utc-navbar .btn-link,
+[data-theme="dark"] .btn-link.text-dark {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .nav-action-btn,
+[data-theme="dark"] .admin-dropdown-btn {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .admin-dropdown-btn .text-dark {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .badge.bg-teal-soft {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .badge.bg-warning-subtle {
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-theme="dark"] .badge.bg-danger-subtle {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+[data-theme="dark"] .badge.bg-secondary-subtle {
+  background: rgba(148, 163, 184, 0.2) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
+}
+
+[data-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme="dark"] .nav-action-btn:hover {
+  background-color: #334155 !important;
+  color: #10b981 !important;
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: #243248 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .alert-info {
+  background-color: rgba(2, 132, 199, 0.15) !important;
+  border-color: rgba(2, 132, 199, 0.35) !important;
+  color: #7dd3fc !important;
+}
+
+[data-theme="dark"] .alert-success {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme="dark"] .alert-warning {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #fde68a !important;
+}
+
+[data-theme="dark"] .btn-realtime-uptime {
+  background-color: #132337;
+  color: #34d399;
+  border-color: #065f46;
+}
+
+[data-theme="dark"] .btn-realtime-uptime:hover {
+  background-color: #059669;
+  color: #ffffff;
+}
+
+[data-theme="dark"] #card-feat-realtime-monitoring {
+  background: linear-gradient(180deg, #1e293b 0%, #132337 100%) !important;
+  border-color: #10b981 !important;
+}
+
+[data-theme="dark"] .utc-footer {
+  color: #94a3b8 !important;
+  border-top-color: #334155 !important;
+}
+
+[data-theme="dark"] .utc-footer a {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .utc-footer a:hover {
+  color: #34d399 !important;
+}
+

@@ -100,7 +100,6 @@ $activeTab = $activeTab ?? ($_GET['tab'] ?? 'login');
 if (!in_array($activeTab, ['login', 'register', 'forgot'], true)) {
     $activeTab = 'login';
 }
-
 $forgotStep = (int) ($_GET['step'] ?? (!empty($_SESSION['reset_email']) ? 2 : 1));
 if ($forgotStep !== 1 && $forgotStep !== 2) {
     $forgotStep = 1;
